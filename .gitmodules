@@ -1,0 +1,3 @@
+[submodule "mahjong-cpp"]
+	path = mahjong-cpp
+	url = git@github.com:goreil/mahjong-cpp.git
