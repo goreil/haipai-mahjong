@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mahjong Review</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Mahjong Review</h2>
+        <button class="btn btn-primary" style="width:100%" onclick="showAddModal()">+ Add Game</button>
+      </div>
+      <div class="game-list" id="game-list"></div>
+    </div>
+
+    <div class="main">
+      <div class="toolbar">
+        <label><input type="checkbox" onchange="onToggleMinor(this)"> Hide ? (minor)</label>
+        <label><input type="checkbox" onchange="onToggleMedium(this)"> Hide ?? (medium)</label>
+        <div class="spacer"></div>
+      </div>
+      <div class="content" id="content">
+        <div class="empty-state">Select a game to review</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Game Modal -->
+  <div class="modal-overlay" id="add-modal" onclick="if(event.target===this)hideAddModal()">
+    <div class="modal">
+      <h3>Add Game</h3>
+      <div class="form-group">
+        <label>Mortal Viewer URL</label>
+        <input type="text" id="add-url" placeholder="https://mjai.ekyu.moe/killerducky/?data=/report/...json">
+      </div>
+      <div class="form-group">
+        <label>Date (optional, defaults to today)</label>
+        <input type="date" id="add-date">
+      </div>
+      <div class="error" id="add-error"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="hideAddModal()">Cancel</button>
+        <button class="btn btn-primary" id="add-submit-btn" onclick="submitAddGame()">Add Game</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
