@@ -325,35 +325,59 @@ body {
 }
 
 .tile {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 32px;
+  height: 36px;
+  width: auto;
   border-radius: 3px;
-  font-size: 13px;
-  font-weight: 700;
-  background: var(--tile-bg);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 2px solid transparent;
+  vertical-align: middle;
+  background: #fff;
 }
 
-.tile.m { color: var(--tile-m); }
-.tile.p { color: var(--tile-p); }
-.tile.s { color: var(--tile-s); }
-.tile.z { color: var(--tile-z); }
 .tile.draw {
   border-color: var(--accent);
-  box-shadow: 0 0 4px rgba(79,195,247,0.3);
+  box-shadow: 0 0 6px rgba(79,195,247,0.4);
+  margin-left: 6px;
 }
 
-.tile.highlight-played {
+.tile.action-tile {
+  height: 32px;
+}
+
+.tile.action-tile-sm {
+  height: 24px;
+}
+
+.action-text {
+  font-size: 13px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.action-meld {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.discard-comparison .played .tile,
+.discard-comparison .played .action-text {
   border-color: var(--sev-major);
   box-shadow: 0 0 4px rgba(239,83,80,0.3);
 }
 
-.tile.highlight-ai {
+.discard-comparison .ai .tile,
+.discard-comparison .ai .action-text {
   border-color: var(--sev-minor);
   box-shadow: 0 0 4px rgba(102,187,106,0.3);
+}
+
+.discard-comparison .arrow {
+  margin: 0 4px;
+  color: var(--text-dim);
+  vertical-align: middle;
 }
 
 /* Top actions */
@@ -366,11 +390,16 @@ body {
 }
 
 .top-action {
-  padding: 2px 8px;
+  padding: 3px 8px;
   background: var(--bg);
   border-radius: 4px;
   color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
+
+.top-action .tile { height: 26px; }
 
 .top-action:first-child { color: var(--sev-minor); }
 

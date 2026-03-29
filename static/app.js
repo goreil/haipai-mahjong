@@ -27,33 +27,30 @@ let state = {
 
 // --- Tile rendering ---
 
-function tileInfo(t) {
-  if (!t) return { num: "?", suit: "" };
-  if (t.endsWith("r")) {
-    // Red five: 5mr -> 0, suit m
-    return { num: "0", suit: t.slice(-2, -1), red: true };
-  }
-  if (t.length >= 2 && "mps".includes(t[t.length - 1])) {
-    return { num: t.slice(0, -1), suit: t[t.length - 1] };
-  }
-  // Honor
-  return { num: t, suit: "z" };
+// mjai notation -> SVG filename
+const TILE_FILE = {
+  "1m": "Man1", "2m": "Man2", "3m": "Man3", "4m": "Man4", "5m": "Man5",
+  "6m": "Man6", "7m": "Man7", "8m": "Man8", "9m": "Man9", "5mr": "Man5-Dora",
+  "1p": "Pin1", "2p": "Pin2", "3p": "Pin3", "4p": "Pin4", "5p": "Pin5",
+  "6p": "Pin6", "7p": "Pin7", "8p": "Pin8", "9p": "Pin9", "5pr": "Pin5-Dora",
+  "1s": "Sou1", "2s": "Sou2", "3s": "Sou3", "4s": "Sou4", "5s": "Sou5",
+  "6s": "Sou6", "7s": "Sou7", "8s": "Sou8", "9s": "Sou9", "5sr": "Sou5-Dora",
+  "E": "Ton", "S": "Nan", "W": "Shaa", "N": "Pei",
+  "P": "Haku", "F": "Hatsu", "C": "Chun",
+};
+
+function tileSrc(t) {
+  const name = TILE_FILE[t];
+  return name ? `/tiles/${name}.svg` : `/tiles/Back.svg`;
 }
 
 function renderTile(t, extraClass = "") {
-  const info = tileInfo(t);
-  const cls = ["tile", info.suit, extraClass].filter(Boolean).join(" ");
-  const label = info.red ? "0" : info.num;
-  return `<span class="${cls}" title="${t}">${label}</span>`;
+  const cls = ["tile", extraClass].filter(Boolean).join(" ");
+  return `<img class="${cls}" src="${tileSrc(t)}" alt="${t}" title="${t}">`;
 }
 
-function renderHand(tiles, draw, actual, expected) {
+function renderHand(tiles, draw) {
   if (!tiles || !tiles.length) return "";
-
-  const actualPai = actual?.type === "dahai" ? actual.pai : null;
-  const expectedPai = expected?.type === "dahai" ? expected.pai : null;
-
-  // Mark the last tile as draw if it matches
   return tiles.map((t, i) => {
     let extra = "";
     if (draw && i === tiles.length - 1 && t === draw) extra = "draw";
@@ -74,6 +71,24 @@ function formatAction(action) {
     case "none": return "pass";
     case "ankan": return `ankan ${(action.consumed || ["?"])[0]}`;
     default: return action.type;
+  }
+}
+
+function renderAction(action, cls = "") {
+  if (!action) return `<span class="action-text ${cls}">?</span>`;
+  switch (action.type) {
+    case "dahai":
+      return renderTile(action.pai, `action-tile ${cls}`);
+    case "chi":
+      return `<span class="action-meld ${cls}">chi ${(action.consumed || []).map(t => renderTile(t, "action-tile-sm")).join("")}+${renderTile(action.pai || "?", "action-tile-sm")}</span>`;
+    case "pon":
+      return `<span class="action-meld ${cls}">pon ${(action.consumed || []).map(t => renderTile(t, "action-tile-sm")).join("")}+${renderTile(action.pai || "?", "action-tile-sm")}</span>`;
+    case "reach": return `<span class="action-text ${cls}">riichi</span>`;
+    case "hora": return `<span class="action-text ${cls}">win</span>`;
+    case "none": return `<span class="action-text ${cls}">pass</span>`;
+    case "ankan":
+      return `<span class="action-meld ${cls}">ankan ${renderTile((action.consumed || ["?"])[0], "action-tile-sm")}</span>`;
+    default: return `<span class="action-text ${cls}">${action.type}</span>`;
   }
 }
 
@@ -140,7 +155,8 @@ async function addGame(url, date) {
 
 function renderGameList() {
   const list = document.getElementById("game-list");
-  list.innerHTML = state.games.map(g => {
+  const sorted = [...state.games].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  list.innerHTML = sorted.map(g => {
     const s = g.summary || {};
     const active = g.id === state.currentGame ? "active" : "";
     const pct = g.total > 0 ? Math.round((g.annotated / g.total) * 100) : 100;
@@ -236,7 +252,9 @@ function renderGame() {
         const expStr = formatAction(m.expected);
         if (actStr !== expStr) {
           html += `<span class="discard-comparison">
-            <span class="played">${actStr}</span> &rarr; <span class="ai">${expStr}</span>
+            <span class="played">${renderAction(m.actual, "played")}</span>
+            <span class="arrow">&rarr;</span>
+            <span class="ai">${renderAction(m.expected, "ai")}</span>
           </span>`;
         }
       }
@@ -254,8 +272,7 @@ function renderGame() {
       if (m.top_actions && m.top_actions.length) {
         html += `<div class="top-actions">`;
         for (const a of m.top_actions) {
-          const aStr = formatAction(a.action);
-          html += `<span class="top-action">${aStr} <b>${a.q_value.toFixed(2)}</b> <span class="prob">${(a.prob * 100).toFixed(0)}%</span></span>`;
+          html += `<span class="top-action">${renderAction(a.action)} <b>${a.q_value.toFixed(2)}</b> <span class="prob">${(a.prob * 100).toFixed(0)}%</span></span>`;
         }
         html += `</div>`;
       }

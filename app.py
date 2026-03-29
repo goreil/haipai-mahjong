@@ -30,6 +30,11 @@ def index():
     return send_from_directory("static", "index.html")
 
 
+@app.route("/tiles/<path:filename>")
+def tiles(filename):
+    return send_from_directory(DIR / "riichi-mahjong-tiles" / "Regular", filename)
+
+
 @app.route("/api/games")
 def api_games():
     data = load_games()
