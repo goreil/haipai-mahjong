@@ -4,7 +4,6 @@
 import argparse
 import json
 import sys
-import urllib.request
 import urllib.parse
 from datetime import date
 from pathlib import Path
@@ -382,8 +381,11 @@ def cmd_add(args):
     if dest.exists():
         print(f"Using existing {dest}")
     else:
+        import requests
         print(f"Downloading {download_url}...")
-        urllib.request.urlretrieve(download_url, dest)
+        resp = requests.get(download_url, timeout=30)
+        resp.raise_for_status()
+        dest.write_bytes(resp.content)
         print(f"Saved to {dest}")
 
     # Parse

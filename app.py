@@ -101,9 +101,9 @@ def api_annotate(game_id):
 
 @app.route("/api/games/add", methods=["POST"])
 def api_add():
-    import urllib.request
     import urllib.parse
     from datetime import date
+    import requests as http_requests
 
     body = request.json
     url = body.get("url", "")
@@ -124,7 +124,9 @@ def api_add():
 
     if not dest.exists():
         try:
-            urllib.request.urlretrieve(download_url, dest)
+            resp = http_requests.get(download_url, timeout=30)
+            resp.raise_for_status()
+            dest.write_bytes(resp.content)
         except Exception as e:
             return jsonify({"error": f"Download failed: {e}"}), 500
 
