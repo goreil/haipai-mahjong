@@ -1,0 +1,4168 @@
+{
+  "games": [
+    {
+      "date": "2026-03-25",
+      "log_url": "https://tenhou.net/0/?log=2026032603gm-0009-0000-0c08f251&tw=0",
+      "rounds": [
+        {
+          "round": "E1",
+          "honba": 0,
+          "turn_count": null,
+          "outcome": ":D",
+          "mistakes": []
+        },
+        {
+          "round": "E2",
+          "honba": 0,
+          "turn_count": null,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 2,
+              "severity": "??",
+              "category": "1D",
+              "ev_loss": 0.8,
+              "note": "|4| > yakuhai",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "E3",
+          "honba": 0,
+          "turn_count": null,
+          "outcome": ":D",
+          "mistakes": []
+        },
+        {
+          "round": "E4",
+          "honba": 0,
+          "turn_count": null,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 0,
+              "severity": "???",
+              "category": "1D",
+              "ev_loss": 1.35,
+              "note": "56|8| > otakaze",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 1,
+              "severity": "??",
+              "category": "1C",
+              "ev_loss": 0.69,
+              "note": "yakuhai > otakaze",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 8,
+              "severity": "??",
+              "category": "1A",
+              "ev_loss": 0.52,
+              "note": "|1|234 in 1-shanten",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S1",
+          "honba": 0,
+          "turn_count": null,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 0,
+              "severity": "???",
+              "category": "1D",
+              "ev_loss": 1.33,
+              "note": "8 > round wind",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 1,
+              "severity": "?",
+              "category": "1C",
+              "ev_loss": 0.42,
+              "note": "yakuhai > round wind",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 12,
+              "severity": "?",
+              "category": "2A",
+              "ev_loss": 0.34,
+              "note": "1-shanten, 2-3han, last place",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 13,
+              "severity": "?",
+              "category": "2A",
+              "ev_loss": 0.29,
+              "note": "\"",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 14,
+              "severity": "??",
+              "category": "2A",
+              "ev_loss": 0.55,
+              "note": "\"",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S2-1",
+          "honba": 1,
+          "turn_count": null,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 5,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.25,
+              "note": "|9|764 > |1|22468, ?",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 11,
+              "severity": "??",
+              "category": "4A",
+              "ev_loss": 0.55,
+              "note": "tanyao, 5 han",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S2-2",
+          "honba": 2,
+          "turn_count": null,
+          "outcome": ":(",
+          "mistakes": [
+            {
+              "turn": 1,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.42,
+              "note": "yakuhai > 6|9|",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 4,
+              "severity": "???",
+              "category": "1A",
+              "ev_loss": 1.1,
+              "note": "1-shanten > 2-shanten",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 6,
+              "severity": "??",
+              "category": "1A",
+              "ev_loss": 0.95,
+              "note": "\"",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 8,
+              "severity": "???",
+              "category": "1A",
+              "ev_loss": 1.01,
+              "note": "\"",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 15,
+              "severity": "???",
+              "category": "1A",
+              "ev_loss": 1.03,
+              "note": "555|6| useless when head exists",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S2-3",
+          "honba": 3,
+          "turn_count": null,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 0,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.16,
+              "note": "otakaze > 5|9|",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 2,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.3,
+              "note": "yakuhai > |1|5",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 9,
+              "severity": "?",
+              "category": "1A",
+              "ev_loss": 0.29,
+              "note": "|5| > |9|987, head exists",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 10,
+              "severity": "?",
+              "category": "1A",
+              "ev_loss": 0.32,
+              "note": "otakaze > |9|987, head exists",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S3-4",
+          "honba": 4,
+          "turn_count": null,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 0,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.41,
+              "note": "|9| > yakuhai, 2 out",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 1,
+              "severity": "??",
+              "category": "1D",
+              "ev_loss": 0.7,
+              "note": "|1| > yakuhai, 3 out",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 2,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.16,
+              "note": "|1|4 > yakuhai, 3 out",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 3,
+              "severity": "??",
+              "category": "1C",
+              "ev_loss": 0.6,
+              "note": "otakaze > yakuhai, 3 out",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 8,
+              "severity": "?",
+              "category": "1B",
+              "ev_loss": 0.2,
+              "note": "yakuhaiD > 5D7|9|",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 11,
+              "severity": "??",
+              "category": "1A",
+              "ev_loss": 0.99,
+              "note": "perfect 1-shanten > 57p wait",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S4",
+          "honba": 0,
+          "turn_count": null,
+          "outcome": ":D",
+          "mistakes": []
+        }
+      ],
+      "mortal_file": null,
+      "summary": {
+        "total_mistakes": 26,
+        "total_ev_loss": 15.73,
+        "total_turns": null,
+        "ev_per_turn": null,
+        "by_severity": {
+          "???": 5,
+          "??": 9,
+          "?": 12,
+          "!": 0
+        },
+        "by_category": {
+          "1D": {
+            "count": 10,
+            "ev": 5.88
+          },
+          "1C": {
+            "count": 3,
+            "ev": 1.71
+          },
+          "1A": {
+            "count": 8,
+            "ev": 6.21
+          },
+          "2A": {
+            "count": 3,
+            "ev": 1.18
+          },
+          "4A": {
+            "count": 1,
+            "ev": 0.55
+          },
+          "1B": {
+            "count": 1,
+            "ev": 0.2
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-03-25",
+      "log_url": "https://tenhou.net/0/?log=2026032507gm-0009-0000-07a0bbe3&tw=2",
+      "rounds": [
+        {
+          "round": "E1",
+          "honba": 0,
+          "turn_count": 13,
+          "outcome": ":(",
+          "mistakes": [
+            {
+              "turn": 1,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.27,
+              "note": "|6| > yakuhai",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 5,
+              "severity": "???",
+              "category": "1D",
+              "ev_loss": 1.31,
+              "note": "888|9| > yakuhai",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 6,
+              "severity": "???",
+              "category": "5A",
+              "ev_loss": 1.16,
+              "note": "2222334, keep 2334 shape",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 6,
+              "severity": "??",
+              "category": "1C",
+              "ev_loss": 0.92,
+              "note": "yakuhai > otakaze, 2out > 3out",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 11,
+              "severity": "??",
+              "category": "3C",
+              "ev_loss": 1.07,
+              "note": "tanyao + dora5 > honiisou",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 12,
+              "severity": "??",
+              "category": "5A",
+              "ev_loss": 0.62,
+              "note": "68888, keep 68",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "E1-1",
+          "honba": 1,
+          "turn_count": 7,
+          "outcome": ":)",
+          "mistakes": [
+            {
+              "turn": 0,
+              "severity": "?",
+              "category": "1E",
+              "ev_loss": 0.4,
+              "note": "97 > 99 when 3 pairs",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 5,
+              "severity": "?",
+              "category": "4A",
+              "ev_loss": 0.23,
+              "note": "3outs no yaku, ?",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "E2",
+          "honba": 0,
+          "turn_count": 10,
+          "outcome": ":)",
+          "mistakes": [
+            {
+              "turn": 4,
+              "severity": "?",
+              "category": "1E",
+              "ev_loss": 0.45,
+              "note": "|8| > 78|8|9, nakabukure only useful in middle",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 5,
+              "severity": "?",
+              "category": "2C",
+              "ev_loss": 0.29,
+              "note": "|1|2 > 1|2|, keep 1 for later defense",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "E3",
+          "honba": 0,
+          "turn_count": 10,
+          "outcome": ":|",
+          "mistakes": [
+            {
+              "turn": 0,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.2,
+              "note": "|9|8 > Yakuhai",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 4,
+              "severity": "??",
+              "category": "1D",
+              "ev_loss": 0.51,
+              "note": "yakuhai > |2|",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 9,
+              "severity": "??",
+              "category": "2C",
+              "ev_loss": 0.56,
+              "note": "genbutsu push > unsafe push",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "E4",
+          "honba": 0,
+          "turn_count": 16,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 0,
+              "severity": "??",
+              "category": "1D",
+              "ev_loss": 0.85,
+              "note": "seat wind > |1|",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 2,
+              "severity": "?",
+              "category": "1D",
+              "ev_loss": 0.33,
+              "note": "round wind > |2|, 1dropped",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 6,
+              "severity": "??",
+              "category": "1A",
+              "ev_loss": 0.58,
+              "note": "33|5| > 9|8|, 6 groups",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 8,
+              "severity": "??",
+              "category": "1A",
+              "ev_loss": 0.89,
+              "note": "|9|8 > |5|",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 10,
+              "severity": "?",
+              "category": "2B",
+              "ev_loss": 0.21,
+              "note": "slow>2-shanten, 2han hand",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 15,
+              "severity": "??",
+              "category": "2B",
+              "ev_loss": 0.74,
+              "note": "\"",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S1",
+          "honba": 0,
+          "turn_count": 10,
+          "outcome": ":D",
+          "mistakes": []
+        },
+        {
+          "round": "S2",
+          "honba": 0,
+          "turn_count": 17,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 2,
+              "severity": "??",
+              "category": "1A",
+              "ev_loss": 0.56,
+              "note": "|7| > |1|2455",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 3,
+              "severity": "??",
+              "category": "1A",
+              "ev_loss": 0.5,
+              "note": "|3| > |1|2455",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 7,
+              "severity": "?",
+              "category": "1A",
+              "ev_loss": 0.33,
+              "note": null,
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 12,
+              "severity": "?",
+              "category": "1A",
+              "ev_loss": 0.31,
+              "note": "89|9| > |8|99",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 13,
+              "severity": "?",
+              "category": "3A",
+              "ev_loss": 0.24,
+              "note": "?",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 13,
+              "severity": "??",
+              "category": "1E",
+              "ev_loss": 0.84,
+              "note": "hopeless pair, 6 groups",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 14,
+              "severity": "???",
+              "category": "1E",
+              "ev_loss": 1.28,
+              "note": "\"",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 15,
+              "severity": "???",
+              "category": "2B",
+              "ev_loss": 1.1,
+              "note": "hopeless pair, slow 1-shanten",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 16,
+              "severity": "??",
+              "category": "2B",
+              "ev_loss": 0.69,
+              "note": "\"",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S2-1",
+          "honba": 1,
+          "turn_count": 14,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 0,
+              "severity": "??",
+              "category": "1A",
+              "ev_loss": 0.58,
+              "note": "don't drop head",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 5,
+              "severity": "?",
+              "category": "1A",
+              "ev_loss": 0.27,
+              "note": null,
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 13,
+              "severity": "?",
+              "category": "3A",
+              "ev_loss": 0.28,
+              "note": "mantenpin > open tanyao",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S3",
+          "honba": 0,
+          "turn_count": 14,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 1,
+              "severity": "?",
+              "category": "1C",
+              "ev_loss": 0.4,
+              "note": "dragon > round wind",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 2,
+              "severity": "?",
+              "category": "1C",
+              "ev_loss": 0.67,
+              "note": "dragon > round wind, drop1",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 5,
+              "severity": "?",
+              "category": "4A",
+              "ev_loss": 0.47,
+              "note": "1-tile wait",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        },
+        {
+          "round": "S4",
+          "honba": 0,
+          "turn_count": 14,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 4,
+              "severity": "?",
+              "category": "1A",
+              "ev_loss": 0.45,
+              "note": "|2|211 > 22|1|1",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 9,
+              "severity": "???",
+              "category": "1A",
+              "ev_loss": 1.25,
+              "note": "increase shanten",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            },
+            {
+              "turn": 13,
+              "severity": "??",
+              "category": "2C",
+              "ev_loss": 0.95,
+              "note": "No reason to keep, because open",
+              "hand": null,
+              "melds": null,
+              "shanten": null,
+              "draw": null,
+              "actual": null,
+              "expected": null,
+              "top_actions": null
+            }
+          ]
+        }
+      ],
+      "mortal_file": null,
+      "summary": {
+        "total_mistakes": 37,
+        "total_ev_loss": 22.76,
+        "total_turns": 125,
+        "ev_per_turn": 0.1821,
+        "by_severity": {
+          "???": 5,
+          "??": 15,
+          "?": 17,
+          "!": 0
+        },
+        "by_category": {
+          "1D": {
+            "count": 6,
+            "ev": 3.47
+          },
+          "5A": {
+            "count": 2,
+            "ev": 1.78
+          },
+          "1C": {
+            "count": 3,
+            "ev": 1.99
+          },
+          "3C": {
+            "count": 1,
+            "ev": 1.07
+          },
+          "1E": {
+            "count": 4,
+            "ev": 2.97
+          },
+          "4A": {
+            "count": 2,
+            "ev": 0.7
+          },
+          "2C": {
+            "count": 3,
+            "ev": 1.8
+          },
+          "1A": {
+            "count": 10,
+            "ev": 5.72
+          },
+          "2B": {
+            "count": 4,
+            "ev": 2.74
+          },
+          "3A": {
+            "count": 2,
+            "ev": 0.52
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-03-29",
+      "log_url": null,
+      "rounds": [
+        {
+          "round": "E1",
+          "honba": 0,
+          "turn_count": 14,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 1,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.49,
+              "note": null,
+              "hand": [
+                "2m",
+                "3m",
+                "4m",
+                "5m",
+                "7m",
+                "9m",
+                "1p",
+                "4p",
+                "7p",
+                "5s",
+                "7s",
+                "F",
+                "C",
+                "2p"
+              ],
+              "melds": [],
+              "shanten": 4,
+              "draw": "2p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "C",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "F",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "F",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0678,
+                  "prob": 0.5834
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1025,
+                  "prob": 0.4124
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "C",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.5606,
+                  "prob": 0.0042
+                }
+              ]
+            },
+            {
+              "turn": 8,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.82,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "3m",
+                "4m",
+                "4m",
+                "5m",
+                "7m",
+                "9m",
+                "2p",
+                "4p",
+                "5s",
+                "7s",
+                "7s",
+                "3p"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "3p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9m",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "4m",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "4m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0362,
+                  "prob": 0.8028
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1809,
+                  "prob": 0.1889
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "5s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4965,
+                  "prob": 0.008
+                }
+              ]
+            },
+            {
+              "turn": 10,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.81,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "3m",
+                "4m",
+                "4m",
+                "5m",
+                "7m",
+                "2p",
+                "3p",
+                "4p",
+                "5s",
+                "7s",
+                "7s",
+                "2m"
+              ],
+              "melds": [],
+              "shanten": 1,
+              "draw": "2m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2m",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1m",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0957,
+                  "prob": 0.9901
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "7m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.5954,
+                  "prob": 0.0067
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "5s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.6794,
+                  "prob": 0.0029
+                }
+              ]
+            },
+            {
+              "turn": 12,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.06,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "3m",
+                "4m",
+                "4m",
+                "5m",
+                "2p",
+                "3p",
+                "4p",
+                "4s",
+                "5s",
+                "7s",
+                "7s",
+                "C"
+              ],
+              "melds": [],
+              "shanten": 1,
+              "draw": "C",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "C",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1m",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.0562,
+                  "prob": 0.6504
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "C",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.0059,
+                  "prob": 0.3496
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "4m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.0043,
+                  "prob": 0.0
+                }
+              ]
+            },
+            {
+              "turn": 13,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.84,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "3m",
+                "4m",
+                "4m",
+                "5m",
+                "2p",
+                "3p",
+                "4p",
+                "4s",
+                "5s",
+                "7s",
+                "7s",
+                "6s"
+              ],
+              "melds": [],
+              "shanten": 1,
+              "draw": "6s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "4m",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1m",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.2426,
+                  "prob": 0.9997
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "4m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.6021,
+                  "prob": 0.0002
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "5m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.7769,
+                  "prob": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "round": "E2",
+          "honba": 0,
+          "turn_count": 13,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 1,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.57,
+              "note": null,
+              "hand": [
+                "1m",
+                "1m",
+                "2m",
+                "8m",
+                "9m",
+                "1p",
+                "1p",
+                "3p",
+                "9p",
+                "1s",
+                "1s",
+                "9s",
+                "E"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "1p",
+              "actual": {
+                "type": "none"
+              },
+              "expected": {
+                "type": "pon",
+                "actor": 2,
+                "target": 0,
+                "pai": "1p",
+                "consumed": [
+                  "1p",
+                  "1p"
+                ]
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "pon",
+                    "actor": 2,
+                    "target": 0,
+                    "pai": "1p",
+                    "consumed": [
+                      "1p",
+                      "1p"
+                    ]
+                  },
+                  "q_value": -0.0273,
+                  "prob": 0.6533
+                },
+                {
+                  "action": {
+                    "type": "none"
+                  },
+                  "q_value": -0.0907,
+                  "prob": 0.3467
+                }
+              ]
+            },
+            {
+              "turn": 1,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.06,
+              "note": null,
+              "hand": [
+                "1m",
+                "1m",
+                "2m",
+                "8m",
+                "9m",
+                "1p",
+                "1p",
+                "3p",
+                "9p",
+                "1s",
+                "1s",
+                "9s",
+                "E"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "1p",
+              "actual": {
+                "type": "none"
+              },
+              "expected": {
+                "type": "pon",
+                "actor": 2,
+                "target": 0,
+                "pai": "1p",
+                "consumed": [
+                  "1p",
+                  "1p"
+                ]
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "pon",
+                    "actor": 2,
+                    "target": 0,
+                    "pai": "1p",
+                    "consumed": [
+                      "1p",
+                      "1p"
+                    ]
+                  },
+                  "q_value": -0.0273,
+                  "prob": 0.6533
+                },
+                {
+                  "action": {
+                    "type": "none"
+                  },
+                  "q_value": -0.0907,
+                  "prob": 0.3467
+                }
+              ]
+            },
+            {
+              "turn": 5,
+              "severity": "???",
+              "category": null,
+              "ev_loss": 1.4,
+              "note": null,
+              "hand": [
+                "1m",
+                "1m",
+                "2m",
+                "8m",
+                "9m",
+                "1p",
+                "1p",
+                "3p",
+                "7p",
+                "8p",
+                "9p",
+                "1s",
+                "1s",
+                "8s"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "8s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1p",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "8s",
+                "tsumogiri": true
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8s",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.0177,
+                  "prob": 1.0
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.3238,
+                  "prob": 0.0
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.4155,
+                  "prob": 0.0
+                }
+              ]
+            },
+            {
+              "turn": 7,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.5,
+              "note": null,
+              "hand": [
+                "1m",
+                "1m",
+                "2m",
+                "3m",
+                "8m",
+                "9m",
+                "1p",
+                "3p",
+                "7p",
+                "8p",
+                "9p",
+                "1s",
+                "1s",
+                "7p"
+              ],
+              "melds": [],
+              "shanten": 1,
+              "draw": "7p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1m",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "7p",
+                "tsumogiri": true
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "7p",
+                    "tsumogiri": true
+                  },
+                  "q_value": 0.0624,
+                  "prob": 0.9935
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4398,
+                  "prob": 0.0065
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.359,
+                  "prob": 0.0
+                }
+              ]
+            },
+            {
+              "turn": 12,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.38,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "3m",
+                "8m",
+                "9m",
+                "7p",
+                "8p",
+                "9p",
+                "1s",
+                "1s",
+                "5s"
+              ],
+              "melds": [
+                {
+                  "type": "chi",
+                  "target": 1,
+                  "pai": "2p",
+                  "consumed": [
+                    "1p",
+                    "3p"
+                  ]
+                }
+              ],
+              "shanten": 0,
+              "draw": "5s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "5s",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "8m",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1411,
+                  "prob": 0.8498
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.3932,
+                  "prob": 0.0683
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4006,
+                  "prob": 0.0634
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "round": "E3",
+          "honba": 0,
+          "turn_count": 8,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 2,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.95,
+              "note": null,
+              "hand": [
+                "7m",
+                "8m",
+                "1p",
+                "5pr",
+                "5p",
+                "1s",
+                "2s",
+                "3s",
+                "9s",
+                "9s",
+                "9s",
+                "E",
+                "W",
+                "C"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "C",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1p",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "W",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "W",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.3219,
+                  "prob": 0.9999
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.6319,
+                  "prob": 0.0001
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "E",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.0851,
+                  "prob": 0.0
+                }
+              ]
+            },
+            {
+              "turn": 4,
+              "severity": "???",
+              "category": null,
+              "ev_loss": 1.27,
+              "note": null,
+              "hand": [
+                "7m",
+                "8m",
+                "5pr",
+                "5p",
+                "1s",
+                "2s",
+                "3s",
+                "4s",
+                "9s",
+                "9s",
+                "9s",
+                "E",
+                "C",
+                "4p"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "4p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1s",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "E",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "E",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.1618,
+                  "prob": 0.9947
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "C",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.3624,
+                  "prob": 0.0053
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.1082,
+                  "prob": 0.0
+                }
+              ]
+            },
+            {
+              "turn": 5,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.66,
+              "note": null,
+              "hand": [
+                "7m",
+                "8m",
+                "4p",
+                "5pr",
+                "5p",
+                "2s",
+                "3s",
+                "4s",
+                "9s",
+                "9s",
+                "9s",
+                "E",
+                "C",
+                "9m"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "9m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "C",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "E",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "E",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.2297,
+                  "prob": 0.9986
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "C",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4305,
+                  "prob": 0.0014
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.089,
+                  "prob": 0.0
+                }
+              ]
+            },
+            {
+              "turn": 6,
+              "severity": "???",
+              "category": null,
+              "ev_loss": 1.49,
+              "note": null,
+              "hand": [
+                "7m",
+                "8m",
+                "9m",
+                "4p",
+                "5pr",
+                "5p",
+                "2s",
+                "3s",
+                "4s",
+                "9s",
+                "9s",
+                "9s",
+                "E",
+                "7s"
+              ],
+              "melds": [],
+              "shanten": 1,
+              "draw": "7s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "7s",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "E",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "E",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.3107,
+                  "prob": 1.0
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.0996,
+                  "prob": 0.0
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "5p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.1411,
+                  "prob": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "round": "E4",
+          "honba": 0,
+          "turn_count": 6,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 3,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.83,
+              "note": null,
+              "hand": [
+                "3m",
+                "6m",
+                "1p",
+                "2p",
+                "3p",
+                "3p",
+                "5p",
+                "6p",
+                "8p",
+                "1s",
+                "1s",
+                "2s",
+                "6s",
+                "5p"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "5p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "3p",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "8p",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0925,
+                  "prob": 0.4388
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1093,
+                  "prob": 0.3712
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "6m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.2088,
+                  "prob": 0.1372
+                }
+              ]
+            },
+            {
+              "turn": 5,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.01,
+              "note": null,
+              "hand": [
+                "3m",
+                "6m",
+                "1p",
+                "2p",
+                "3p",
+                "5p",
+                "5p",
+                "6p",
+                "8p",
+                "1s",
+                "2s",
+                "3s",
+                "6s",
+                "5pr"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "5pr",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "6s",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "6m",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "6m",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.0386,
+                  "prob": 0.451
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "6s",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.0328,
+                  "prob": 0.4258
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1061,
+                  "prob": 0.1062
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "round": "S1",
+          "honba": 0,
+          "turn_count": 14,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 3,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.03,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "6m",
+                "6m",
+                "7m",
+                "2p",
+                "6p",
+                "3s",
+                "6s",
+                "6s",
+                "8s",
+                "8s",
+                "9s",
+                "8m"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "8m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2p",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0291,
+                  "prob": 0.5336
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0574,
+                  "prob": 0.4019
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.2407,
+                  "prob": 0.0643
+                }
+              ]
+            },
+            {
+              "turn": 4,
+              "severity": "???",
+              "category": null,
+              "ev_loss": 1.12,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "6m",
+                "6m",
+                "7m",
+                "8m",
+                "6p",
+                "3s",
+                "6s",
+                "6s",
+                "8s",
+                "8s",
+                "9s",
+                "6m"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "6m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "6p",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.013,
+                  "prob": 0.6444
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0732,
+                  "prob": 0.353
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "3s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.6041,
+                  "prob": 0.0017
+                }
+              ]
+            },
+            {
+              "turn": 5,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.21,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "6m",
+                "6m",
+                "6m",
+                "7m",
+                "8m",
+                "3s",
+                "6s",
+                "6s",
+                "8s",
+                "8s",
+                "9s",
+                "8m"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "8m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1m",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0127,
+                  "prob": 0.6981
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "3s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1325,
+                  "prob": 0.2109
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.2183,
+                  "prob": 0.0894
+                }
+              ]
+            },
+            {
+              "turn": 6,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.14,
+              "note": null,
+              "hand": [
+                "2m",
+                "6m",
+                "6m",
+                "6m",
+                "7m",
+                "8m",
+                "8m",
+                "3s",
+                "6s",
+                "6s",
+                "8s",
+                "8s",
+                "9s",
+                "W"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "W",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "W",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2m",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0393,
+                  "prob": 0.7261
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "W",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.1819,
+                  "prob": 0.1745
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.2385,
+                  "prob": 0.0991
+                }
+              ]
+            },
+            {
+              "turn": 7,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.07,
+              "note": null,
+              "hand": [
+                "2m",
+                "6m",
+                "6m",
+                "6m",
+                "7m",
+                "8m",
+                "8m",
+                "3s",
+                "6s",
+                "6s",
+                "8s",
+                "8s",
+                "9s",
+                "F"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "F",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "F",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2m",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0417,
+                  "prob": 0.6544
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "F",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.1092,
+                  "prob": 0.3333
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4431,
+                  "prob": 0.0118
+                }
+              ]
+            },
+            {
+              "turn": 8,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.23,
+              "note": null,
+              "hand": [
+                "6m",
+                "6m",
+                "6m",
+                "7m",
+                "7m",
+                "8m",
+                "8m",
+                "3s",
+                "6s",
+                "6s",
+                "8s",
+                "8s",
+                "9s"
+              ],
+              "melds": [],
+              "shanten": 1,
+              "draw": "7m",
+              "actual": {
+                "type": "none"
+              },
+              "expected": {
+                "type": "pon",
+                "actor": 2,
+                "target": 1,
+                "pai": "7m",
+                "consumed": [
+                  "7m",
+                  "7m"
+                ]
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "pon",
+                    "actor": 2,
+                    "target": 1,
+                    "pai": "7m",
+                    "consumed": [
+                      "7m",
+                      "7m"
+                    ]
+                  },
+                  "q_value": 0.1337,
+                  "prob": 0.6134
+                },
+                {
+                  "action": {
+                    "type": "chi",
+                    "actor": 2,
+                    "target": 1,
+                    "pai": "7m",
+                    "consumed": [
+                      "6m",
+                      "8m"
+                    ]
+                  },
+                  "q_value": 0.0694,
+                  "prob": 0.3226
+                },
+                {
+                  "action": {
+                    "type": "none"
+                  },
+                  "q_value": -0.0924,
+                  "prob": 0.0639
+                }
+              ]
+            },
+            {
+              "turn": 9,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.1,
+              "note": null,
+              "hand": [
+                "6m",
+                "6m",
+                "6m",
+                "7m",
+                "7m",
+                "8m",
+                "8m",
+                "3s",
+                "6s",
+                "6s",
+                "8s",
+                "8s",
+                "9s",
+                "8p"
+              ],
+              "melds": [],
+              "shanten": 1,
+              "draw": "8p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "3s",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "8p",
+                "tsumogiri": true
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": true
+                  },
+                  "q_value": 0.0158,
+                  "prob": 0.3501
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "6m",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.0103,
+                  "prob": 0.3312
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0457,
+                  "prob": 0.1893
+                }
+              ]
+            },
+            {
+              "turn": 11,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.44,
+              "note": null,
+              "hand": [
+                "6m",
+                "6m",
+                "6m",
+                "7m",
+                "7m",
+                "8m",
+                "8m",
+                "6s",
+                "6s",
+                "8s",
+                "8s",
+                "8s",
+                "9s",
+                "6s"
+              ],
+              "melds": [],
+              "shanten": 1,
+              "draw": "6s",
+              "actual": {
+                "type": "reach",
+                "actor": 2
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.748,
+                  "prob": 0.9884
+                },
+                {
+                  "action": {
+                    "type": "reach",
+                    "actor": 2
+                  },
+                  "q_value": 0.3035,
+                  "prob": 0.0116
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.7476,
+                  "prob": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "round": "S2",
+          "honba": 0,
+          "turn_count": 12,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 2,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.62,
+              "note": null,
+              "hand": [
+                "5mr",
+                "5m",
+                "5pr",
+                "5p",
+                "5p",
+                "8p",
+                "5s",
+                "7s",
+                "9s",
+                "N",
+                "N",
+                "F",
+                "C",
+                "2s"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "2s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2s",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "F",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "F",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.0147,
+                  "prob": 0.9922
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.5083,
+                  "prob": 0.0053
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.6024,
+                  "prob": 0.0021
+                }
+              ]
+            },
+            {
+              "turn": 3,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.6,
+              "note": null,
+              "hand": [
+                "5mr",
+                "5m",
+                "5pr",
+                "5p",
+                "5p",
+                "8p",
+                "5s",
+                "7s",
+                "9s",
+                "N",
+                "N",
+                "F",
+                "C",
+                "2s"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "2s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "C",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2s",
+                "tsumogiri": true
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.0113,
+                  "prob": 0.9802
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "F",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4294,
+                  "prob": 0.015
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "C",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.612,
+                  "prob": 0.0024
+                }
+              ]
+            },
+            {
+              "turn": 4,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.94,
+              "note": null,
+              "hand": [
+                "5mr",
+                "5m",
+                "5pr",
+                "5p",
+                "5p",
+                "8p",
+                "2s",
+                "5s",
+                "7s",
+                "9s",
+                "N",
+                "N",
+                "F",
+                "S"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "S",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "S",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "F",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "F",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0301,
+                  "prob": 0.8737
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.2239,
+                  "prob": 0.1258
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.8222,
+                  "prob": 0.0003
+                }
+              ]
+            },
+            {
+              "turn": 5,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.0,
+              "note": null,
+              "hand": [
+                "5mr",
+                "5m",
+                "5pr",
+                "5p",
+                "5p",
+                "8p",
+                "2s",
+                "5s",
+                "7s",
+                "9s",
+                "N",
+                "N",
+                "F",
+                "3s"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "3s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "F",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "8p",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0016,
+                  "prob": 0.503
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "F",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0029,
+                  "prob": 0.4969
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "N",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.8993,
+                  "prob": 0.0001
+                }
+              ]
+            },
+            {
+              "turn": 6,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.02,
+              "note": null,
+              "hand": [
+                "5mr",
+                "5m",
+                "5pr",
+                "5p",
+                "5p",
+                "8p",
+                "2s",
+                "3s",
+                "5s",
+                "7s",
+                "9s",
+                "N",
+                "N",
+                "W"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "W",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "W",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "8p",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.0155,
+                  "prob": 0.5569
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "W",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.0074,
+                  "prob": 0.4431
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "N",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.0058,
+                  "prob": 0.0
+                }
+              ]
+            },
+            {
+              "turn": 7,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.29,
+              "note": null,
+              "hand": [
+                "5mr",
+                "5m",
+                "5pr",
+                "5p",
+                "5p",
+                "8p",
+                "2s",
+                "3s",
+                "5s",
+                "7s",
+                "9s",
+                "N",
+                "N",
+                "P"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "P",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "P",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "8p",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0528,
+                  "prob": 0.948
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "P",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.3431,
+                  "prob": 0.052
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.0978,
+                  "prob": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "round": "S2-1",
+          "honba": 1,
+          "turn_count": 10,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 2,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.68,
+              "note": null,
+              "hand": [
+                "2m",
+                "4m",
+                "1p",
+                "3p",
+                "4p",
+                "8p",
+                "9p",
+                "1s",
+                "2s",
+                "4s",
+                "9s",
+                "W",
+                "W",
+                "S"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "S",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1p",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1269,
+                  "prob": 0.9882
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.6169,
+                  "prob": 0.0074
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "S",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.6964,
+                  "prob": 0.0033
+                }
+              ]
+            },
+            {
+              "turn": 3,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.36,
+              "note": null,
+              "hand": [
+                "2m",
+                "4m",
+                "3p",
+                "4p",
+                "8p",
+                "9p",
+                "1s",
+                "2s",
+                "4s",
+                "9s",
+                "S",
+                "W",
+                "W",
+                "1m"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "1m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1s",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1667,
+                  "prob": 0.9687
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.529,
+                  "prob": 0.0259
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "S",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.7467,
+                  "prob": 0.0029
+                }
+              ]
+            },
+            {
+              "turn": 4,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.53,
+              "note": null,
+              "hand": [
+                "1m",
+                "2m",
+                "4m",
+                "3p",
+                "4p",
+                "8p",
+                "9p",
+                "2s",
+                "4s",
+                "9s",
+                "S",
+                "W",
+                "W",
+                "C"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "C",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1m",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.208,
+                  "prob": 0.9923
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.7399,
+                  "prob": 0.0049
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "S",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.7969,
+                  "prob": 0.0027
+                }
+              ]
+            },
+            {
+              "turn": 6,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.37,
+              "note": null,
+              "hand": [
+                "2m",
+                "4m",
+                "3p",
+                "4p",
+                "8p",
+                "9p",
+                "2s",
+                "4s",
+                "S",
+                "W",
+                "W",
+                "W",
+                "C",
+                "5s"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "5s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "C",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "S",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "S",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.121,
+                  "prob": 0.8478
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.3069,
+                  "prob": 0.132
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "C",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.495,
+                  "prob": 0.0201
+                }
+              ]
+            },
+            {
+              "turn": 8,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.84,
+              "note": null,
+              "hand": [
+                "2m",
+                "4m",
+                "3p",
+                "4p",
+                "8p",
+                "9p",
+                "2s",
+                "4s",
+                "5s",
+                "S",
+                "W",
+                "W",
+                "W"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "3m",
+              "actual": {
+                "type": "chi",
+                "actor": 2,
+                "target": 1,
+                "pai": "3m",
+                "consumed": [
+                  "2m",
+                  "4m"
+                ]
+              },
+              "expected": {
+                "type": "none"
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "none"
+                  },
+                  "q_value": -0.2667,
+                  "prob": 0.9998
+                },
+                {
+                  "action": {
+                    "type": "chi",
+                    "actor": 2,
+                    "target": 1,
+                    "pai": "3m",
+                    "consumed": [
+                      "2m",
+                      "4m"
+                    ]
+                  },
+                  "q_value": -1.102,
+                  "prob": 0.0002
+                }
+              ]
+            },
+            {
+              "turn": 9,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.55,
+              "note": null,
+              "hand": [
+                "3p",
+                "4p",
+                "8p",
+                "9p",
+                "2s",
+                "4s",
+                "5s",
+                "S",
+                "W",
+                "W",
+                "W"
+              ],
+              "melds": [
+                {
+                  "type": "chi",
+                  "target": 1,
+                  "pai": "3m",
+                  "consumed": [
+                    "2m",
+                    "4m"
+                  ]
+                }
+              ],
+              "shanten": 2,
+              "draw": "3m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "S",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "8p",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "8p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.2614,
+                  "prob": 0.9945
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "S",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.8099,
+                  "prob": 0.0041
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "W",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.9322,
+                  "prob": 0.0012
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "round": "S3",
+          "honba": 0,
+          "turn_count": 12,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 3,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.54,
+              "note": null,
+              "hand": [
+                "3m",
+                "5mr",
+                "7m",
+                "9m",
+                "2p",
+                "4p",
+                "4p",
+                "5p",
+                "7p",
+                "8p",
+                "4s",
+                "5s",
+                "7s",
+                "3m"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "3m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9m",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "7s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "7s",
+                    "tsumogiri": false
+                  },
+                  "q_value": 0.092,
+                  "prob": 0.9925
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4517,
+                  "prob": 0.0043
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4836,
+                  "prob": 0.0031
+                }
+              ]
+            },
+            {
+              "turn": 5,
+              "severity": "???",
+              "category": null,
+              "ev_loss": 1.27,
+              "note": null,
+              "hand": [
+                "3m",
+                "3m",
+                "5mr",
+                "7m",
+                "2p",
+                "4p",
+                "4p",
+                "5p",
+                "7p",
+                "8p",
+                "9p",
+                "4s",
+                "5s",
+                "2p"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "2p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2p",
+                "tsumogiri": true
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "4p",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "4p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0828,
+                  "prob": 0.9915
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "3m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.5586,
+                  "prob": 0.0085
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "7m",
+                    "tsumogiri": false
+                  },
+                  "q_value": -1.3179,
+                  "prob": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "round": "S4",
+          "honba": 0,
+          "turn_count": 11,
+          "outcome": null,
+          "mistakes": [
+            {
+              "turn": 1,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.09,
+              "note": null,
+              "hand": [
+                "2m",
+                "2m",
+                "2m",
+                "7m",
+                "8m",
+                "9p",
+                "9p",
+                "9s",
+                "S",
+                "W",
+                "P",
+                "P",
+                "F",
+                "2s"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "2s",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9s",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "W",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "W",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.0667,
+                  "prob": 0.5288
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.1416,
+                  "prob": 0.2502
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "9s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.154,
+                  "prob": 0.221
+                }
+              ]
+            },
+            {
+              "turn": 3,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.38,
+              "note": null,
+              "hand": [
+                "2m",
+                "2m",
+                "2m",
+                "7m",
+                "8m",
+                "9p",
+                "9p",
+                "2s",
+                "5sr",
+                "S",
+                "P",
+                "P",
+                "F",
+                "7p"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "7p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "S",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1589,
+                  "prob": 0.9687
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "S",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.5357,
+                  "prob": 0.0224
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "F",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.6281,
+                  "prob": 0.0089
+                }
+              ]
+            },
+            {
+              "turn": 4,
+              "severity": "?",
+              "category": null,
+              "ev_loss": 0.42,
+              "note": null,
+              "hand": [
+                "2m",
+                "2m",
+                "2m",
+                "7m",
+                "8m",
+                "7p",
+                "9p",
+                "9p",
+                "2s",
+                "5sr",
+                "P",
+                "P",
+                "F",
+                "1p"
+              ],
+              "melds": [],
+              "shanten": 3,
+              "draw": "1p",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "F",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "1p",
+                "tsumogiri": true
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1p",
+                    "tsumogiri": true
+                  },
+                  "q_value": -0.2726,
+                  "prob": 0.7862
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.4084,
+                  "prob": 0.2022
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "F",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.6949,
+                  "prob": 0.0115
+                }
+              ]
+            },
+            {
+              "turn": 7,
+              "severity": "??",
+              "category": null,
+              "ev_loss": 0.99,
+              "note": null,
+              "hand": [
+                "2m",
+                "2m",
+                "2m",
+                "7m",
+                "8m",
+                "7p",
+                "9p",
+                "9p",
+                "1s",
+                "2s",
+                "5sr",
+                "P",
+                "P",
+                "6m"
+              ],
+              "melds": [],
+              "shanten": 2,
+              "draw": "6m",
+              "actual": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "9p",
+                "tsumogiri": false
+              },
+              "expected": {
+                "type": "dahai",
+                "actor": 2,
+                "pai": "2s",
+                "tsumogiri": false
+              },
+              "top_actions": [
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "2s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.1542,
+                  "prob": 0.7213
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "1s",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.2512,
+                  "prob": 0.2734
+                },
+                {
+                  "action": {
+                    "type": "dahai",
+                    "actor": 2,
+                    "pai": "7p",
+                    "tsumogiri": false
+                  },
+                  "q_value": -0.6528,
+                  "prob": 0.0049
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "mortal_file": "mortal_analysis/2c7268c4e0205cc0.json",
+      "summary": {
+        "total_mistakes": 42,
+        "total_ev_loss": 22.97,
+        "total_turns": 100,
+        "ev_per_turn": 0.2297,
+        "by_severity": {
+          "???": 5,
+          "??": 17,
+          "?": 20,
+          "!": 0
+        },
+        "by_category": {}
+      }
+    }
+  ]
+}
