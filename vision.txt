@@ -48,7 +48,13 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
    - Requires building the bridge: mjai tile notation <-> mpsz notation conversion
    - Call mahjong-cpp ExpectedScoreCalculator for each mistake
    - If cpp agrees with mortal -> "pure tile efficiency" error (1A/1B/1E)
-   - If they disagree -> strategic consideration (defense, meld, riichi timing)
+   - If they disagree -> strategic consideration (defense) or unapplicable to mahjong-cpp(meld, riichi timing)
+Note: I found something interesting: 
+In mahjong_curl is a web request to the mahjong-cpp server which gives us a json immediatly to work with.
+Now here is three different ways to implement this:
+a) Use the webserver to do the hard work for us (doesn't scale, but easy for personal use)
+b) Spin up the webserver locally (should be in the git repo somewhere)
+c) Create a custom tool from the git repo that parses our stuff without the whole web server overhead.
 
 3. Visual EV comparison (vision item 2b, checkpoint 2)
    - Show mahjong-cpp expected score side-by-side with mortal q_value

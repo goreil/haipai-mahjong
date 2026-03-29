@@ -152,6 +152,12 @@ def cmd_review(args):
     else:
         games = list(enumerate(games))
 
+    hide = set()
+    if args.hide_minor:
+        hide.add("?")
+    if args.hide_medium:
+        hide.add("??")
+
     for idx, game in games:
         print(f"=== Game {idx+1}: {game['date']} ===")
         if game.get("log_url"):
@@ -164,12 +170,14 @@ def cmd_review(args):
                 header += f"T{rnd['turn_count']}"
             if rnd.get("outcome"):
                 header += f" {rnd['outcome']}"
-            if not rnd["mistakes"]:
+
+            visible = [m for m in rnd["mistakes"] if m["severity"] not in hide]
+            if not visible:
                 print(header)
                 continue
 
             print(header)
-            for m in rnd["mistakes"]:
+            for m in visible:
                 actual_str = format_action_short(m.get("actual"))
                 expected_str = format_action_short(m.get("expected"))
 
@@ -413,6 +421,8 @@ def main():
 
     p_review = sub.add_parser("review", help="Pretty-print game mistakes")
     p_review.add_argument("--game", "-g", type=int, help="Game number (1-based)")
+    p_review.add_argument("--hide-minor", action="store_true", help="Hide ? (0-0.50 EV) mistakes")
+    p_review.add_argument("--hide-medium", action="store_true", help="Hide ?? (0.50-1.00 EV) mistakes")
 
     p_ann = sub.add_parser("annotate", help="Set category/note on a mistake")
     p_ann.add_argument("game", type=int, help="Game number (1-based)")
