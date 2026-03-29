@@ -1,3 +1,6 @@
 [submodule "mahjong-cpp"]
 	path = mahjong-cpp
 	url = git@github.com:goreil/mahjong-cpp.git
+[submodule "riichi-mahjong-tiles"]
+	path = riichi-mahjong-tiles
+	url = https://github.com/FluffyStuff/riichi-mahjong-tiles.git
