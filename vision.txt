@@ -1,0 +1,44 @@
+My vision for this is having a neat trainer tool to help me 
+study my mahjong mistakes. My current workflow is:
+
+1. Play a game
+2. Paste the game link into the mortal analysis engine
+Note: This must be done by hand, since it is protected by cloudflare
+3. Use mortal_analysis/mj_fetch.sh to download the json
+4. Use mj_parse.py to check my worst mistakes and get a general overview of how it went.
+5. Add the output manually to Mahjong Mistakes.txt
+6. Create a summary using mj_calc.sh
+
+The grand vision would be to build a web-app that I may even 
+make some money with since there are currently 
+no good english apps like that online.
+
+
+What i'd like to have is the following features:
+
+1. QoL -> Less typing
+a) one script fits all
+b) Web interface so it looks nicer
+2. A Trainer that tells me what stuff to focus on and highlights my mistakes:
+a) Automatic grouping into error categories
+    - First simple charateristic might be between: Full-Tile efficiency vs more consideration
+    - this could be done by comparing if mortal and mahjong-cpp agree (tile efficiency) vs disagree (other considerations)
+b) Visual overview of tile-efficiency errors with mortal-ev and actual ev from mahjong-cpp side-by side
+4. Change data format from the current .txt to something better machine readable, so I can programmatically use this.
+a) Update the current summary scripts to interact with the new data format.
+
+Decisionpoint:
+Do we reform the data format now while it is still small or should we do it later
+when we know more of how the data looks like.
+
+Future work might include assistants on:
+1. analysis of defense (Integrate existing tools, that mark safe tiles and suji)
+2. More data analysis when I have an easier access and more logs (Currently I played ~10 games, but 
+only loaded 2 analysis games)
+
+In general, there are several checkpoints I can think of but I'm more interested in the end goal 
+than immediate results (although they will help checking whether I like the direction)
+1. Have the mj_parser output the current hand and which tiles it wanted to discard
+2. Have some nice way, to additionally show the EV calculations of mahjong-cpp with my decision vs AI decision.
+3. Better data format and immediate summary
+4. Web-Ui with the features
