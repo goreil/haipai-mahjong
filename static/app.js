@@ -21,8 +21,8 @@ let state = {
   games: [],
   currentGame: null,
   currentGameData: null,
-  hideMinor: false,
-  hideMedium: false,
+  showMinor: false,
+  showMedium: false,
 };
 
 // --- Tile rendering ---
@@ -203,8 +203,8 @@ function renderGame() {
   // Rounds
   for (const rnd of game.rounds) {
     const visible = rnd.mistakes.filter(m => {
-      if (state.hideMinor && m.severity === "?") return false;
-      if (state.hideMedium && m.severity === "??") return false;
+      if (m.severity === "?" && !state.showMinor) return false;
+      if (m.severity === "??" && !state.showMedium) return false;
       return true;
     });
 
@@ -233,8 +233,8 @@ function renderGame() {
       const idx = turnSeen[turnKey] = (turnSeen[turnKey] || 0);
       turnSeen[turnKey]++;
 
-      if (state.hideMinor && m.severity === "?") continue;
-      if (state.hideMedium && m.severity === "??") continue;
+      if (m.severity === "?" && !state.showMinor) continue;
+      if (m.severity === "??" && !state.showMedium) continue;
 
       const sc = sevClass(m.severity);
       const dataAttrs = `data-game="${state.currentGame}" data-round="${rnd.round}" data-turn="${m.turn}" data-index="${idx}"`;
@@ -360,12 +360,12 @@ function onAnnotate(el) {
 // --- Filter handlers ---
 
 function onToggleMinor(cb) {
-  state.hideMinor = cb.checked;
+  state.showMinor = cb.checked;
   if (state.currentGameData) renderGame();
 }
 
 function onToggleMedium(cb) {
-  state.hideMedium = cb.checked;
+  state.showMedium = cb.checked;
   if (state.currentGameData) renderGame();
 }
 
