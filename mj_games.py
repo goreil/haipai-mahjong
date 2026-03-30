@@ -389,8 +389,6 @@ def cmd_summary(args):
 
 def cmd_categorize(args):
     """Auto-categorize mistakes by comparing Mortal vs mahjong-cpp."""
-    from mj_categorize import categorize_game
-
     data = load_games()
     games = data["games"]
 
@@ -403,6 +401,22 @@ def cmd_categorize(args):
     else:
         indices = range(len(games))
 
+    if args.recheck:
+        # Re-run categorization logic on stored data (no API calls)
+        from mj_categorize import recheck_game
+        total_changed = 0
+        for idx in indices:
+            game = games[idx]
+            print(f"Rechecking game {idx+1} ({game['date']})...")
+            n = recheck_game(game, idx, dry_run=args.dry_run)
+            total_changed += n
+            if not args.dry_run and n > 0:
+                compute_summary(game)
+                save_games(data)
+        print(f"\nDone: {total_changed} categories changed (0 API calls)")
+        return
+
+    from mj_categorize import categorize_game
     total_categorized = 0
     total_api = 0
 
@@ -484,6 +498,15 @@ def cmd_add(args):
     sev = s["by_severity"]
     print(f"  ???:{sev['???']} ??:{sev['??']} ?:{sev['?']} !:{sev['!']}")
 
+    # Auto-categorize
+    from mj_categorize import categorize_game
+    print(f"\nAuto-categorizing...")
+    cat_n, api_calls = categorize_game(game, n - 1, delay=0.5)
+    if cat_n > 0:
+        compute_summary(game)
+        save_games(data)
+    print(f"  Categorized {cat_n} mistakes ({api_calls} API calls)")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Mahjong game review manager")
@@ -510,7 +533,8 @@ def main():
     p_cat = sub.add_parser("categorize", help="Auto-categorize mistakes via mahjong-cpp")
     p_cat.add_argument("--game", "-g", type=int, help="Game number (1-based)")
     p_cat.add_argument("--delay", type=float, default=1.0, help="Seconds between API calls (default: 1.0)")
-    p_cat.add_argument("--force", action="store_true", help="Re-categorize already categorized mistakes")
+    p_cat.add_argument("--force", action="store_true", help="Re-categorize already categorized mistakes (re-queries API)")
+    p_cat.add_argument("--recheck", action="store_true", help="Re-run categorization logic on stored data (no API calls)")
     p_cat.add_argument("--dry-run", action="store_true", help="Show categories without saving")
 
     p_add = sub.add_parser("add", help="Fetch Mortal JSON and add game")

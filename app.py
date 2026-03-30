@@ -203,9 +203,18 @@ def api_add():
     else:
         data = {"games": []}
     data["games"].append(game)
+    game_id = len(data["games"]) - 1
     save_games(data)
 
-    return jsonify({"ok": True, "game_id": len(data["games"]) - 1, "summary": game["summary"]})
+    # Auto-categorize
+    from mj_categorize import categorize_game
+    cat_n, api_calls = categorize_game(game, game_id, delay=0.5)
+    if cat_n > 0:
+        compute_summary(game)
+        save_games(data)
+
+    return jsonify({"ok": True, "game_id": game_id, "summary": game["summary"],
+                    "categorized": cat_n, "api_calls": api_calls})
 
 
 if __name__ == "__main__":

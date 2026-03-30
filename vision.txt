@@ -63,11 +63,26 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
    - Best values highlighted, color-coded columns (green=Mortal, blue=Cpp)
 
 
+8. Trend analysis across games
+   - /api/trends endpoint with per-game stats sorted by date
+   - SVG line chart: EV/turn over time with 3-game moving average
+   - Stacked bar chart: severity breakdown per game
+   - Horizontal bars: EV loss by skill area across all games
+   - Stacked bars: skill area breakdown per game
+   - Summary stats with trend direction indicator
+
+9. Defense analysis & 2A category refinement
+   - mj_defense.py: suji-based safety evaluator ported from Riichi-Trainer
+   - Evaluates tile safety (0-15) against riichi opponents using genbutsu, suji, honor counts
+   - "Reasonable agreement" check: if mortal's tile is same shanten and within 90% score of
+     cpp's best, classify as efficiency instead of 2A (reclassifies ~74% of old 2A cases)
+   - Defense-aware 2A/2B split: if opponent is in riichi and mortal chose a significantly safer
+     tile (3+ safety rating difference), classify as 2B Defense instead of 2A Push/Fold
+
+
 === TODO ===
 
 4. More data analysis (future work)
-   - Defense analysis: integrate tools that mark safe tiles and suji
-   - Trend analysis across games once more logs are loaded
    - Currently have 3 analyzed games, 1 unprocessed (9e9b37c38b06365e.json)
 
 5. Checkpoint 4: Web-UI with all features

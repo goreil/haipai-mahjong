@@ -403,7 +403,89 @@ def extract_cpp_stats(response):
     return result
 
 
-def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators, delay=1.0):
+def _classify_strategic(mistake, defense_ctx, tiles_left, wall):
+    """Distinguish 2A (push/fold) vs 2B (defense) for genuine cpp/mortal disagreements.
+
+    If an opponent is in riichi and mortal chose a significantly safer tile,
+    it's a defense play (2B). Otherwise it stays as 2A (push/fold).
+    """
+    from mj_defense import get_tile_safety_for_mistake
+
+    safety = get_tile_safety_for_mistake(
+        mistake["hand"],
+        defense_ctx["mjai_events"],
+        defense_ctx["start_pos"],
+        defense_ctx["end_pos"],
+        defense_ctx["player_id"],
+        tiles_left,
+        wall,
+    )
+
+    if safety is None:
+        # No opponent in riichi — strategic disagreement without defense pressure
+        return "2A"
+
+    mortal_tile = mistake["expected"]["pai"]
+    mortal_safety = safety.get(mortal_tile, safety.get(mortal_tile.rstrip("r"), 0))
+
+    # Check if cpp's tile (or player's tile) is less safe
+    cpp_tile = mistake.get("cpp_best")
+    if cpp_tile:
+        cpp_safety = safety.get(cpp_tile, safety.get(cpp_tile.rstrip("r"), 0))
+        # Mortal chose a significantly safer tile (3+ points difference on 0-15 scale)
+        if mortal_safety - cpp_safety >= 3:
+            return "2B"
+
+    return "2A"
+
+
+def _cpp_reasonably_agrees(mortal_tile_id, cpp_stats):
+    """Check if mortal's pick is competitive in cpp's rankings.
+
+    Returns True if mortal's tile has the same shanten as cpp's best
+    and an expected score within 90% of the top candidate.
+    """
+    if not cpp_stats:
+        return False
+
+    mortal_base = tile_id_to_base(mortal_tile_id)
+    mortal_mjai = ID_TO_MJAI.get(mortal_base, ID_TO_MJAI.get(mortal_tile_id))
+
+    # Find mortal's tile in cpp stats
+    mortal_entry = None
+    for s in cpp_stats:
+        s_base = s["tile"].rstrip("r")
+        m_base = mortal_mjai.rstrip("r") if mortal_mjai else None
+        if s["tile"] == mortal_mjai or s_base == m_base:
+            mortal_entry = s
+            break
+
+    if mortal_entry is None:
+        return False
+
+    top = cpp_stats[0]
+
+    # Must have same shanten
+    if mortal_entry["shanten"] != top["shanten"]:
+        return False
+
+    # Compare expected scores (if available)
+    top_score = top.get("exp_score")
+    mortal_score = mortal_entry.get("exp_score")
+    if top_score and mortal_score:
+        return mortal_score >= top_score * 0.90
+
+    # Fallback: compare necessary tile counts
+    top_nec = top.get("necessary_count", 0)
+    mortal_nec = mortal_entry.get("necessary_count", 0)
+    if top_nec > 0:
+        return mortal_nec >= top_nec * 0.80
+
+    return False
+
+
+def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
+                       delay=1.0, defense_ctx=None):
     """Categorize a single mistake.
 
     Args:
@@ -413,6 +495,8 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators, 
         entry: The original review entry from Mortal JSON
         dora_indicators: List of dora indicator mjai strings for this round
         delay: Seconds to wait before API calls
+        defense_ctx: Optional dict with keys (mjai_events, start_pos, end_pos, player_id)
+                     for defense analysis
 
     Returns:
         (category, cpp_data) where cpp_data is a dict with cpp results
@@ -478,14 +562,20 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators, 
     actual_base = tile_id_to_base(actual_id)
 
     cpp_agrees_mortal = (cpp_base == mortal_base)
-    cpp_agrees_player = (cpp_base == actual_base)
 
     if cpp_agrees_mortal:
         # cpp and mortal agree: tile efficiency error
         cat = sub_categorize_efficiency(mistake, dora_indicators)
+    elif _cpp_reasonably_agrees(mortal_best_id, cpp_stats):
+        # cpp and mortal pick different tiles but mortal's pick is still
+        # competitive by cpp's own metrics — this is efficiency, not strategy
+        cat = sub_categorize_efficiency(mistake, dora_indicators)
     else:
-        # cpp and mortal disagree: mortal sees something cpp doesn't
+        # Genuine disagreement: mortal sees something cpp doesn't
+        # Check if mortal is choosing a safer tile (defense-motivated)
         cat = "2A"
+        if defense_ctx:
+            cat = _classify_strategic(mistake, defense_ctx, tiles_left, wall)
 
     return cat, cpp_data
 
@@ -522,6 +612,10 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
     events = flatten_mjai_log(mortal_data["mjai_log"])
     start_events = [e for e in events if e.get("type") == "start_kyoku"]
 
+    # Build start positions for defense context
+    start_positions = [i for i, e in enumerate(events) if e.get("type") == "start_kyoku"]
+    player_id = mortal_data["player_id"]
+
     categorized = 0
     api_calls = 0
 
@@ -541,6 +635,16 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
 
         # Collect dora indicators for this round
         dora_indicators = [start["dora_marker"]]
+
+        # Build defense context for this kyoku
+        start_pos = start_positions[kyoku_idx]
+        end_pos = start_positions[kyoku_idx + 1] if kyoku_idx + 1 < len(start_positions) else len(events)
+        defense_ctx = {
+            "mjai_events": events,
+            "start_pos": start_pos,
+            "end_pos": end_pos,
+            "player_id": player_id,
+        }
 
         # Match mistakes to review entries
         mistake_idx = 0
@@ -577,6 +681,7 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
             cat, cpp_data = categorize_mistake(
                 m, mortal_data, kyoku_idx, entry, dora_indicators,
                 delay=delay if needs_api else 0,
+                defense_ctx=defense_ctx,
             )
 
             if cat:
@@ -596,3 +701,117 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
                 print(f"{label}skipped (API error or unknown)")
 
     return categorized, api_calls
+
+
+def recheck_game(game, game_idx, dry_run=False):
+    """Re-run categorization logic using stored cpp_stats (no API calls).
+
+    Use this after updating the categorization rules to reclassify
+    existing mistakes without re-querying mahjong-cpp.
+
+    Returns number of mistakes whose category changed.
+    """
+    mortal_file = game.get("mortal_file")
+    if not mortal_file:
+        return 0
+
+    mortal_path = DIR / mortal_file
+    if not mortal_path.exists():
+        return 0
+
+    with open(mortal_path) as f:
+        mortal_data = json.load(f)
+
+    events = flatten_mjai_log(mortal_data["mjai_log"])
+    start_positions = [i for i, e in enumerate(events) if e.get("type") == "start_kyoku"]
+    start_events = [events[p] for p in start_positions]
+    player_id = mortal_data["player_id"]
+    kyokus = mortal_data["review"]["kyokus"]
+
+    changed = 0
+    from mj_parse import round_header
+
+    for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
+        rnd_header = round_header(start)
+
+        game_round = None
+        for rnd in game["rounds"]:
+            if rnd["round"] == rnd_header:
+                game_round = rnd
+                break
+        if game_round is None:
+            continue
+
+        dora_indicators = [start["dora_marker"]]
+
+        # Defense context
+        start_pos = start_positions[kyoku_idx]
+        end_pos = start_positions[kyoku_idx + 1] if kyoku_idx + 1 < len(start_positions) else len(events)
+        defense_ctx = {
+            "mjai_events": events,
+            "start_pos": start_pos,
+            "end_pos": end_pos,
+            "player_id": player_id,
+        }
+
+        # Match mistakes to review entries for tiles_left
+        mistake_idx = 0
+        for entry in kyoku["entries"]:
+            if entry["is_equal"]:
+                continue
+            while mistake_idx < len(game_round["mistakes"]):
+                if game_round["mistakes"][mistake_idx]["turn"] == entry["junme"]:
+                    break
+                mistake_idx += 1
+            else:
+                continue
+            if mistake_idx >= len(game_round["mistakes"]):
+                continue
+
+            m = game_round["mistakes"][mistake_idx]
+            mistake_idx += 1
+
+            actual = m.get("actual", {})
+            expected = m.get("expected", {})
+            old_cat = m.get("category")
+
+            # Non-dahai: use action-type categorization
+            cat = categorize_by_action_type(actual, expected)
+            if cat is not None:
+                if cat != old_cat:
+                    if not dry_run:
+                        m["category"] = cat
+                    print(f"  {rnd_header} T{m['turn']}: {old_cat} -> {cat}")
+                    changed += 1
+                continue
+
+            # dahai vs dahai: re-run classification using stored cpp data
+            if not m.get("cpp_stats") or not m.get("cpp_best"):
+                continue
+
+            cpp_best_mjai = m["cpp_best"]
+            cpp_best_id = mjai_to_tile_id(cpp_best_mjai)
+            mortal_best_id = mjai_to_tile_id(expected["pai"])
+            cpp_base = tile_id_to_base(cpp_best_id)
+            mortal_base = tile_id_to_base(mortal_best_id)
+
+            if cpp_base == mortal_base:
+                cat = sub_categorize_efficiency(m, dora_indicators)
+            elif _cpp_reasonably_agrees(mortal_best_id, m["cpp_stats"]):
+                cat = sub_categorize_efficiency(m, dora_indicators)
+            else:
+                tiles_left = entry["tiles_left"]
+                wall, _, _, _ = reconstruct_context(mortal_data, kyoku_idx, tiles_left)
+                wall = subtract_hand_from_wall(wall, m["hand"])
+                for i in range(len(wall)):
+                    if wall[i] < 0:
+                        wall[i] = 0
+                cat = _classify_strategic(m, defense_ctx, tiles_left, wall)
+
+            if cat != old_cat:
+                if not dry_run:
+                    m["category"] = cat
+                print(f"  {rnd_header} T{m['turn']}: {old_cat} -> {cat}")
+                changed += 1
+
+    return changed

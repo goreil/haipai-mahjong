@@ -10,12 +10,14 @@ Personal Riichi Mahjong game analysis workspace. Analyzes Tenhou replays via Mor
 
 - `games.json` - Canonical data store (JSON). All game reviews with structured mistake data.
 - `mj_games.py` - Main CLI tool: `list`, `review`, `annotate`, `summary`, `add`, `categorize` subcommands.
-- `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp tile efficiency via pystyle.info API.
+- `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp tile efficiency via pystyle.info API. Includes "reasonable agreement" check and defense-aware 2A/2B split.
+- `mj_defense.py` - Suji-based tile safety evaluator (ported from Riichi-Trainer). Rates tiles 0-15 against riichi opponents.
 - `mj_parse.py` - Core parser. `parse_game(data, date)` returns structured game dict from Mortal JSON. Also has `--text` legacy mode.
 - `app.py` - Flask web server (port 5000). Serves API + static frontend.
 - `static/` - Web frontend: `index.html`, `style.css`, `app.js` (vanilla JS SPA).
 - `riichi-mahjong-tiles/` - Git submodule with SVG tile graphics. Served at `/tiles/<Name>.svg`.
 - `mahjong-cpp/` - Git submodule ([goreil/mahjong-cpp](https://github.com/goreil/mahjong-cpp)), a C++ mahjong library.
+- `Riichi-Trainer/` - Git submodule. React-based trainer with defense analysis (suji evaluator ported to `mj_defense.py`).
 - `mj_migrate.py` - One-shot migration from Mahjong Mistakes.txt → games.json (already run).
 - `mj_calc.sh` - Legacy summary calculator for .txt format (superseded).
 - `Mahjong Mistakes.txt` - Legacy game review log (read-only archive).
@@ -39,6 +41,8 @@ python3 mj_games.py annotate 3 E1 1 -c 1D -n "note"    # Set category/note on a 
 python3 mj_games.py summary                             # Recompute and display all summaries
 python3 mj_games.py categorize                          # Auto-categorize all uncategorized mistakes
 python3 mj_games.py categorize --game 3                 # Categorize specific game
+python3 mj_games.py categorize --recheck                # Re-run logic on stored data (no API, instant)
+python3 mj_games.py categorize --force                  # Re-query API for all (slow)
 python3 mj_games.py categorize --dry-run                # Preview without saving
 
 # Lower-level
@@ -55,7 +59,7 @@ Flask app (`app.py`) serving a vanilla JS SPA. Features:
 - Severity filter checkboxes (hide minor/medium)
 - Add game modal (paste Mortal viewer URL)
 
-API routes: `GET /api/games`, `GET /api/games/<id>`, `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`, `POST /api/games/add`.
+API routes: `GET /api/games`, `GET /api/games/<id>`, `GET /api/trends`, `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`, `POST /api/games/add` (auto-categorizes).
 Tiles served at `/tiles/<Name>.svg` from `riichi-mahjong-tiles/Regular/`.
 
 ## Data Format
@@ -64,7 +68,25 @@ Games in `games.json` have rounds, each with mistakes containing:
 - `turn`, `severity` (?/??/???), `ev_loss`, `category`, `note`
 - Rich data (from Mortal JSON): `hand`, `melds`, `shanten`, `draw`, `actual`/`expected` actions, `top_actions`
 
-Categories: 1A-1E (efficiency/dora/honors/pairs), 2A-2C (defense), 3A-3C (melding), 4A-4B (riichi), 5A-5B (kan).
+Categories: 1A-1E (efficiency/dora/honors/pairs), 2A-2C (strategy), 3A-3C (melding), 4A-4B (riichi), 5A-5B (kan).
+
+## Auto-Categorization Logic
+
+When adding a game (CLI or web), mistakes are automatically categorized:
+
+1. **Non-discard actions** are categorized by type: 3A-3C (meld), 4A-4B (riichi), 5A-5B (kan).
+2. **Discard vs discard**: queries mahjong-cpp API for pure tile efficiency analysis, then:
+   - **cpp == mortal** (exact match): efficiency error → sub-categorize as 1A-1E
+   - **cpp ~= mortal** ("reasonable agreement" — same shanten, mortal's tile within 90% of cpp's best expected score): still efficiency → 1A-1E
+   - **cpp != mortal** (genuine disagreement): check defense context:
+     - If opponent is in riichi and mortal chose a significantly safer tile (3+ safety rating difference) → **2B** (Defense)
+     - Otherwise → **2A** (Push/Fold)
+
+Efficiency sub-categories: 1B (dora handling), 1C (honor ordering), 1D (honor vs number), 1E (pair management), 1A (general).
+
+Defense analysis uses suji-based safety ratings (0-15 scale, ported from Riichi-Trainer): genbutsu=15, suji terminals=13-14, honors by remaining count, non-suji middle tiles=1-3.
+
+Use `--recheck` to re-run categorization logic on stored data without API calls (instant). Use `--force` to re-query the API (slow).
 
 ## Tile Notation
 
