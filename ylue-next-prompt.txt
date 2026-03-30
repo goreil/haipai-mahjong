@@ -1,0 +1,9 @@
+In this file I'll prepare the next prompt. CLAUDE DO NOT EDIT
+
+So at some point I'll have to think about the whole categories thing:
+
+First off, I think visually it's not helpful to have these codes in the app.
+There should be a more UX-helpful way to look at them
+2. I don't know if these categories still make sense. They were just chosen randomly in the beginning. A few thoughts:
+a) The catories should be `relatively easy` to classify them given the stuff we have. Especially when we add another tool that calculates defense, then we can do the defense vs push comparison more easily
+b) The categories should be educational meaning a user can see. "Ohh, my worst mistakes are in tile efficiency, let's look at that more.

@@ -377,6 +377,32 @@ def _next_tile_mjai(indicator):
     return indicator
 
 
+def extract_cpp_stats(response):
+    """Extract top candidates from mahjong-cpp response for storage."""
+    stats = response.get("stats", [])
+    calc_stats = response.get("config", {}).get("calc_stats", False)
+    result = []
+    for s in stats:
+        entry = {
+            "tile": ID_TO_MJAI.get(s["tile"], str(s["tile"])),
+            "shanten": s["shanten"],
+            "necessary_count": sum(
+                t["count"] for t in s.get("necessary_tiles", s.get("necessary", []))
+            ),
+        }
+        if calc_stats:
+            entry["exp_score"] = round(sum(s.get("exp_score", [0])), 1)
+            entry["win_prob_max"] = round(max(s.get("win_prob", [0])), 4)
+        result.append(entry)
+
+    # Sort by shanten asc, then exp_score desc (or necessary_count desc)
+    if calc_stats:
+        result.sort(key=lambda x: (x["shanten"], -x.get("exp_score", 0)))
+    else:
+        result.sort(key=lambda x: (x["shanten"], -x["necessary_count"]))
+    return result
+
+
 def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators, delay=1.0):
     """Categorize a single mistake.
 
@@ -389,7 +415,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators, 
         delay: Seconds to wait before API calls
 
     Returns:
-        (category, cpp_best_mjai) where cpp_best_mjai is the mahjong-cpp recommendation
+        (category, cpp_data) where cpp_data is a dict with cpp results
         (or None if no API call was made).
     """
     actual = mistake["actual"]
@@ -435,20 +461,33 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators, 
         return None, None
 
     cpp_best_mjai = ID_TO_MJAI.get(cpp_best_id)
+    cpp_stats = extract_cpp_stats(response)
 
-    # Compare mahjong-cpp recommendation with Mortal's
+    # Build cpp_data to store on the mistake
+    cpp_data = {
+        "best": cpp_best_mjai,
+        "shanten": response.get("shanten", {}).get("all"),
+        "stats": cpp_stats,
+    }
+
+    # Compare mahjong-cpp recommendation with Mortal's and player's actual
     mortal_best_id = mjai_to_tile_id(expected["pai"])
+    actual_id = mjai_to_tile_id(actual["pai"])
     cpp_base = tile_id_to_base(cpp_best_id)
     mortal_base = tile_id_to_base(mortal_best_id)
+    actual_base = tile_id_to_base(actual_id)
 
-    if cpp_base == mortal_base:
-        # Agreement: tile efficiency error
+    cpp_agrees_mortal = (cpp_base == mortal_base)
+    cpp_agrees_player = (cpp_base == actual_base)
+
+    if cpp_agrees_mortal:
+        # cpp and mortal agree: tile efficiency error
         cat = sub_categorize_efficiency(mistake, dora_indicators)
     else:
-        # Disagreement: strategic (usually defense)
+        # cpp and mortal disagree: mortal sees something cpp doesn't
         cat = "2A"
 
-    return cat, cpp_best_mjai
+    return cat, cpp_data
 
 
 def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
@@ -535,7 +574,7 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
             if needs_api:
                 api_calls += 1
 
-            cat, cpp_best = categorize_mistake(
+            cat, cpp_data = categorize_mistake(
                 m, mortal_data, kyoku_idx, entry, dora_indicators,
                 delay=delay if needs_api else 0,
             )
@@ -543,13 +582,14 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
             if cat:
                 actual_str = m["actual"].get("pai", m["actual"]["type"])
                 expected_str = m["expected"].get("pai", m["expected"]["type"])
-                cpp_str = f" cpp={cpp_best}" if cpp_best else ""
+                cpp_str = f" cpp={cpp_data['best']}" if cpp_data else ""
                 print(f"{label}{actual_str} -> {expected_str}{cpp_str} => {cat}")
 
                 if not dry_run:
                     m["category"] = cat
-                    if cpp_best:
-                        m["cpp_best"] = cpp_best
+                    if cpp_data:
+                        m["cpp_best"] = cpp_data["best"]
+                        m["cpp_stats"] = cpp_data["stats"]
 
                 categorized += 1
             else:
