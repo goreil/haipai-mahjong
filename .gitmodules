@@ -4,3 +4,6 @@
 [submodule "riichi-mahjong-tiles"]
 	path = riichi-mahjong-tiles
 	url = https://github.com/FluffyStuff/riichi-mahjong-tiles.git
+[submodule "Riichi-Trainer"]
+	path = Riichi-Trainer
+	url = git@github.com:goreil/Riichi-Trainer.git

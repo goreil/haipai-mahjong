@@ -554,6 +554,305 @@ async function submitAddGame() {
   fetchGame(result.game_id);
 }
 
+// --- Trends ---
+
+async function fetchTrends() {
+  const res = await fetch("/api/trends");
+  return await res.json();
+}
+
+async function showTrends() {
+  state.currentGame = null;
+  state.currentGameData = null;
+  renderGameList();
+  const content = document.getElementById("content");
+  content.innerHTML = '<div class="empty-state">Loading trends...</div>';
+
+  const games = await fetchTrends();
+  if (games.length < 2) {
+    content.innerHTML = '<div class="empty-state">Need at least 2 games for trend analysis</div>';
+    return;
+  }
+  renderTrends(games);
+}
+
+function renderTrends(games) {
+  const content = document.getElementById("content");
+
+  // Compute aggregates
+  const totalGames = games.length;
+  const totalMistakes = games.reduce((s, g) => s + g.total_mistakes, 0);
+  const totalEv = games.reduce((s, g) => s + g.total_ev_loss, 0);
+  const gamesWithTurns = games.filter(g => g.ev_per_turn != null);
+  const avgEvPerTurn = gamesWithTurns.length > 0
+    ? gamesWithTurns.reduce((s, g) => s + g.ev_per_turn, 0) / gamesWithTurns.length : null;
+
+  // Trend direction (last 5 vs first 5 for ev_per_turn)
+  let trendArrow = "";
+  if (gamesWithTurns.length >= 4) {
+    const half = Math.floor(gamesWithTurns.length / 2);
+    const firstHalf = gamesWithTurns.slice(0, half);
+    const secondHalf = gamesWithTurns.slice(-half);
+    const avgFirst = firstHalf.reduce((s, g) => s + g.ev_per_turn, 0) / firstHalf.length;
+    const avgSecond = secondHalf.reduce((s, g) => s + g.ev_per_turn, 0) / secondHalf.length;
+    const pctChange = ((avgSecond - avgFirst) / avgFirst * 100).toFixed(0);
+    if (avgSecond < avgFirst) {
+      trendArrow = `<span class="trend-down">${pctChange}%</span>`;
+    } else {
+      trendArrow = `<span class="trend-up">+${pctChange}%</span>`;
+    }
+  }
+
+  let html = `
+    <div class="game-header"><h2>Trend Analysis</h2></div>
+    <div class="summary-bar">
+      <div class="stat"><span class="value">${totalGames}</span><span class="label">Games</span></div>
+      <div class="stat"><span class="value">${totalMistakes}</span><span class="label">Total Mistakes</span></div>
+      <div class="stat"><span class="value">${totalEv.toFixed(1)}</span><span class="label">Total EV Loss</span></div>
+      ${avgEvPerTurn != null ? `<div class="stat"><span class="value">${avgEvPerTurn.toFixed(4)}</span><span class="label">Avg EV/Turn</span></div>` : ""}
+      ${trendArrow ? `<div class="stat"><span class="value">${trendArrow}</span><span class="label">EV/Turn Trend</span></div>` : ""}
+    </div>
+  `;
+
+  // Chart 1: EV per turn over time
+  if (gamesWithTurns.length >= 2) {
+    html += `<div class="trend-chart-card">
+      <h3>EV Loss per Turn</h3>
+      <div class="trend-chart">${renderLineChart(gamesWithTurns, "ev_per_turn", {
+        color: "#4fc3f7",
+        avgColor: "#4fc3f740",
+        format: v => v.toFixed(3),
+        yLabel: "EV/Turn",
+      })}</div>
+    </div>`;
+  }
+
+  // Chart 2: Severity breakdown over time
+  html += `<div class="trend-chart-card">
+    <h3>Mistakes by Severity</h3>
+    <div class="trend-chart">${renderStackedBarChart(games)}</div>
+  </div>`;
+
+  // Chart 3: Category EV breakdown across all games
+  html += renderCategoryTrend(games);
+
+  content.innerHTML = html;
+}
+
+function renderLineChart(games, field, opts) {
+  const W = 700, H = 200, PAD = { top: 20, right: 20, bottom: 40, left: 55 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const values = games.map(g => g[field]);
+  const minV = Math.min(...values) * 0.85;
+  const maxV = Math.max(...values) * 1.1;
+  const range = maxV - minV || 1;
+
+  // Compute 3-game moving average
+  const avg = [];
+  for (let i = 0; i < values.length; i++) {
+    const window = values.slice(Math.max(0, i - 2), i + 1);
+    avg.push(window.reduce((a, b) => a + b, 0) / window.length);
+  }
+
+  function x(i) { return PAD.left + (i / (games.length - 1)) * plotW; }
+  function y(v) { return PAD.top + plotH - ((v - minV) / range) * plotH; }
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="trend-svg">`;
+
+  // Y grid lines
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const val = minV + (range * i / yTicks);
+    const yy = y(val);
+    svg += `<line x1="${PAD.left}" y1="${yy}" x2="${W - PAD.right}" y2="${yy}" stroke="var(--border)" stroke-width="0.5"/>`;
+    svg += `<text x="${PAD.left - 8}" y="${yy + 4}" text-anchor="end" fill="var(--text-dim)" font-size="10">${opts.format(val)}</text>`;
+  }
+
+  // Moving average area
+  if (avg.length >= 2) {
+    let areaPath = `M${x(0)},${y(avg[0])}`;
+    for (let i = 1; i < avg.length; i++) areaPath += ` L${x(i)},${y(avg[i])}`;
+    svg += `<polyline points="${avg.map((v, i) => `${x(i)},${y(v)}`).join(" ")}" fill="none" stroke="${opts.avgColor}" stroke-width="2" stroke-dasharray="4,3"/>`;
+  }
+
+  // Main line
+  const points = values.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  svg += `<polyline points="${points}" fill="none" stroke="${opts.color}" stroke-width="2"/>`;
+
+  // Dots + labels
+  for (let i = 0; i < games.length; i++) {
+    const cx = x(i), cy = y(values[i]);
+    svg += `<circle cx="${cx}" cy="${cy}" r="4" fill="${opts.color}" stroke="var(--bg)" stroke-width="1.5"/>`;
+    // X label (date)
+    const dateLabel = games[i].date.slice(5); // MM-DD
+    svg += `<text x="${cx}" y="${H - 5}" text-anchor="middle" fill="var(--text-dim)" font-size="9" transform="rotate(-30,${cx},${H - 5})">${dateLabel}</text>`;
+  }
+
+  // Y axis label
+  svg += `<text x="12" y="${PAD.top + plotH / 2}" text-anchor="middle" fill="var(--text-dim)" font-size="10" transform="rotate(-90,12,${PAD.top + plotH / 2})">${opts.yLabel}</text>`;
+
+  svg += `</svg>`;
+  return svg;
+}
+
+function renderStackedBarChart(games) {
+  const W = 700, H = 200, PAD = { top: 20, right: 20, bottom: 40, left: 55 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const sevKeys = ["???", "??", "?"];
+  const sevColors = { "???": "var(--sev-major)", "??": "var(--sev-medium)", "?": "var(--sev-minor)" };
+
+  const maxTotal = Math.max(...games.map(g => {
+    const sev = g.by_severity || {};
+    return (sev["???"] || 0) + (sev["??"] || 0) + (sev["?"] || 0);
+  }));
+
+  const barW = Math.min(30, (plotW / games.length) * 0.7);
+  const gap = plotW / games.length;
+
+  function y(v) { return PAD.top + plotH - (v / (maxTotal || 1)) * plotH; }
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="trend-svg">`;
+
+  // Y grid
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const val = Math.round(maxTotal * i / yTicks);
+    const yy = y(val);
+    svg += `<line x1="${PAD.left}" y1="${yy}" x2="${W - PAD.right}" y2="${yy}" stroke="var(--border)" stroke-width="0.5"/>`;
+    svg += `<text x="${PAD.left - 8}" y="${yy + 4}" text-anchor="end" fill="var(--text-dim)" font-size="10">${val}</text>`;
+  }
+
+  // Bars
+  for (let i = 0; i < games.length; i++) {
+    const sev = games[i].by_severity || {};
+    const cx = PAD.left + gap * i + gap / 2;
+    let bottom = PAD.top + plotH;
+
+    for (const key of sevKeys) {
+      const count = sev[key] || 0;
+      if (count === 0) continue;
+      const barH = (count / (maxTotal || 1)) * plotH;
+      const top = bottom - barH;
+      svg += `<rect x="${cx - barW / 2}" y="${top}" width="${barW}" height="${barH}" fill="${sevColors[key]}" rx="2" opacity="0.85"/>`;
+      if (barH > 14) {
+        svg += `<text x="${cx}" y="${top + barH / 2 + 4}" text-anchor="middle" fill="var(--bg)" font-size="9" font-weight="700">${count}</text>`;
+      }
+      bottom = top;
+    }
+
+    // X label
+    const dateLabel = games[i].date.slice(5);
+    svg += `<text x="${cx}" y="${H - 5}" text-anchor="middle" fill="var(--text-dim)" font-size="9" transform="rotate(-30,${cx},${H - 5})">${dateLabel}</text>`;
+  }
+
+  // Legend
+  let lx = W - PAD.right - 150;
+  for (const key of sevKeys) {
+    svg += `<rect x="${lx}" y="5" width="10" height="10" fill="${sevColors[key]}" rx="2"/>`;
+    svg += `<text x="${lx + 14}" y="14" fill="var(--text-dim)" font-size="10">${key}</text>`;
+    lx += 45;
+  }
+
+  svg += `</svg>`;
+  return svg;
+}
+
+function renderCategoryTrend(games) {
+  // Aggregate category EV across all games
+  const groupTotals = {};
+  for (const g of games) {
+    for (const [grp, data] of Object.entries(g.by_group || {})) {
+      if (!groupTotals[grp]) groupTotals[grp] = { count: 0, ev: 0 };
+      groupTotals[grp].count += data.count;
+      groupTotals[grp].ev += data.ev;
+    }
+  }
+
+  const sorted = Object.entries(groupTotals).sort((a, b) => b[1].ev - a[1].ev);
+  if (sorted.length === 0) return "";
+
+  const maxEv = sorted[0][1].ev;
+
+  let html = `<div class="trend-chart-card"><h3>EV Loss by Skill Area (All Games)</h3><div class="trend-bars">`;
+  for (const [grp, data] of sorted) {
+    const color = GROUP_COLORS[grp] || "#888";
+    const pct = (data.ev / maxEv * 100).toFixed(0);
+    html += `<div class="trend-bar-row">
+      <span class="trend-bar-label" style="color:${color}">${grp}</span>
+      <div class="trend-bar-track">
+        <div class="trend-bar-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <span class="trend-bar-value">${data.ev.toFixed(1)} EV <span class="trend-bar-count">(${data.count})</span></span>
+    </div>`;
+  }
+  html += `</div></div>`;
+
+  // Per-game category breakdown table (sparkline style)
+  html += `<div class="trend-chart-card"><h3>Skill Area per Game</h3><div class="trend-chart">`;
+  html += renderGroupStackedChart(games, sorted.map(s => s[0]));
+  html += `</div></div>`;
+
+  return html;
+}
+
+function renderGroupStackedChart(games, groups) {
+  const W = 700, H = 200, PAD = { top: 20, right: 20, bottom: 40, left: 55 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const maxEv = Math.max(...games.map(g => g.total_ev_loss || 0));
+  const barW = Math.min(30, (plotW / games.length) * 0.7);
+  const gap = plotW / games.length;
+
+  function y(v) { return PAD.top + plotH - (v / (maxEv || 1)) * plotH; }
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="trend-svg">`;
+
+  // Y grid
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const val = (maxEv * i / yTicks).toFixed(0);
+    const yy = y(parseFloat(val));
+    svg += `<line x1="${PAD.left}" y1="${yy}" x2="${W - PAD.right}" y2="${yy}" stroke="var(--border)" stroke-width="0.5"/>`;
+    svg += `<text x="${PAD.left - 8}" y="${yy + 4}" text-anchor="end" fill="var(--text-dim)" font-size="10">${val}</text>`;
+  }
+
+  // Stacked bars
+  for (let i = 0; i < games.length; i++) {
+    const cx = PAD.left + gap * i + gap / 2;
+    let bottom = PAD.top + plotH;
+
+    for (const grp of groups) {
+      const data = (games[i].by_group || {})[grp];
+      if (!data || data.ev <= 0) continue;
+      const barH = (data.ev / (maxEv || 1)) * plotH;
+      const top = bottom - barH;
+      const color = GROUP_COLORS[grp] || "#888";
+      svg += `<rect x="${cx - barW / 2}" y="${top}" width="${barW}" height="${barH}" fill="${color}" rx="1" opacity="0.8"/>`;
+      bottom = top;
+    }
+
+    const dateLabel = games[i].date.slice(5);
+    svg += `<text x="${cx}" y="${H - 5}" text-anchor="middle" fill="var(--text-dim)" font-size="9" transform="rotate(-30,${cx},${H - 5})">${dateLabel}</text>`;
+  }
+
+  // Legend
+  let lx = PAD.left;
+  for (const grp of groups) {
+    const color = GROUP_COLORS[grp] || "#888";
+    svg += `<rect x="${lx}" y="4" width="10" height="10" fill="${color}" rx="2"/>`;
+    svg += `<text x="${lx + 13}" y="13" fill="var(--text-dim)" font-size="9">${grp}</text>`;
+    lx += grp.length * 7 + 22;
+  }
+
+  svg += `</svg>`;
+  return svg;
+}
+
 // --- Init ---
 
 document.addEventListener("DOMContentLoaded", async () => {

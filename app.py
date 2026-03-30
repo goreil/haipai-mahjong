@@ -40,6 +40,36 @@ def api_categories():
     return jsonify(CATEGORY_INFO)
 
 
+@app.route("/api/trends")
+def api_trends():
+    data = load_games()
+    games = []
+    for i, g in enumerate(data["games"]):
+        s = g.get("summary", {})
+        by_cat = s.get("by_category", {})
+        # Group categories by skill area
+        by_group = {}
+        for cat, info in by_cat.items():
+            grp = CATEGORY_INFO.get(cat, {}).get("group", cat)
+            if grp not in by_group:
+                by_group[grp] = {"count": 0, "ev": 0.0}
+            by_group[grp]["count"] += info["count"]
+            by_group[grp]["ev"] = round(by_group[grp]["ev"] + info["ev"], 2)
+        games.append({
+            "id": i,
+            "date": g["date"],
+            "total_mistakes": s.get("total_mistakes", 0),
+            "total_ev_loss": s.get("total_ev_loss", 0),
+            "total_turns": s.get("total_turns"),
+            "ev_per_turn": s.get("ev_per_turn"),
+            "by_severity": s.get("by_severity", {}),
+            "by_group": by_group,
+        })
+    # Sort by date then id
+    games.sort(key=lambda g: (g["date"], g["id"]))
+    return jsonify(games)
+
+
 @app.route("/api/games")
 def api_games():
     data = load_games()
