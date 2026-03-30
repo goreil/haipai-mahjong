@@ -104,6 +104,27 @@ def api_annotate(game_id):
     return jsonify({"ok": True, "summary": game["summary"]})
 
 
+@app.route("/api/games/<int:game_id>/categorize", methods=["POST"])
+def api_categorize(game_id):
+    from mj_categorize import categorize_game
+
+    data = load_games()
+    if game_id < 0 or game_id >= len(data["games"]):
+        return jsonify({"error": "Game not found"}), 404
+
+    body = request.json or {}
+    force = body.get("force", False)
+
+    game = data["games"][game_id]
+    n, api_calls = categorize_game(game, game_id, delay=0.5, force=force)
+
+    if n > 0:
+        compute_summary(game)
+        save_games(data)
+
+    return jsonify({"ok": True, "categorized": n, "api_calls": api_calls, "summary": game["summary"]})
+
+
 @app.route("/api/games/add", methods=["POST"])
 def api_add():
     import urllib.parse

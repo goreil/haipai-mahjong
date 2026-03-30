@@ -1,0 +1,558 @@
+#!/usr/bin/env python3
+"""Automatic error categorization by comparing Mortal AI vs mahjong-cpp tile efficiency."""
+
+import json
+import sys
+import time
+from pathlib import Path
+
+import requests
+
+DIR = Path(__file__).parent
+
+API_URL = "https://pystyle.info/apps/mahjong-cpp_0.9.1/post.py"
+API_HEADERS = {
+    "Content-Type": "application/x-www-form-urlencoded",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0",
+    "Origin": "https://pystyle.info",
+    "Referer": "https://pystyle.info/apps/mahjong-nanikiru-simulator/",
+}
+
+# --- Tile notation conversion (mjai <-> tile IDs) ---
+
+MJAI_TO_ID = {
+    "1m": 0, "2m": 1, "3m": 2, "4m": 3, "5m": 4, "6m": 5, "7m": 6, "8m": 7, "9m": 8,
+    "1p": 9, "2p": 10, "3p": 11, "4p": 12, "5p": 13, "6p": 14, "7p": 15, "8p": 16, "9p": 17,
+    "1s": 18, "2s": 19, "3s": 20, "4s": 21, "5s": 22, "6s": 23, "7s": 24, "8s": 25, "9s": 26,
+    "E": 27, "S": 28, "W": 29, "N": 30, "P": 31, "F": 32, "C": 33,
+    "5mr": 34, "5pr": 35, "5sr": 36,
+}
+
+ID_TO_MJAI = {v: k for k, v in MJAI_TO_ID.items()}
+
+# Red five -> base five mapping (for comparison: 5mr and 5m are "same tile")
+RED_TO_BASE = {34: 4, 35: 13, 36: 22}
+
+
+def mjai_to_tile_id(tile):
+    return MJAI_TO_ID[tile]
+
+
+def tile_id_to_base(tid):
+    """Map red five IDs to their base ID (34->4, 35->13, 36->22), others unchanged."""
+    return RED_TO_BASE.get(tid, tid)
+
+
+def is_honor_mjai(tile):
+    return tile in ("E", "S", "W", "N", "P", "F", "C")
+
+
+def is_red_five_mjai(tile):
+    return tile in ("5mr", "5pr", "5sr")
+
+
+def is_wind_mjai(tile):
+    return tile in ("E", "S", "W", "N")
+
+
+def is_dragon_mjai(tile):
+    return tile in ("P", "F", "C")
+
+
+# --- Wall reconstruction ---
+
+def flatten_mjai_log(mjai_log):
+    """Flatten mjai_log (which can have nested lists for simultaneous events)."""
+    events = []
+    for item in mjai_log:
+        if isinstance(item, dict):
+            events.append(item)
+        elif isinstance(item, list):
+            for sub in item:
+                if isinstance(sub, dict):
+                    events.append(sub)
+    return events
+
+
+def decrement_wall(wall, mjai_tile):
+    """Decrement wall count for a tile. Handles red fives."""
+    tid = mjai_to_tile_id(mjai_tile)
+    base = tile_id_to_base(tid)
+    wall[base] -= 1
+    if tid != base:
+        wall[tid] -= 1
+
+
+def reconstruct_context(mortal_data, kyoku_idx, tiles_left_target):
+    """Replay mjai_log for a kyoku up to tiles_left_target.
+
+    Returns (wall, round_wind_id, seat_wind_id, dora_indicator_ids, visible_tiles).
+    wall is a 37-element array of remaining tile counts.
+    """
+    player_id = mortal_data["player_id"]
+    events = flatten_mjai_log(mortal_data["mjai_log"])
+
+    # Find start_kyoku events and their positions
+    start_positions = []
+    for i, e in enumerate(events):
+        if e.get("type") == "start_kyoku":
+            start_positions.append(i)
+
+    start_pos = start_positions[kyoku_idx]
+    start = events[start_pos]
+
+    # Round/seat wind
+    bakaze = start["bakaze"]  # "E" or "S"
+    round_wind_id = mjai_to_tile_id(bakaze)
+    oya = start["oya"]
+    seat_idx = (player_id - oya) % 4
+    seat_wind_id = 27 + seat_idx
+
+    # Initialize wall: 4 of each regular tile, 1 of each red five
+    wall = [4] * 34 + [1, 1, 1]
+
+    # Track dora indicators
+    dora_indicators = [start["dora_marker"]]
+
+    # Visible tiles (everything we can see that's NOT in our hand)
+    visible = []
+    visible.append(start["dora_marker"])
+
+    # Replay events from after start_kyoku
+    tiles_left = 70  # standard live wall for 4-player
+    pos = start_pos + 1
+
+    # Find end of this kyoku
+    next_start = start_positions[kyoku_idx + 1] if kyoku_idx + 1 < len(start_positions) else len(events)
+
+    while pos < next_start:
+        e = events[pos]
+        etype = e.get("type")
+
+        if etype == "tsumo":
+            tiles_left -= 1
+            # The drawn tile is NOT visible to others (it goes into the drawer's hand)
+            # We only care about it if it's our draw (it'll be in our tehai)
+
+        elif etype == "dahai":
+            # Discarded tile is visible to everyone
+            visible.append(e["pai"])
+
+        elif etype in ("chi", "pon"):
+            # consumed tiles (from caller's hand) become visible via the meld
+            # pai was already counted as a dahai by the target player
+            for t in e.get("consumed", []):
+                visible.append(t)
+
+        elif etype == "ankan":
+            # All 4 tiles revealed (even though face-down, the tile type is known)
+            for t in e.get("consumed", []):
+                visible.append(t)
+
+        elif etype == "kakan":
+            # The added tile becomes visible
+            visible.append(e["pai"])
+
+        elif etype == "daiminkan":
+            # consumed tiles (3 from caller's hand) visible; pai was already a dahai
+            for t in e.get("consumed", []):
+                visible.append(t)
+
+        elif etype == "dora":
+            # New dora indicator revealed (after kan)
+            visible.append(e["dora_marker"])
+            dora_indicators.append(e["dora_marker"])
+
+        if tiles_left <= tiles_left_target:
+            break
+
+        pos += 1
+
+    # Build wall: subtract hand will be done by caller (since hand varies per mistake)
+    # Here we subtract all visible tiles
+    for t in visible:
+        decrement_wall(wall, t)
+
+    dora_ids = [mjai_to_tile_id(d) for d in dora_indicators]
+
+    return wall, round_wind_id, seat_wind_id, dora_ids
+
+
+def subtract_hand_from_wall(wall, hand_tiles):
+    """Subtract player's hand tiles from wall. Returns a copy."""
+    w = wall[:]
+    for t in hand_tiles:
+        decrement_wall(w, t)
+    return w
+
+
+# --- mahjong-cpp API ---
+
+def build_api_request(hand_mjai, melds_mjai, round_wind_id, seat_wind_id, dora_ids, wall):
+    """Build the API request payload."""
+    hand_ids = [mjai_to_tile_id(t) for t in hand_mjai]
+
+    melds = []
+    for m in melds_mjai:
+        mtype = m["type"]
+        tiles = [mjai_to_tile_id(t) for t in m.get("consumed", [])]
+        if "pai" in m:
+            tiles.append(mjai_to_tile_id(m["pai"]))
+        type_map = {"chi": 1, "pon": 0, "ankan": 2, "daiminkan": 3, "kakan": 4}
+        melds.append({"type": type_map.get(mtype, 0), "tiles": sorted(tiles)})
+
+    return {
+        "enable_reddora": True,
+        "enable_uradora": True,
+        "enable_shanten_down": True,
+        "enable_tegawari": True,
+        "enable_riichi": False,
+        "round_wind": round_wind_id,
+        "seat_wind": seat_wind_id,
+        "dora_indicators": dora_ids,
+        "hand": hand_ids,
+        "melds": melds,
+        "wall": wall,
+        "version": "0.9.1",
+    }
+
+
+def call_mahjong_cpp(request_data):
+    """Call the pystyle.info mahjong-cpp API."""
+    resp = requests.post(
+        API_URL,
+        data=json.dumps(request_data),
+        headers=API_HEADERS,
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if not data.get("success"):
+        raise RuntimeError(f"API error: {data.get('err_msg', 'unknown')}")
+    return data["response"]
+
+
+def get_cpp_best_discard(response):
+    """Find the best discard tile ID from mahjong-cpp response.
+
+    Ranks by: lowest shanten, then highest sum of exp_score.
+    Returns (tile_id, shanten) or (None, None) if no stats.
+    """
+    stats = response.get("stats", [])
+    if not stats:
+        return None, None
+
+    # Find minimum shanten
+    min_shanten = min(s["shanten"] for s in stats)
+    best = [s for s in stats if s["shanten"] == min_shanten]
+
+    # Among best shanten, rank by expected score sum (or necessary tiles count as fallback)
+    calc_stats = response.get("config", {}).get("calc_stats", False)
+
+    if calc_stats:
+        # Use sum of exp_score as ranking
+        best.sort(key=lambda s: sum(s.get("exp_score", [0])), reverse=True)
+    else:
+        # Fallback: use total necessary tile count (acceptance / ukeiire)
+        best.sort(
+            key=lambda s: sum(t["count"] for t in s.get("necessary_tiles", s.get("necessary", []))),
+            reverse=True,
+        )
+
+    return best[0]["tile"], min_shanten
+
+
+# --- Categorization logic ---
+
+def categorize_by_action_type(actual, expected):
+    """Categorize non-discard-vs-discard mistakes by action type.
+    Returns category string or None if this is a dahai-vs-dahai case.
+    """
+    at = actual.get("type")
+    et = expected.get("type")
+
+    # Meld decisions (3A-3C)
+    if at in ("chi", "pon") and et == "none":
+        return "3A"  # Bad meld call
+    if at == "none" and et in ("chi", "pon"):
+        return "3B"  # Missed meld opportunity
+    if at in ("chi", "pon") and et in ("chi", "pon"):
+        return "3C"  # Wrong meld choice
+
+    # Riichi decisions (4A-4B)
+    if at == "reach" and et == "dahai":
+        return "4A"  # Bad riichi
+    if at == "dahai" and et == "reach":
+        return "4B"  # Missed riichi
+
+    # Kan decisions (5A-5B)
+    if at in ("ankan", "kakan", "daiminkan") and et in ("dahai", "none"):
+        return "5A"  # Bad kan
+    if at in ("dahai", "none") and et in ("ankan", "kakan", "daiminkan"):
+        return "5B"  # Missed kan
+
+    # Missed win
+    if et == "hora":
+        return "2A"  # Defensive error (passed on win)
+
+    # dahai vs dahai -> needs mahjong-cpp comparison
+    if at == "dahai" and et == "dahai":
+        return None
+
+    # Other combinations (reach vs none, etc.) - categorize as strategic
+    return "2A"
+
+
+def sub_categorize_efficiency(mistake, dora_indicators):
+    """Sub-categorize a tile efficiency error (mahjong-cpp agrees with Mortal).
+
+    Returns one of 1A-1E.
+    """
+    actual_tile = mistake["actual"]["pai"]
+    expected_tile = mistake["expected"]["pai"]
+    hand = mistake["hand"]
+
+    # Compute dora tiles from indicators
+    dora_tiles = set()
+    for d in dora_indicators:
+        dora_tiles.add(_next_tile_mjai(d))
+
+    # 1B: Dora handling - player discarded a dora or red five when shouldn't have
+    actual_is_dora = actual_tile in dora_tiles or is_red_five_mjai(actual_tile)
+    expected_is_dora = expected_tile in dora_tiles or is_red_five_mjai(expected_tile)
+    if actual_is_dora != expected_is_dora:
+        return "1B"
+
+    # 1C: Honor tile ordering (both are honors but different ones)
+    if is_honor_mjai(actual_tile) and is_honor_mjai(expected_tile):
+        return "1C"
+
+    # 1D: Honor vs number tile
+    if is_honor_mjai(actual_tile) != is_honor_mjai(expected_tile):
+        return "1D"
+
+    # 1E: Pair management - involves a paired tile
+    tile_counts = {}
+    for t in hand:
+        base = t.rstrip("r")  # normalize red fives: 5mr -> 5m
+        if len(base) == 2 and base[1] in "mps":
+            key = base
+        else:
+            key = t
+        tile_counts[key] = tile_counts.get(key, 0) + 1
+
+    def normalize(t):
+        base = t.rstrip("r")
+        return base if len(base) == 2 and base[1] in "mps" else t
+
+    if tile_counts.get(normalize(actual_tile), 0) >= 2 or tile_counts.get(normalize(expected_tile), 0) >= 2:
+        return "1E"
+
+    # 1A: General tile efficiency
+    return "1A"
+
+
+def _next_tile_mjai(indicator):
+    """Given a dora indicator tile (mjai notation), return the actual dora tile."""
+    # Number tiles: indicator N -> dora is N+1 (wrapping 9->1)
+    for suit in ("m", "p", "s"):
+        if indicator.endswith(suit) and not indicator.endswith("r"):
+            num = int(indicator[0])
+            next_num = (num % 9) + 1
+            return f"{next_num}{suit}"
+        if indicator.endswith(f"{suit}r"):
+            # Red five indicator -> dora is 6 of that suit
+            return f"6{suit}"
+
+    # Wind tiles: E->S->W->N->E
+    winds = ["E", "S", "W", "N"]
+    if indicator in winds:
+        return winds[(winds.index(indicator) + 1) % 4]
+
+    # Dragon tiles: P->F->C->P
+    dragons = ["P", "F", "C"]
+    if indicator in dragons:
+        return dragons[(dragons.index(indicator) + 1) % 3]
+
+    return indicator
+
+
+def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators, delay=1.0):
+    """Categorize a single mistake.
+
+    Args:
+        mistake: The mistake dict from games.json
+        mortal_data: Full Mortal analysis JSON
+        kyoku_idx: Index into review.kyokus
+        entry: The original review entry from Mortal JSON
+        dora_indicators: List of dora indicator mjai strings for this round
+        delay: Seconds to wait before API calls
+
+    Returns:
+        (category, cpp_best_mjai) where cpp_best_mjai is the mahjong-cpp recommendation
+        (or None if no API call was made).
+    """
+    actual = mistake["actual"]
+    expected = mistake["expected"]
+
+    # Try action-type categorization first
+    cat = categorize_by_action_type(actual, expected)
+    if cat is not None:
+        return cat, None
+
+    # dahai vs dahai -> call mahjong-cpp
+    hand = mistake["hand"]
+    melds = mistake["melds"]
+    tiles_left = entry["tiles_left"]
+
+    # Reconstruct wall (visible tiles, not including our hand)
+    wall, round_wind, seat_wind, dora_ids = reconstruct_context(
+        mortal_data, kyoku_idx, tiles_left
+    )
+    # Subtract our hand from wall
+    wall = subtract_hand_from_wall(wall, hand)
+
+    # Validate wall (no negative values)
+    for i, count in enumerate(wall):
+        if count < 0:
+            print(f"  Warning: wall[{i}] = {count} (negative), clamping to 0", file=sys.stderr)
+            wall[i] = 0
+
+    # Build and send API request
+    req = build_api_request(hand, melds, round_wind, seat_wind, dora_ids, wall)
+
+    if delay > 0:
+        time.sleep(delay)
+
+    try:
+        response = call_mahjong_cpp(req)
+    except Exception as e:
+        print(f"  API error: {e}", file=sys.stderr)
+        return None, None
+
+    cpp_best_id, cpp_shanten = get_cpp_best_discard(response)
+    if cpp_best_id is None:
+        return None, None
+
+    cpp_best_mjai = ID_TO_MJAI.get(cpp_best_id)
+
+    # Compare mahjong-cpp recommendation with Mortal's
+    mortal_best_id = mjai_to_tile_id(expected["pai"])
+    cpp_base = tile_id_to_base(cpp_best_id)
+    mortal_base = tile_id_to_base(mortal_best_id)
+
+    if cpp_base == mortal_base:
+        # Agreement: tile efficiency error
+        cat = sub_categorize_efficiency(mistake, dora_indicators)
+    else:
+        # Disagreement: strategic (usually defense)
+        cat = "2A"
+
+    return cat, cpp_best_mjai
+
+
+def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
+    """Categorize all mistakes in a game.
+
+    Args:
+        game: Game dict from games.json
+        game_idx: 0-based game index (for display)
+        delay: Seconds between API calls
+        force: Re-categorize even if already categorized
+        dry_run: Don't save, just print what would happen
+
+    Returns:
+        Number of mistakes categorized, number of API calls made.
+    """
+    mortal_file = game.get("mortal_file")
+    if not mortal_file:
+        print(f"  Skipping game {game_idx+1}: no mortal_file", file=sys.stderr)
+        return 0, 0
+
+    mortal_path = DIR / mortal_file
+    if not mortal_path.exists():
+        print(f"  Skipping game {game_idx+1}: {mortal_file} not found", file=sys.stderr)
+        return 0, 0
+
+    with open(mortal_path) as f:
+        mortal_data = json.load(f)
+
+    kyokus = mortal_data["review"]["kyokus"]
+
+    # Build start_kyoku events for dora tracking
+    events = flatten_mjai_log(mortal_data["mjai_log"])
+    start_events = [e for e in events if e.get("type") == "start_kyoku"]
+
+    categorized = 0
+    api_calls = 0
+
+    for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
+        # Match kyoku to round in games.json
+        from mj_parse import round_header
+        rnd_header = round_header(start)
+
+        game_round = None
+        for rnd in game["rounds"]:
+            if rnd["round"] == rnd_header:
+                game_round = rnd
+                break
+
+        if game_round is None:
+            continue
+
+        # Collect dora indicators for this round
+        dora_indicators = [start["dora_marker"]]
+
+        # Match mistakes to review entries
+        mistake_idx = 0
+        for entry in kyoku["entries"]:
+            if entry["is_equal"]:
+                continue
+
+            # Find the corresponding mistake in games.json
+            while mistake_idx < len(game_round["mistakes"]):
+                m = game_round["mistakes"][mistake_idx]
+                if m["turn"] == entry["junme"]:
+                    break
+                mistake_idx += 1
+            else:
+                continue
+
+            if mistake_idx >= len(game_round["mistakes"]):
+                continue
+
+            m = game_round["mistakes"][mistake_idx]
+            mistake_idx += 1
+
+            # Skip if already categorized (unless force)
+            if m.get("category") and not force:
+                continue
+
+            needs_api = (m["actual"].get("type") == "dahai" and
+                         m["expected"].get("type") == "dahai")
+
+            label = f"  {rnd_header} T{m['turn']}: "
+            if needs_api:
+                api_calls += 1
+
+            cat, cpp_best = categorize_mistake(
+                m, mortal_data, kyoku_idx, entry, dora_indicators,
+                delay=delay if needs_api else 0,
+            )
+
+            if cat:
+                actual_str = m["actual"].get("pai", m["actual"]["type"])
+                expected_str = m["expected"].get("pai", m["expected"]["type"])
+                cpp_str = f" cpp={cpp_best}" if cpp_best else ""
+                print(f"{label}{actual_str} -> {expected_str}{cpp_str} => {cat}")
+
+                if not dry_run:
+                    m["category"] = cat
+                    if cpp_best:
+                        m["cpp_best"] = cpp_best
+
+                categorized += 1
+            else:
+                print(f"{label}skipped (API error or unknown)")
+
+    return categorized, api_calls

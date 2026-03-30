@@ -1,0 +1,15 @@
+First off, I'd like to see the different
+things in comparison.
+
+I have a hunch that the bad defend category
+might be misclassifying a lot. Maybe mortal just wants
+to go for honiitsu instead?
+
+Another thing is that the question is whether
+both disagree if the categorization is based on
+my discard choice or the one of mahjong-cpp
+
+Another important thing:
+We should save the output from the api, so
+we can use other information for the future,
+and can quickly prototype new features.

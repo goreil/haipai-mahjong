@@ -9,7 +9,8 @@ Personal Riichi Mahjong game analysis workspace. Analyzes Tenhou replays via Mor
 ## Key Files
 
 - `games.json` - Canonical data store (JSON). All game reviews with structured mistake data.
-- `mj_games.py` - Main CLI tool: `list`, `review`, `annotate`, `summary`, `add` subcommands.
+- `mj_games.py` - Main CLI tool: `list`, `review`, `annotate`, `summary`, `add`, `categorize` subcommands.
+- `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp tile efficiency via pystyle.info API.
 - `mj_parse.py` - Core parser. `parse_game(data, date)` returns structured game dict from Mortal JSON. Also has `--text` legacy mode.
 - `app.py` - Flask web server (port 5000). Serves API + static frontend.
 - `static/` - Web frontend: `index.html`, `style.css`, `app.js` (vanilla JS SPA).
@@ -36,6 +37,9 @@ python3 mj_games.py review --game 3 --hide-minor        # Hide ? severity
 python3 mj_games.py review --game 3 --hide-medium       # Hide ?? severity
 python3 mj_games.py annotate 3 E1 1 -c 1D -n "note"    # Set category/note on a mistake
 python3 mj_games.py summary                             # Recompute and display all summaries
+python3 mj_games.py categorize                          # Auto-categorize all uncategorized mistakes
+python3 mj_games.py categorize --game 3                 # Categorize specific game
+python3 mj_games.py categorize --dry-run                # Preview without saving
 
 # Lower-level
 python3 mj_parse.py analysis.json                       # Parse Mortal JSON → structured JSON to stdout
@@ -51,7 +55,7 @@ Flask app (`app.py`) serving a vanilla JS SPA. Features:
 - Severity filter checkboxes (hide minor/medium)
 - Add game modal (paste Mortal viewer URL)
 
-API routes: `GET /api/games`, `GET /api/games/<id>`, `POST /api/games/<id>/annotate`, `POST /api/games/add`.
+API routes: `GET /api/games`, `GET /api/games/<id>`, `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`, `POST /api/games/add`.
 Tiles served at `/tiles/<Name>.svg` from `riichi-mahjong-tiles/Regular/`.
 
 ## Data Format

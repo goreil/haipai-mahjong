@@ -36,25 +36,22 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
    - Checkpoint 1: mj_parse.py outputs current hand and which tiles it wanted to discard
    - Checkpoint 3: Better data format (JSON) and immediate summary via mj_games.py
 
+4. Web interface (vision item 1b)
+   - Flask web UI with game list, review view, inline annotation, severity filters
+   - SVG tile rendering via riichi-mahjong-tiles submodule
+   - Add-game modal (paste Mortal viewer URL)
+
+5. Automatic error categorization (vision item 2a)
+   - mj_categorize.py: compares Mortal AI vs mahjong-cpp tile efficiency
+   - Uses pystyle.info web API (option a) for mahjong-cpp expected score calculation
+   - Built: mjai->tile ID conversion, wall state reconstruction from mjai_log, API integration
+   - Categorization logic: cpp agrees with mortal -> efficiency (1A-1E), disagrees -> defense (2A)
+   - Non-discard actions categorized by type (3A-3C meld, 4A-4B riichi, 5A-5B kan)
+   - CLI: python3 mj_games.py categorize [--game N] [--delay S] [--force] [--dry-run]
+   - Web API: POST /api/games/<id>/categorize
+
 
 === TODO ===
-
-1. Web interface (vision item 1b)
-   - Would make review/annotation much nicer than CLI
-   - Could render tile images instead of text notation
-
-2. Trainer: automatic error categorization (vision item 2a)
-   - Compare if mortal and mahjong-cpp agree (tile efficiency) vs disagree (other considerations)
-   - Requires building the bridge: mjai tile notation <-> mpsz notation conversion
-   - Call mahjong-cpp ExpectedScoreCalculator for each mistake
-   - If cpp agrees with mortal -> "pure tile efficiency" error (1A/1B/1E)
-   - If they disagree -> strategic consideration (defense) or unapplicable to mahjong-cpp(meld, riichi timing)
-Note: I found something interesting: 
-In mahjong_curl is a web request to the mahjong-cpp server which gives us a json immediatly to work with.
-Now here is three different ways to implement this:
-a) Use the webserver to do the hard work for us (doesn't scale, but easy for personal use)
-b) Spin up the webserver locally (should be in the git repo somewhere)
-c) Create a custom tool from the git repo that parses our stuff without the whole web server overhead.
 
 3. Visual EV comparison (vision item 2b, checkpoint 2)
    - Show mahjong-cpp expected score side-by-side with mortal q_value

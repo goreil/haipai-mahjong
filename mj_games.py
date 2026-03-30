@@ -355,6 +355,44 @@ def cmd_summary(args):
         print(f"  ???:{sev['???']} ??:{sev['??']} ?:{sev['?']} !:{sev['!']}")
 
 
+def cmd_categorize(args):
+    """Auto-categorize mistakes by comparing Mortal vs mahjong-cpp."""
+    from mj_categorize import categorize_game
+
+    data = load_games()
+    games = data["games"]
+
+    if args.game:
+        idx = args.game - 1
+        if idx < 0 or idx >= len(games):
+            print(f"Error: game {args.game} not found", file=sys.stderr)
+            sys.exit(1)
+        indices = [idx]
+    else:
+        indices = range(len(games))
+
+    total_categorized = 0
+    total_api = 0
+
+    for idx in indices:
+        game = games[idx]
+        print(f"Categorizing game {idx+1} ({game['date']})...")
+        n, api = categorize_game(
+            game, idx,
+            delay=args.delay,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+        total_categorized += n
+        total_api += api
+
+        if not args.dry_run and n > 0:
+            compute_summary(game)
+            save_games(data)
+
+    print(f"\nDone: {total_categorized} categorized, {total_api} API calls")
+
+
 def cmd_add(args):
     """Fetch Mortal JSON, parse it, and append game to games.json."""
     from mj_parse import parse_game
@@ -437,6 +475,12 @@ def main():
     p_sum = sub.add_parser("summary", help="Recompute and display summaries")
     p_sum.add_argument("--game", "-g", type=int, help="Game number (1-based)")
 
+    p_cat = sub.add_parser("categorize", help="Auto-categorize mistakes via mahjong-cpp")
+    p_cat.add_argument("--game", "-g", type=int, help="Game number (1-based)")
+    p_cat.add_argument("--delay", type=float, default=1.0, help="Seconds between API calls (default: 1.0)")
+    p_cat.add_argument("--force", action="store_true", help="Re-categorize already categorized mistakes")
+    p_cat.add_argument("--dry-run", action="store_true", help="Show categories without saving")
+
     p_add = sub.add_parser("add", help="Fetch Mortal JSON and add game")
     p_add.add_argument("url", help="mjai.ekyu.moe viewer URL")
     p_add.add_argument("--date", help="Game date (default: today)")
@@ -450,6 +494,8 @@ def main():
         cmd_annotate(args)
     elif args.command == "summary":
         cmd_summary(args)
+    elif args.command == "categorize":
+        cmd_categorize(args)
     elif args.command == "add":
         cmd_add(args)
     else:
