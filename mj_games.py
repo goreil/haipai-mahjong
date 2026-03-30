@@ -19,6 +19,24 @@ CATEGORIES = [
     "5A", "5B",
 ]
 
+CATEGORY_INFO = {
+    "1A": {"group": "Efficiency", "label": "Shape",          "desc": "Hand shape / sequence building"},
+    "1B": {"group": "Efficiency", "label": "Dora",           "desc": "Dora-related tile handling"},
+    "1C": {"group": "Efficiency", "label": "Honor Priority", "desc": "Which honor tile to discard first"},
+    "1D": {"group": "Efficiency", "label": "Isolation",      "desc": "Isolated honor vs isolated number tile"},
+    "1E": {"group": "Efficiency", "label": "Pairs",          "desc": "Managing duplicate tiles / pairs"},
+    "2A": {"group": "Strategy",   "label": "Push/Fold",      "desc": "Mortal wanted a different tile than pure efficiency"},
+    "2B": {"group": "Strategy",   "label": "Defense",        "desc": "Specific defensive play"},
+    "2C": {"group": "Strategy",   "label": "Value",          "desc": "Hand value / yaku pursuit"},
+    "3A": {"group": "Meld",       "label": "Bad Call",       "desc": "Called chi/pon when shouldn't have"},
+    "3B": {"group": "Meld",       "label": "Missed Call",    "desc": "Didn't call chi/pon when should have"},
+    "3C": {"group": "Meld",       "label": "Wrong Choice",   "desc": "Called wrong combination"},
+    "4A": {"group": "Riichi",     "label": "Bad Riichi",     "desc": "Declared riichi when shouldn't have"},
+    "4B": {"group": "Riichi",     "label": "Missed Riichi",  "desc": "Didn't declare riichi when should have"},
+    "5A": {"group": "Kan",        "label": "Bad Kan",        "desc": "Declared kan when shouldn't have"},
+    "5B": {"group": "Kan",        "label": "Missed Kan",     "desc": "Didn't declare kan when should have"},
+}
+
 
 def load_games():
     with open(GAMES_FILE) as f:
@@ -181,8 +199,10 @@ def cmd_review(args):
                 expected_str = format_action_short(m.get("expected"))
 
                 # Main line
-                cat = m.get("category") or "   "
-                line = f"  {m['turn']:2d} {m['severity']:3s} {cat:3s} {m['ev_loss']:.2f}"
+                cat_code = m.get("category") or ""
+                cat_info = CATEGORY_INFO.get(cat_code)
+                cat_label = f"{cat_info['group']}/{cat_info['label']}" if cat_info else cat_code or "   "
+                line = f"  {m['turn']:2d} {m['severity']:3s} {cat_label:<20s} {m['ev_loss']:.2f}"
 
                 if m.get("shanten") is not None:
                     line += f"  [{m['shanten']}-shanten]"
@@ -215,12 +235,18 @@ def cmd_review(args):
         s = game.get("summary", {})
         if s:
             print()
-            cats = " ".join(
-                f"{k}:{v['count']}({v['ev']})"
-                for k, v in sorted(s.get("by_category", {}).items())
-            )
-            if cats:
-                print(f"SUMMARY: {cats}")
+            # Group categories by skill area
+            by_group = {}
+            for k, v in s.get("by_category", {}).items():
+                info = CATEGORY_INFO.get(k, {})
+                group = info.get("group", k)
+                if group not in by_group:
+                    by_group[group] = {"count": 0, "ev": 0.0}
+                by_group[group]["count"] += v["count"]
+                by_group[group]["ev"] = round(by_group[group]["ev"] + v["ev"], 2)
+            if by_group:
+                parts = [f"{g}: {v['count']}({v['ev']})" for g, v in sorted(by_group.items())]
+                print(f"SUMMARY: {' | '.join(parts)}")
             sev = s.get("by_severity", {})
             print(f"TOTAL: {s['total_mistakes']} mistakes, {s['total_ev_loss']:.2f} EV"
                   f" | ???:{sev.get('???',0)} ??:{sev.get('??',0)} ?:{sev.get('?',0)} !:{sev.get('!',0)}")
@@ -312,17 +338,26 @@ def cmd_summary(args):
     all_by_cat = {}
     all_by_sev = {"???": 0, "??": 0, "?": 0, "!": 0}
 
+    def format_cats_grouped(by_category):
+        """Format categories grouped by skill area."""
+        groups = {}
+        for k, v in by_category.items():
+            info = CATEGORY_INFO.get(k, {})
+            group = info.get("group", k)
+            if group not in groups:
+                groups[group] = {"count": 0, "ev": 0.0}
+            groups[group]["count"] += v["count"]
+            groups[group]["ev"] = round(groups[group]["ev"] + v["ev"], 2)
+        return " | ".join(f"{g}: {v['count']}({v['ev']})" for g, v in sorted(groups.items(), key=lambda x: -x[1]["ev"]))
+
     for idx in indices:
         s = games[idx]["summary"]
         print(f"Game {idx+1} ({games[idx]['date']}):")
-        cats = " ".join(
-            f"{k}:{v['count']}({v['ev']})"
-            for k, v in sorted(s.get("by_category", {}).items())
-        )
         print(f"  {s['total_mistakes']} mistakes, {s['total_ev_loss']:.2f} EV", end="")
         if s.get("total_turns"):
             print(f"  | {s['total_turns']}T, {s['ev_per_turn']:.4f}/T", end="")
         print()
+        cats = format_cats_grouped(s.get("by_category", {}))
         if cats:
             print(f"  {cats}")
         print()
@@ -345,10 +380,7 @@ def cmd_summary(args):
         if all_turns:
             print(f"  | {all_turns}T, {all_ev/all_turns:.4f}/T", end="")
         print()
-        cats = " ".join(
-            f"{k}:{v['count']}({v['ev']})"
-            for k, v in sorted(all_by_cat.items())
-        )
+        cats = format_cats_grouped(all_by_cat)
         if cats:
             print(f"  {cats}")
         sev = all_by_sev

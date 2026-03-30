@@ -6,7 +6,7 @@ from pathlib import Path
 import json
 
 from mj_parse import parse_game
-from mj_games import compute_summary
+from mj_games import compute_summary, CATEGORY_INFO
 
 DIR = Path(__file__).parent
 GAMES_FILE = DIR / "games.json"
@@ -33,6 +33,11 @@ def index():
 @app.route("/tiles/<path:filename>")
 def tiles(filename):
     return send_from_directory(DIR / "riichi-mahjong-tiles" / "Regular", filename)
+
+
+@app.route("/api/categories")
+def api_categories():
+    return jsonify(CATEGORY_INFO)
 
 
 @app.route("/api/games")

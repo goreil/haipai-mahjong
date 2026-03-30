@@ -425,7 +425,7 @@ body {
   font-size: 12px;
 }
 
-.annotation-row select { width: 70px; }
+.annotation-row select { width: 180px; }
 .annotation-row input { flex: 1; min-width: 100px; }
 
 .annotation-row .save-indicator {
@@ -541,6 +541,62 @@ body {
 
 .cat-chip .cat-name { font-weight: 700; color: var(--accent); }
 .cat-chip .cat-stat { color: var(--text-dim); }
+
+/* Category badge on mistake cards */
+.cat-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Grouped category summary */
+.category-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cat-group {
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.cat-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.cat-group-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.cat-group-stat {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.cat-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0 2px 12px;
+  font-size: 12px;
+}
+
+.cat-sub-label {
+  color: var(--text);
+  min-width: 100px;
+}
+
+.cat-sub-stat {
+  color: var(--text-dim);
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }

@@ -6,13 +6,25 @@ const CATEGORIES = [
   "5A", "5B",
 ];
 
-const CATEGORY_LABELS = {
-  "1A": "Tile Efficiency", "1B": "Dora Handling", "1C": "Honor Ordering",
-  "1D": "Honor vs Number", "1E": "Pair Management",
-  "2A": "Bad Defend", "2B": "Missed Defend", "2C": "Inefficient Defense",
-  "3A": "Bad Meld", "3B": "Missed Meld", "3C": "Bad Strategy after Meld",
-  "4A": "Bad Riichi", "4B": "Missed Riichi",
-  "5A": "Bad Kan", "5B": "Missed Kan",
+// Loaded from /api/categories on init
+let CATEGORY_INFO = {};
+
+function catLabel(code) {
+  const info = CATEGORY_INFO[code];
+  return info ? `${info.group} / ${info.label}` : code;
+}
+
+function catGroup(code) {
+  const info = CATEGORY_INFO[code];
+  return info ? info.group : code;
+}
+
+const GROUP_COLORS = {
+  "Efficiency": "#4a9eff",
+  "Strategy": "#ff6b6b",
+  "Meld": "#ffa94d",
+  "Riichi": "#a855f7",
+  "Kan": "#22c55e",
 };
 
 const OUTCOME_EMOJI = { ":D": "\u{1F60E}", ":)": "\u{1F642}", ":|": "\u{1F610}", ":(": "\u{1F61E}" };
@@ -244,6 +256,11 @@ function renderGame() {
       html += `<span class="turn-num">T${m.turn}</span>`;
       html += `<span class="severity ${sc}">${m.severity}</span>`;
       html += `<span class="ev-loss">${m.ev_loss.toFixed(2)} EV</span>`;
+      if (m.category) {
+        const grp = catGroup(m.category);
+        const color = GROUP_COLORS[grp] || "#888";
+        html += `<span class="cat-badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${catLabel(m.category)}</span>`;
+      }
       if (m.shanten != null) {
         html += `<span class="shanten">${m.shanten}-shanten</span>`;
       }
@@ -280,7 +297,7 @@ function renderGame() {
       // Annotation
       const catOptions = CATEGORIES.map(c => {
         const sel = (m.category || "") === c ? "selected" : "";
-        const label = c ? `${c}` : "---";
+        const label = c ? catLabel(c) : "---";
         return `<option value="${c}" ${sel}>${label}</option>`;
       }).join("");
 
@@ -297,17 +314,40 @@ function renderGame() {
     html += `</div>`; // .round
   }
 
-  // Category summary
+  // Category summary - grouped by skill area
   if (s.by_category && Object.keys(s.by_category).length) {
-    html += `<div class="game-summary"><h3>Categories</h3><div class="category-grid">`;
-    const sorted = Object.entries(s.by_category).sort((a, b) => a[0].localeCompare(b[0]));
-    for (const [cat, data] of sorted) {
-      const label = CATEGORY_LABELS[cat] || cat;
-      html += `<span class="cat-chip">
-        <span class="cat-name">${cat}</span>
-        <span class="cat-stat">${data.count} (${data.ev.toFixed(2)})</span>
-        <span style="font-size:10px;color:var(--text-dim)">${label}</span>
-      </span>`;
+    html += `<div class="game-summary"><h3>Mistake Breakdown</h3>`;
+
+    // Group by skill area
+    const groups = {};
+    for (const [cat, data] of Object.entries(s.by_category)) {
+      const grp = catGroup(cat);
+      if (!groups[grp]) groups[grp] = { count: 0, ev: 0, subs: {} };
+      groups[grp].count += data.count;
+      groups[grp].ev += data.ev;
+      groups[grp].subs[cat] = data;
+    }
+
+    html += `<div class="category-groups">`;
+    for (const [grp, data] of Object.entries(groups).sort((a, b) => b[1].ev - a[1].ev)) {
+      const color = GROUP_COLORS[grp] || "#888";
+      html += `<div class="cat-group" style="border-left: 3px solid ${color}">
+        <div class="cat-group-header">
+          <span class="cat-group-name" style="color:${color}">${grp}</span>
+          <span class="cat-group-stat">${data.count} mistakes &middot; ${data.ev.toFixed(2)} EV</span>
+        </div>`;
+      // Subcategories
+      const subs = Object.entries(data.subs).sort((a, b) => b[1].ev - a[1].ev);
+      for (const [cat, sub] of subs) {
+        const info = CATEGORY_INFO[cat];
+        const label = info ? info.label : cat;
+        const desc = info ? info.desc : "";
+        html += `<div class="cat-sub" title="${desc}">
+          <span class="cat-sub-label">${label}</span>
+          <span class="cat-sub-stat">${sub.count} (${sub.ev.toFixed(2)} EV)</span>
+        </div>`;
+      }
+      html += `</div>`;
     }
     html += `</div></div>`;
   }
@@ -414,6 +454,8 @@ async function submitAddGame() {
 
 // --- Init ---
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  const catRes = await fetch("/api/categories");
+  CATEGORY_INFO = await catRes.json();
   fetchGames();
 });
