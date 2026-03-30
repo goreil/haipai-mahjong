@@ -50,13 +50,20 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
    - CLI: python3 mj_games.py categorize [--game N] [--delay S] [--force] [--dry-run]
    - Web API: POST /api/games/<id>/categorize
 
+6. Category UX redesign
+   - CATEGORY_INFO dict with group/label/description for each code
+   - CLI shows "Efficiency/Pairs" instead of "1E", summaries grouped by skill area
+   - Web UI: color-coded category badges, grouped breakdown sorted by EV loss
+   - GET /api/categories endpoint for frontend
+
+7. Visual EV comparison (vision item 2b, checkpoint 2)
+   - cpp_stats saved on each mistake (tile, shanten, exp_score, win_prob_max, necessary_count)
+   - Web UI: side-by-side table showing Mortal Q-value vs mahjong-cpp expected score per tile
+   - Rows tagged with "You" (actual), "AI" (mortal best), "Cpp" (cpp best) markers
+   - Best values highlighted, color-coded columns (green=Mortal, blue=Cpp)
+
 
 === TODO ===
-
-3. Visual EV comparison (vision item 2b, checkpoint 2)
-   - Show mahjong-cpp expected score side-by-side with mortal q_value
-   - For player's actual discard vs AI's recommended discard
-   - Needs: mahjong-cpp JSON server running, tile conversion, wall state reconstruction
 
 4. More data analysis (future work)
    - Defense analysis: integrate tools that mark safe tiles and suji

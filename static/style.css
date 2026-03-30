@@ -407,6 +407,66 @@ body {
   opacity: 0.6;
 }
 
+/* EV Comparison table */
+.ev-comparison {
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.ev-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+.ev-table th {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 3px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.ev-table th:first-child { text-align: left; }
+
+.ev-table td {
+  padding: 4px 8px;
+  text-align: right;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.ev-table td:first-child { text-align: left; }
+
+.ev-table .tile-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.ev-tile { height: 26px; }
+
+.ev-table .mortal-col { color: #81c784; }
+.ev-table .cpp-col { color: #64b5f6; }
+.ev-table .dim { color: var(--border); }
+.ev-table .best-val { font-weight: 700; }
+
+.ev-table .row-actual { background: rgba(239,83,80,0.08); }
+.ev-table .row-expected { background: rgba(102,187,106,0.08); }
+
+.marker {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.marker.played { background: rgba(239,83,80,0.2); color: var(--sev-major); }
+.marker.ai { background: rgba(102,187,106,0.2); color: var(--sev-minor); }
+.marker.cpp { background: rgba(100,181,246,0.2); color: #64b5f6; }
+
 /* Annotation row */
 .annotation-row {
   margin-top: 8px;

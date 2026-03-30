@@ -112,6 +112,105 @@ function sevClass(sev) {
   return "";
 }
 
+// --- EV Comparison ---
+
+function renderEvComparison(m) {
+  // Build a unified list of tiles from mortal top_actions and cpp_stats
+  const mortalMap = {};
+  for (const a of m.top_actions) {
+    const tile = a.action.pai || a.action.type;
+    mortalMap[tile] = a;
+  }
+
+  const cppMap = {};
+  for (const s of m.cpp_stats) {
+    cppMap[s.tile] = s;
+  }
+
+  // Collect all tiles to show: mortal top 3 + cpp top 3 + actual + expected
+  const shown = new Set();
+  for (const a of m.top_actions.slice(0, 3)) {
+    shown.add(a.action.pai || a.action.type);
+  }
+  for (const s of m.cpp_stats.slice(0, 3)) {
+    shown.add(s.tile);
+  }
+  if (m.actual && m.actual.pai) shown.add(m.actual.pai);
+  if (m.expected && m.expected.pai) shown.add(m.expected.pai);
+
+  // Sort: mortal best first, then by mortal q_value desc, then cpp exp_score desc
+  const tiles = [...shown].sort((a, b) => {
+    const ma = mortalMap[a], mb = mortalMap[b];
+    const ca = cppMap[a], cb = cppMap[b];
+    const qa = ma ? ma.q_value : -999;
+    const qb = mb ? mb.q_value : -999;
+    return qb - qa;
+  });
+
+  // Find best values for highlighting
+  const bestCppScore = Math.max(...m.cpp_stats.slice(0, 5).map(s => s.exp_score || 0));
+  const bestMortalQ = Math.max(...m.top_actions.map(a => a.q_value));
+
+  let html = `<div class="ev-comparison">`;
+  html += `<table class="ev-table">`;
+  html += `<thead><tr>
+    <th>Tile</th>
+    <th class="mortal-col">Mortal Q</th>
+    <th class="mortal-col">Prob</th>
+    <th class="cpp-col">Cpp Score</th>
+    <th class="cpp-col">Win%</th>
+    <th class="cpp-col">Shanten</th>
+  </tr></thead><tbody>`;
+
+  for (const tile of tiles) {
+    const ma = mortalMap[tile];
+    const ca = cppMap[tile] || cppMap[normalizeRed(tile)];
+    const isActual = m.actual && m.actual.pai === tile;
+    const isExpected = m.expected && m.expected.pai === tile;
+    const isCppBest = m.cpp_best === tile;
+
+    let rowClass = "";
+    if (isActual) rowClass = "row-actual";
+    else if (isExpected) rowClass = "row-expected";
+
+    const markers = [];
+    if (isActual) markers.push('<span class="marker played">You</span>');
+    if (isExpected) markers.push('<span class="marker ai">AI</span>');
+    if (isCppBest) markers.push('<span class="marker cpp">Cpp</span>');
+
+    html += `<tr class="${rowClass}">`;
+    html += `<td class="tile-cell">${renderTile(tile, "ev-tile")} ${markers.join("")}</td>`;
+
+    if (ma) {
+      const qClass = ma.q_value === bestMortalQ ? "best-val" : "";
+      html += `<td class="mortal-col ${qClass}">${ma.q_value.toFixed(3)}</td>`;
+      html += `<td class="mortal-col">${(ma.prob * 100).toFixed(0)}%</td>`;
+    } else {
+      html += `<td class="mortal-col dim">-</td><td class="mortal-col dim">-</td>`;
+    }
+
+    if (ca) {
+      const sClass = ca.exp_score === bestCppScore ? "best-val" : "";
+      html += `<td class="cpp-col ${sClass}">${Math.round(ca.exp_score).toLocaleString()}</td>`;
+      html += `<td class="cpp-col">${(ca.win_prob_max * 100).toFixed(1)}%</td>`;
+      html += `<td class="cpp-col">${ca.shanten}</td>`;
+    } else {
+      html += `<td class="cpp-col dim">-</td><td class="cpp-col dim">-</td><td class="cpp-col dim">-</td>`;
+    }
+
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function normalizeRed(tile) {
+  // 5mr -> 5m, 5pr -> 5p, 5sr -> 5s
+  if (tile && tile.endsWith("r")) return tile.slice(0, -1);
+  return tile;
+}
+
 // --- API ---
 
 async function fetchGames() {
@@ -285,8 +384,11 @@ function renderGame() {
         </div>`;
       }
 
-      // Top actions
-      if (m.top_actions && m.top_actions.length) {
+      // EV Comparison table (Mortal vs mahjong-cpp)
+      if (m.top_actions && m.top_actions.length && m.cpp_stats && m.cpp_stats.length) {
+        html += renderEvComparison(m);
+      } else if (m.top_actions && m.top_actions.length) {
+        // Fallback: just show mortal top actions
         html += `<div class="top-actions">`;
         for (const a of m.top_actions) {
           html += `<span class="top-action">${renderAction(a.action)} <b>${a.q_value.toFixed(2)}</b> <span class="prob">${(a.prob * 100).toFixed(0)}%</span></span>`;
