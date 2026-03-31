@@ -522,6 +522,36 @@ def cmd_delete(args):
     print(f"Done. {len(data['games'])} games remaining.")
 
 
+def cmd_invite(args):
+    """Manage invite codes."""
+    import db
+    conn = db.get_db()
+    db.init_db(conn)
+
+    if args.create:
+        codes = db.create_invite_codes(conn, args.create)
+        print(f"Created {len(codes)} invite codes:")
+        for code in codes:
+            print(f"  {code}")
+    elif args.list:
+        rows = db.list_invite_codes(conn)
+        if not rows:
+            print("No invite codes.")
+        else:
+            print(f"{'Code':<16} {'Status':<20} {'Created'}")
+            print("-" * 56)
+            for r in rows:
+                if r["used_by_name"]:
+                    status = f"used by {r['used_by_name']}"
+                else:
+                    status = "available"
+                created = r["created_at"] or ""
+                print(f"{r['code']:<16} {status:<20} {created}")
+    else:
+        print("Use --create N or --list")
+    conn.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Mahjong game review manager")
     sub = parser.add_subparsers(dest="command")
@@ -557,6 +587,10 @@ def main():
     p_del = sub.add_parser("delete", help="Delete a game from games.json")
     p_del.add_argument("game", type=int, help="Game number (1-based)")
 
+    p_inv = sub.add_parser("invite", help="Manage invite codes")
+    p_inv.add_argument("--create", type=int, metavar="N", help="Generate N invite codes")
+    p_inv.add_argument("--list", action="store_true", help="List all invite codes")
+
     args = parser.parse_args()
     if args.command == "list":
         cmd_list(args)
@@ -572,6 +606,8 @@ def main():
         cmd_add(args)
     elif args.command == "delete":
         cmd_delete(args)
+    elif args.command == "invite":
+        cmd_invite(args)
     else:
         parser.print_help()
 
