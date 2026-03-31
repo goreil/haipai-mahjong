@@ -19,6 +19,14 @@ function catGroup(code) {
   return info ? info.group : code;
 }
 
+function catDesc(code) {
+  const info = CATEGORY_INFO[code];
+  if (!info) return code;
+  let desc = info.desc || "";
+  if (info.study) desc += ` (${info.study})`;
+  return desc;
+}
+
 const GROUP_COLORS = {
   "Efficiency": "#4a9eff",
   "Strategy": "#ff6b6b",
@@ -445,7 +453,8 @@ function renderGame() {
       if (m.category) {
         const grp = catGroup(m.category);
         const color = GROUP_COLORS[grp] || "#888";
-        html += `<span class="cat-badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${catLabel(m.category)}</span>`;
+        const desc = catDesc(m.category);
+        html += `<span class="cat-badge" style="background:${color}20;color:${color};border:1px solid ${color}40" title="${desc}">${catLabel(m.category)}</span>`;
       }
       if (m.shanten != null) {
         html += `<span class="shanten">${m.shanten}-shanten</span>`;
@@ -1134,6 +1143,79 @@ function resetPracticeScore() {
   practice.correct = 0;
   practice.total = 0;
   renderPractice();
+}
+
+// --- Help ---
+
+function showHelp() {
+  state.currentGame = null;
+  state.currentGameData = null;
+  renderGameList();
+  const content = document.getElementById("content");
+
+  // Group categories
+  const groups = {};
+  for (const [code, info] of Object.entries(CATEGORY_INFO)) {
+    const grp = info.group;
+    if (!groups[grp]) groups[grp] = [];
+    groups[grp].push({ code, ...info });
+  }
+
+  let html = `<div class="game-header"><h2>Category Reference</h2></div>`;
+
+  for (const [grp, cats] of Object.entries(groups)) {
+    const color = GROUP_COLORS[grp] || "#888";
+    html += `<div class="help-group">`;
+    html += `<div class="help-group-header" style="color:${color}">${grp}</div>`;
+    for (const cat of cats) {
+      html += `<div class="help-cat">
+        <span class="help-cat-code" style="color:${color}">${cat.code}</span>
+        <span class="help-cat-label">${cat.label}</span>
+        <span class="help-cat-desc">${cat.desc || ""}</span>
+        ${cat.study ? `<span class="help-cat-study">${cat.study}</span>` : ""}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Defense explanation
+  html += `
+    <div class="help-section">
+      <h3>Defense Analysis</h3>
+      <p>When an opponent declares riichi, tiles in your hand are rated for safety on a 0-15 scale:</p>
+      <div class="help-safety-scale">
+        <div class="help-safety-item">
+          <span class="help-safety-bar" style="background:var(--sev-minor)"></span>
+          <span><b>10-15</b> Safe &mdash; genbutsu (100%), suji terminals, honors with few remaining</span>
+        </div>
+        <div class="help-safety-item">
+          <span class="help-safety-bar" style="background:var(--sev-medium)"></span>
+          <span><b>6-9</b> Caution &mdash; suji number tiles, honors with 2-3 remaining</span>
+        </div>
+        <div class="help-safety-item">
+          <span class="help-safety-bar" style="background:var(--sev-major)"></span>
+          <span><b>0-5</b> Dangerous &mdash; non-suji middle tiles, no suji protection</span>
+        </div>
+      </div>
+      <p>Category <b>2B (Defense)</b> is assigned when Mortal chose a significantly safer tile (3+ point difference) over the pure-efficiency recommendation.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>EV Comparison Table</h3>
+      <p><span style="color:#81c784">Mortal Q</span> &mdash; Mortal AI's evaluation of each discard (higher = better overall strategy)</p>
+      <p><span style="color:#64b5f6">Tile Calc</span> &mdash; mahjong-cpp's pure tile efficiency score (ignores defense/strategy)</p>
+      <p>When both agree, the mistake is an efficiency error. When they disagree, Mortal sees strategic factors that pure efficiency misses.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>Game Ratings</h3>
+      <p>\u2605 <b>Great game</b> &mdash; EV/turn in the top 25% of your games</p>
+      <p>\u2606 <b>Solid game</b> &mdash; EV/turn in the top 50% of your games</p>
+      <p>Ratings are relative to your own history, so they reflect personal improvement.</p>
+    </div>
+  `;
+
+  content.innerHTML = html;
 }
 
 // --- Init ---

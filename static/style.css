@@ -974,6 +974,94 @@ body {
   margin-bottom: 20px;
 }
 
+/* Help page */
+.help-group {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.help-group-header {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.help-cat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.help-cat-code {
+  font-weight: 700;
+  min-width: 28px;
+}
+
+.help-cat-label {
+  font-weight: 600;
+  min-width: 90px;
+  color: var(--text);
+}
+
+.help-cat-desc {
+  color: var(--text-dim);
+  flex: 1;
+  min-width: 200px;
+}
+
+.help-cat-study {
+  font-size: 11px;
+  color: var(--accent-dim);
+  white-space: nowrap;
+}
+
+.help-section {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+
+.help-section h3 {
+  font-size: 14px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.help-section p {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.help-safety-scale {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.help-safety-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.help-safety-bar {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
