@@ -19,7 +19,7 @@ from mj_parse import parse_game
 from mj_games import compute_summary, CATEGORY_INFO
 
 DIR = Path(__file__).parent
-NANIKIRU_BIN = DIR / "mahjong-cpp" / "build" / "install" / "bin" / "nanikiru"
+NANIKIRU_BIN = Path(os.environ.get("NANIKIRU_BIN", DIR / "mahjong-cpp" / "build" / "install" / "bin" / "nanikiru"))
 NANIKIRU_PORT = 50000
 
 app = Flask(__name__, static_folder="static")
@@ -470,14 +470,24 @@ def api_practice():
     return jsonify(pick)
 
 
-if __name__ == "__main__":
-    # Initialize database
+def init_app():
+    """Initialize database and start nanikiru. Called once on startup."""
     conn = db.get_db()
     db.init_db(conn)
     conn.close()
+    start_nanikiru()
+    atexit.register(stop_nanikiru)
 
-    # Only start nanikiru in the reloader child (or when not using reloader)
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
-        start_nanikiru()
-        atexit.register(stop_nanikiru)
+
+# Auto-init when imported by gunicorn (not in Flask reloader parent)
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or "gunicorn" in os.environ.get("SERVER_SOFTWARE", ""):
+    init_app()
+
+
+if __name__ == "__main__":
+    # Dev server: init in reloader child only
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        pass  # already initialized above
+    elif not app.debug:
+        init_app()
     app.run(debug=True, port=5000)

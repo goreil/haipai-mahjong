@@ -2,11 +2,12 @@
 """SQLite database module for mahjong game review data."""
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 
 DIR = Path(__file__).parent
-DB_FILE = DIR / "games.db"
+DB_FILE = Path(os.environ.get("DB_PATH", DIR / "games.db"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
