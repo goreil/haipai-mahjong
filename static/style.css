@@ -320,6 +320,17 @@ body {
   min-width: 40px;
 }
 
+.defense-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(239, 83, 80, 0.15);
+  color: var(--sev-major);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .tiles {
   display: flex;
   gap: 2px;
@@ -340,6 +351,11 @@ body {
   box-shadow: 0 0 6px rgba(79,195,247,0.4);
   margin-left: 6px;
 }
+
+/* Safety indicators on hand tiles */
+.tile.safety-safe { border-bottom: 3px solid var(--sev-minor); }
+.tile.safety-caution { border-bottom: 3px solid var(--sev-medium); }
+.tile.safety-danger { border-bottom: 3px solid var(--sev-major); }
 
 .tile.action-tile {
   height: 32px;
@@ -452,6 +468,10 @@ body {
 
 .ev-table .mortal-col { color: #81c784; }
 .ev-table .cpp-col { color: #64b5f6; }
+.ev-table .safety-col { color: var(--text-dim); }
+.ev-table .safety-safe { color: var(--sev-minor); font-weight: 700; }
+.ev-table .safety-caution { color: var(--sev-medium); font-weight: 700; }
+.ev-table .safety-danger { color: var(--sev-major); font-weight: 700; }
 .ev-table .dim { color: var(--border); }
 .ev-table .best-val { font-weight: 700; }
 

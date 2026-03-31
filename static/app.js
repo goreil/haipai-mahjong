@@ -56,17 +56,21 @@ function tileSrc(t) {
   return name ? `/tiles/${name}.svg` : `/tiles/Back.svg`;
 }
 
-function renderTile(t, extraClass = "") {
+function renderTile(t, extraClass = "", titleOverride = null) {
   const cls = ["tile", extraClass].filter(Boolean).join(" ");
-  return `<img class="${cls}" src="${tileSrc(t)}" alt="${t}" title="${t}">`;
+  const title = titleOverride || t;
+  return `<img class="${cls}" src="${tileSrc(t)}" alt="${t}" title="${title}">`;
 }
 
-function renderHand(tiles, draw) {
+function renderHand(tiles, draw, safetyRatings) {
   if (!tiles || !tiles.length) return "";
   return tiles.map((t, i) => {
     let extra = "";
     if (draw && i === tiles.length - 1 && t === draw) extra = "draw";
-    return renderTile(t, extra);
+    const sr = getSafetyRating(safetyRatings, t);
+    if (sr != null) extra += ` ${safetyClass(sr)}`;
+    const title = sr != null ? `${t} (safety: ${sr})` : null;
+    return renderTile(t, extra, title);
   }).join("");
 }
 
@@ -115,6 +119,8 @@ function sevClass(sev) {
 // --- EV Comparison ---
 
 function renderEvComparison(m) {
+  const hasSafety = m.safety_ratings && Object.keys(m.safety_ratings).length > 0;
+
   // Build a unified list of tiles from mortal top_actions and cpp_stats
   const mortalMap = {};
   for (const a of m.top_actions) {
@@ -160,6 +166,7 @@ function renderEvComparison(m) {
     <th class="cpp-col">Tile Calc</th>
     <th class="cpp-col">Win%</th>
     <th class="cpp-col">Shanten</th>
+    ${hasSafety ? '<th class="safety-col">Safety</th>' : ''}
   </tr></thead><tbody>`;
 
   for (const tile of tiles) {
@@ -198,6 +205,15 @@ function renderEvComparison(m) {
       html += `<td class="cpp-col dim">-</td><td class="cpp-col dim">-</td><td class="cpp-col dim">-</td>`;
     }
 
+    if (hasSafety) {
+      const sr = getSafetyRating(m.safety_ratings, tile);
+      if (sr != null) {
+        html += `<td class="safety-col ${safetyClass(sr)}">${sr}</td>`;
+      } else {
+        html += `<td class="safety-col dim">-</td>`;
+      }
+    }
+
     html += `</tr>`;
   }
 
@@ -209,6 +225,25 @@ function normalizeRed(tile) {
   // 5mr -> 5m, 5pr -> 5p, 5sr -> 5s
   if (tile && tile.endsWith("r")) return tile.slice(0, -1);
   return tile;
+}
+
+function getSafetyRating(safetyRatings, tile) {
+  if (!safetyRatings) return null;
+  if (safetyRatings[tile] != null) return safetyRatings[tile];
+  const normalized = normalizeRed(tile);
+  if (normalized !== tile && safetyRatings[normalized] != null) return safetyRatings[normalized];
+  if (tile.match(/^5[mps]$/)) {
+    const red = tile + "r";
+    if (safetyRatings[red] != null) return safetyRatings[red];
+  }
+  return null;
+}
+
+function safetyClass(rating) {
+  if (rating == null) return "";
+  if (rating >= 10) return "safety-safe";
+  if (rating >= 6) return "safety-caution";
+  return "safety-danger";
 }
 
 // --- API ---
@@ -382,7 +417,8 @@ function renderGame() {
       if (m.hand && m.hand.length) {
         html += `<div class="hand-row">
           <span class="label">Hand</span>
-          <span class="tiles">${renderHand(m.hand, m.draw, m.actual, m.expected)}</span>
+          ${m.safety_ratings ? '<span class="defense-badge">Riichi</span>' : ''}
+          <span class="tiles">${renderHand(m.hand, m.draw, m.safety_ratings)}</span>
         </div>`;
       }
 

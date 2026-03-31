@@ -545,7 +545,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     # Try action-type categorization first
     cat = categorize_by_action_type(actual, expected)
     if cat is not None:
-        return cat, None
+        return cat, None, None
 
     # dahai vs dahai -> call mahjong-cpp
     hand = mistake["hand"]
@@ -565,6 +565,18 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
             print(f"  Warning: wall[{i}] = {count} (negative), clamping to 0", file=sys.stderr)
             wall[i] = 0
 
+    # Compute safety ratings for defense visuals
+    safety_data = None
+    if defense_ctx:
+        from mj_defense import get_tile_safety_for_mistake
+        safety_data = get_tile_safety_for_mistake(
+            hand, defense_ctx["mjai_events"], defense_ctx["start_pos"],
+            defense_ctx["end_pos"], defense_ctx["player_id"],
+            tiles_left, wall,
+        )
+        if safety_data:
+            safety_data = {k: round(v, 1) for k, v in safety_data.items()}
+
     # Build and send API request
     req = build_api_request(hand, melds, round_wind, seat_wind, dora_ids, wall)
 
@@ -575,11 +587,11 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
         response = call_mahjong_cpp(req)
     except Exception as e:
         print(f"  API error: {e}", file=sys.stderr)
-        return None, None
+        return None, None, safety_data
 
     cpp_best_id, cpp_shanten = get_cpp_best_discard(response)
     if cpp_best_id is None:
-        return None, None
+        return None, None, safety_data
 
     cpp_best_mjai = ID_TO_MJAI.get(cpp_best_id)
     cpp_stats = extract_cpp_stats(response)
@@ -614,7 +626,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
         if defense_ctx:
             cat = _classify_strategic(mistake, defense_ctx, tiles_left, wall)
 
-    return cat, cpp_data
+    return cat, cpp_data, safety_data
 
 
 def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
@@ -715,7 +727,7 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
             if needs_api:
                 api_calls += 1
 
-            cat, cpp_data = categorize_mistake(
+            cat, cpp_data, safety_data = categorize_mistake(
                 m, mortal_data, kyoku_idx, entry, dora_indicators,
                 delay=delay if needs_api else 0,
                 defense_ctx=defense_ctx,
@@ -732,6 +744,8 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
                     if cpp_data:
                         m["cpp_best"] = cpp_data["best"]
                         m["cpp_stats"] = cpp_data["stats"]
+                    if safety_data:
+                        m["safety_ratings"] = safety_data
 
                 categorized += 1
             else:
@@ -826,6 +840,25 @@ def recheck_game(game, game_idx, dry_run=False):
             if not m.get("cpp_stats") or not m.get("cpp_best"):
                 continue
 
+            # Reconstruct wall for safety computation and strategic classification
+            tiles_left = entry["tiles_left"]
+            wall, _, _, _ = reconstruct_context(mortal_data, kyoku_idx, tiles_left)
+            wall = subtract_hand_from_wall(wall, m["hand"])
+            for i in range(len(wall)):
+                if wall[i] < 0:
+                    wall[i] = 0
+
+            # Compute safety ratings for defense visuals
+            from mj_defense import get_tile_safety_for_mistake
+            safety = get_tile_safety_for_mistake(
+                m["hand"], events, start_pos, end_pos,
+                player_id, tiles_left, wall,
+            )
+            if safety:
+                safety = {k: round(v, 1) for k, v in safety.items()}
+            if not dry_run and safety:
+                m["safety_ratings"] = safety
+
             cpp_best_mjai = m["cpp_best"]
             cpp_best_id = mjai_to_tile_id(cpp_best_mjai)
             mortal_best_id = mjai_to_tile_id(expected["pai"])
@@ -837,12 +870,6 @@ def recheck_game(game, game_idx, dry_run=False):
             elif _cpp_reasonably_agrees(mortal_best_id, m["cpp_stats"]):
                 cat = sub_categorize_efficiency(m, dora_indicators)
             else:
-                tiles_left = entry["tiles_left"]
-                wall, _, _, _ = reconstruct_context(mortal_data, kyoku_idx, tiles_left)
-                wall = subtract_hand_from_wall(wall, m["hand"])
-                for i in range(len(wall)):
-                    if wall[i] < 0:
-                        wall[i] = 0
                 cat = _classify_strategic(m, defense_ctx, tiles_left, wall)
 
             if cat != old_cat:
