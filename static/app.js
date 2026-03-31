@@ -484,6 +484,19 @@ function renderGame() {
         </div>`;
       }
 
+      // Melds
+      if (m.melds && m.melds.length) {
+        html += `<div class="hand-row">
+          <span class="label">Melds</span>
+          <span class="tiles">`;
+        for (const meld of m.melds) {
+          const meldTiles = [...(meld.consumed || [])];
+          if (meld.pai) meldTiles.push(meld.pai);
+          html += `<span class="meld-group">${meld.type} ${meldTiles.map(t => renderTile(t, "action-tile-sm")).join("")}</span> `;
+        }
+        html += `</span></div>`;
+      }
+
       // Opponent discards (defense context)
       if (m.opponent_discards && m.opponent_discards.length) {
         html += `<div class="opp-discards">`;
@@ -1135,7 +1148,27 @@ function renderPractice() {
 
       return `<span class="practice-tile-result ${marker}">${renderTile(t, cls, title)}</span>`;
     }).join("");
-    html += `</span></div></div>`;
+    html += `</span></div>`;
+
+    // Opponent discards
+    if (m.opponent_discards && m.opponent_discards.length) {
+      html += `<div class="opp-discards">`;
+      for (const opp of m.opponent_discards) {
+        const seatNames = ["East", "South", "West", "North"];
+        const seatName = seatNames[opp.seat] || `P${opp.seat}`;
+        html += `<div class="opp-discard-row">`;
+        html += `<span class="opp-label">${seatName}</span>`;
+        html += `<span class="tiles">`;
+        for (let di = 0; di < opp.discards.length; di++) {
+          const isRiichi = di === opp.riichi_idx;
+          html += renderTile(opp.discards[di], `action-tile-sm${isRiichi ? " riichi-tile" : ""}`);
+        }
+        html += `</span></div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `</div>`; // .practice-hand-area
   } else {
     // Clickable hand
     html += `<div class="practice-hand-area">`;

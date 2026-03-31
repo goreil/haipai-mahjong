@@ -82,6 +82,15 @@ def parse_game(data, game_date=None):
                     }
                     for d in entry["details"][:3]
                 ]
+                # Include player's actual choice if not in top 3
+                actual_idx = entry["actual_index"]
+                if actual_idx >= 3:
+                    d = entry["details"][actual_idx]
+                    top_actions.append({
+                        "action": d["action"],
+                        "q_value": round(d["q_value"], 4),
+                        "prob": round(d["prob"], 4),
+                    })
 
                 mistakes.append({
                     "turn": entry["junme"],
