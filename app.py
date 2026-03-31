@@ -292,6 +292,31 @@ def api_add():
                     "categorized": cat_n, "api_calls": api_calls})
 
 
+@app.route("/api/practice")
+def api_practice():
+    import random
+    data = load_games()
+    candidates = []
+    for i, g in enumerate(data["games"]):
+        for rnd in g["rounds"]:
+            for m in rnd["mistakes"]:
+                if ((m.get("actual") or {}).get("type") == "dahai" and
+                    (m.get("expected") or {}).get("type") == "dahai" and
+                    m.get("severity") in ("??", "???") and
+                    m.get("hand")):
+                    candidates.append({
+                        "game_id": i,
+                        "game_date": g["date"],
+                        "round": rnd["round"],
+                        "mistake": m,
+                    })
+    if not candidates:
+        return jsonify({"error": "No eligible practice problems"}), 404
+    pick = random.choice(candidates)
+    pick["pool_size"] = len(candidates)
+    return jsonify(pick)
+
+
 if __name__ == "__main__":
     import os
     # Only start nanikiru in the reloader child (or when not using reloader)

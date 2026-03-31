@@ -37,6 +37,15 @@ let state = {
   showMedium: false,
 };
 
+let practice = {
+  problem: null,
+  answered: false,
+  userPick: null,
+  correct: 0,
+  total: 0,
+  poolSize: 0,
+};
+
 // --- Tile rendering ---
 
 // mjai notation -> SVG filename
@@ -903,6 +912,187 @@ function renderGroupStackedChart(games, groups) {
 
   svg += `</svg>`;
   return svg;
+}
+
+// --- Practice mode ---
+
+async function fetchPractice() {
+  const res = await fetch("/api/practice");
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+async function showPractice() {
+  state.currentGame = null;
+  state.currentGameData = null;
+  renderGameList();
+  const content = document.getElementById("content");
+  content.innerHTML = '<div class="empty-state">Loading practice problem...</div>';
+
+  const data = await fetchPractice();
+  if (!data || data.error) {
+    content.innerHTML = '<div class="empty-state">No eligible practice problems (need ??/??? discard mistakes)</div>';
+    return;
+  }
+
+  practice.problem = data;
+  practice.answered = false;
+  practice.userPick = null;
+  practice.poolSize = data.pool_size;
+  renderPractice();
+}
+
+function renderPracticeHand(tiles, draw) {
+  if (!tiles || !tiles.length) return "";
+  return tiles.map((t, i) => {
+    const isDraw = draw && i === tiles.length - 1 && t === draw;
+    const extra = isDraw ? "draw" : "";
+    // Escape single quotes in tile names for onclick
+    const safe = t.replace(/'/g, "\\'");
+    return `<span class="practice-tile" onclick="submitPracticeAnswer('${safe}')">${renderTile(t, extra)}</span>`;
+  }).join("");
+}
+
+function submitPracticeAnswer(tile) {
+  if (practice.answered) return;
+  practice.answered = true;
+  practice.userPick = tile;
+  practice.total++;
+
+  const m = practice.problem.mistake;
+  const expected = m.expected.pai;
+  // Correct if matches expected (normalize red fives)
+  const isCorrect = tile === expected || normalizeRed(tile) === normalizeRed(expected);
+  if (isCorrect) practice.correct++;
+
+  renderPractice();
+}
+
+function renderPractice() {
+  const content = document.getElementById("content");
+  const p = practice.problem;
+  const m = p.mistake;
+  const answered = practice.answered;
+
+  const sc = sevClass(m.severity);
+  const shantenStr = m.shanten != null ? `${m.shanten}-shanten` : "";
+
+  let html = `
+    <div class="practice-header">
+      <h2>Practice</h2>
+      <div class="practice-score">
+        <span class="practice-score-num">${practice.correct}</span>/<span>${practice.total}</span> correct
+        <span class="practice-pool">${practice.poolSize} problems</span>
+      </div>
+    </div>
+
+    <div class="practice-context">
+      <span>Game ${p.game_id + 1} (${p.game_date})</span>
+      <span>${p.round}</span>
+      <span class="severity ${sc}">${m.severity}</span>
+      ${shantenStr ? `<span class="shanten">${shantenStr}</span>` : ""}
+      <span class="ev-loss">${m.ev_loss.toFixed(2)} EV</span>
+    </div>
+  `;
+
+  // Melds
+  if (m.melds && m.melds.length) {
+    html += `<div class="practice-melds">`;
+    for (const meld of m.melds) {
+      const tiles = [...(meld.consumed || [])];
+      if (meld.pai) tiles.push(meld.pai);
+      html += `<span class="practice-meld">${meld.type} ${tiles.map(t => renderTile(t, "action-tile-sm")).join("")}</span>`;
+    }
+    html += `</div>`;
+  }
+
+  // Hand
+  if (answered) {
+    // Show hand with answer indicators
+    html += `<div class="practice-hand-area">`;
+    html += `<div class="hand-row"><span class="label">Hand</span>`;
+    if (m.safety_ratings) html += `<span class="defense-badge">Riichi</span>`;
+    html += `<span class="tiles">`;
+    const expected = m.expected.pai;
+    const actual = m.actual.pai;
+    html += m.hand.map((t, i) => {
+      const isDraw = m.draw && i === m.hand.length - 1 && t === m.draw;
+      let cls = isDraw ? "draw" : "";
+      // Safety colors
+      const sr = getSafetyRating(m.safety_ratings, t);
+      if (sr != null) cls += ` ${safetyClass(sr)}`;
+      const title = sr != null ? `${t} (safety: ${sr})` : t;
+
+      // Answer highlight
+      const isUserPick = t === practice.userPick || normalizeRed(t) === normalizeRed(practice.userPick);
+      const isExpected = t === expected || normalizeRed(t) === normalizeRed(expected);
+      let marker = "";
+      if (isExpected) marker = "practice-correct";
+      if (isUserPick && !isExpected) marker = "practice-wrong";
+
+      return `<span class="practice-tile-result ${marker}">${renderTile(t, cls, title)}</span>`;
+    }).join("");
+    html += `</span></div></div>`;
+  } else {
+    // Clickable hand
+    html += `<div class="practice-hand-area">`;
+    html += `<div class="practice-prompt">Pick a tile to discard</div>`;
+    html += `<div class="hand-row"><span class="label">Hand</span>`;
+    html += `<span class="tiles">${renderPracticeHand(m.hand, m.draw)}</span>`;
+    html += `</div></div>`;
+  }
+
+  // Answer section
+  if (answered) {
+    const isCorrect = normalizeRed(practice.userPick) === normalizeRed(m.expected.pai);
+    html += `<div class="practice-result ${isCorrect ? "practice-result-correct" : "practice-result-wrong"}">`;
+    if (isCorrect) {
+      html += `<div class="practice-result-label">Correct!</div>`;
+    } else {
+      html += `<div class="practice-result-label">Mortal recommends: ${renderTile(m.expected.pai, "action-tile")}</div>`;
+    }
+    html += `<div class="practice-result-detail">`;
+    html += `<span>You picked: </span><span class="played">${renderTile(practice.userPick, "action-tile")}</span>`;
+    html += `<span class="arrow"> &rarr; </span>`;
+    html += `<span>Original play: </span><span class="played">${renderTile(m.actual.pai, "action-tile")}</span>`;
+    if (m.category) {
+      const grp = catGroup(m.category);
+      const color = GROUP_COLORS[grp] || "#888";
+      html += ` <span class="cat-badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${catLabel(m.category)}</span>`;
+    }
+    html += `</div>`;
+
+    // EV comparison table
+    if (m.top_actions && m.top_actions.length && m.cpp_stats && m.cpp_stats.length) {
+      html += renderEvComparison(m);
+    } else if (m.top_actions && m.top_actions.length) {
+      html += `<div class="top-actions">`;
+      for (const a of m.top_actions) {
+        html += `<span class="top-action">${renderAction(a.action)} <b>${a.q_value.toFixed(2)}</b> <span class="prob">${(a.prob * 100).toFixed(0)}%</span></span>`;
+      }
+      html += `</div>`;
+    }
+
+    // Note if present
+    if (m.note) {
+      html += `<div class="practice-note">${m.note}</div>`;
+    }
+
+    html += `</div>`; // .practice-result
+
+    html += `<div class="practice-actions">`;
+    html += `<button class="btn btn-primary" onclick="showPractice()">Next Problem</button>`;
+    html += `<button class="btn" onclick="resetPracticeScore()">Reset Score</button>`;
+    html += `</div>`;
+  }
+
+  content.innerHTML = html;
+}
+
+function resetPracticeScore() {
+  practice.correct = 0;
+  practice.total = 0;
+  renderPractice();
 }
 
 // --- Init ---
