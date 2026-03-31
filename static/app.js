@@ -89,7 +89,7 @@ function renderHand(tiles, draw, safetyRatings) {
     if (draw && i === tiles.length - 1 && t === draw) extra = "draw";
     const sr = getSafetyRating(safetyRatings, t);
     if (sr != null) extra += ` ${safetyClass(sr)}`;
-    const title = sr != null ? `${t} (safety: ${sr})` : null;
+    const title = sr != null ? `${t} — ${safetyLabel(sr)} (${sr}/15)` : null;
     return renderTile(t, extra, title);
   }).join("");
 }
@@ -255,7 +255,7 @@ function renderEvComparison(m) {
     if (hasSafety) {
       const sr = getSafetyRating(m.safety_ratings, tile);
       if (sr != null) {
-        html += `<td class="safety-col ${safetyClass(sr)}">${sr}</td>`;
+        html += `<td class="safety-col ${safetyClass(sr)}" title="${sr}/15">${safetyLabel(sr)}</td>`;
       } else {
         html += `<td class="safety-col dim">-</td>`;
       }
@@ -291,6 +291,23 @@ function safetyClass(rating) {
   if (rating >= 10) return "safety-safe";
   if (rating >= 6) return "safety-caution";
   return "safety-danger";
+}
+
+function safetyLabel(rating) {
+  if (rating == null) return "";
+  if (rating >= 15) return "Genbutsu";
+  if (rating >= 14) return "Suji terminal / dead honor";
+  if (rating >= 13) return "Honor (1 left) / suji terminal";
+  if (rating >= 11) return "Suji terminal";
+  if (rating >= 10) return "Honor (2 left)";
+  if (rating >= 9) return "Suji 4-5-6";
+  if (rating >= 8) return "Suji 2/8";
+  if (rating >= 7) return "Suji 3/7";
+  if (rating >= 6) return "Honor (3 left)";
+  if (rating >= 5) return "Non-suji terminal";
+  if (rating >= 3) return "Non-suji 2/8";
+  if (rating >= 2) return "Non-suji 3/7";
+  return "Non-suji 4-5-6";
 }
 
 // --- API ---
@@ -1137,7 +1154,7 @@ function renderPractice() {
       // Safety colors
       const sr = getSafetyRating(m.safety_ratings, t);
       if (sr != null) cls += ` ${safetyClass(sr)}`;
-      const title = sr != null ? `${t} (safety: ${sr})` : t;
+      const title = sr != null ? `${t} — ${safetyLabel(sr)} (${sr}/15)` : t;
 
       // Answer highlight
       const isUserPick = t === practice.userPick || normalizeRed(t) === normalizeRed(practice.userPick);
@@ -1274,40 +1291,70 @@ function showHelp() {
     html += `</div>`;
   }
 
-  // Defense explanation
+  // How categorization works
   html += `
     <div class="help-section">
-      <h3>Defense Analysis</h3>
-      <p>When an opponent declares riichi, tiles in your hand are rated for safety on a 0-15 scale:</p>
+      <h3>How Auto-Categorization Works</h3>
+      <p>Every discard mistake is categorized by comparing two independent analyses:</p>
+      <p><span style="color:#81c784"><b>Mortal AI</b></span> &mdash; A neural-network mahjong AI that considers the full game state: tile efficiency, defense, hand value, riichi timing, opponent behavior, and more. Its "Q-value" is a strategic evaluation of each discard.</p>
+      <p><span style="color:#64b5f6"><b>Tile Calculator</b></span> (mahjong-cpp) &mdash; A pure tile efficiency engine. It calculates expected score, win probability, and shanten for each discard, considering only your hand and visible tiles. It ignores defense and strategy entirely.</p>
+      <p style="margin-top:8px"><b>The comparison tells us WHY you made a mistake:</b></p>
+      <p>&bull; <b>Both agree on the best tile</b> (or nearly agree) &rarr; This is a <span style="color:#4a9eff">tile efficiency</span> error. You picked a worse tile by pure hand-building logic. Sub-categorized into dora handling (1B), honor priority (1C/1D), pair management (1E), or general acceptance (1A).</p>
+      <p>&bull; <b>They disagree</b> &rarr; Mortal sees something the calculator doesn't. This is a <span style="color:#ff6b6b">strategic</span> decision. We then check defense context:</p>
+      <p style="padding-left:16px">&bull; If an opponent is in riichi and Mortal chose a significantly safer tile &rarr; <b>2B Defense</b> (you should have played safe)</p>
+      <p style="padding-left:16px">&bull; Otherwise &rarr; <b>2A Push/Fold</b> (general strategic disagreement)</p>
+      <p>&bull; <b>Non-discard actions</b> (chi, pon, riichi, kan) are categorized by type: 3A-3C (meld), 4A-4B (riichi), 5A-5B (kan).</p>
+      <p style="margin-top:8px"><i>"Reasonable agreement"</i>: If Mortal's pick has the same shanten and at least 90% of the calculator's best expected score, we still call it efficiency &mdash; the two engines agree in substance even if they pick different tiles.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>Defense &amp; Safety Ratings</h3>
+      <p>When an opponent declares riichi, each tile in your hand is rated for safety using <b>suji analysis</b> &mdash; a technique based on which tiles the opponent has discarded and what that implies about their waiting tiles.</p>
       <div class="help-safety-scale">
         <div class="help-safety-item">
           <span class="help-safety-bar" style="background:var(--sev-minor)"></span>
-          <span><b>10-15</b> Safe &mdash; genbutsu (100%), suji terminals, honors with few remaining</span>
+          <span><b>15 &mdash; Genbutsu:</b> Tile the opponent already discarded (or discarded after riichi). Cannot deal in. 100% safe.</span>
+        </div>
+        <div class="help-safety-item">
+          <span class="help-safety-bar" style="background:var(--sev-minor)"></span>
+          <span><b>14-11 &mdash; Suji terminal / dead honor:</b> Terminal (1/9) with suji protection (rating decreases as more copies remain in wall). Honor tiles: 14 (0 left), 13 (1 left).</span>
         </div>
         <div class="help-safety-item">
           <span class="help-safety-bar" style="background:var(--sev-medium)"></span>
-          <span><b>6-9</b> Caution &mdash; suji number tiles, honors with 2-3 remaining</span>
+          <span><b>10-7 &mdash; Suji number / honor (2 left):</b> Number tiles (2-8) with suji protection. Suji 4-5-6 = 9, suji 2/8 = 8, suji 3/7 = 7. Honor with 2 remaining = 10.</span>
+        </div>
+        <div class="help-safety-item">
+          <span class="help-safety-bar" style="background:var(--sev-medium)"></span>
+          <span><b>6-5 &mdash; Honor (3 left) / non-suji terminal:</b> Unpaired honors or terminals without suji protection.</span>
         </div>
         <div class="help-safety-item">
           <span class="help-safety-bar" style="background:var(--sev-major)"></span>
-          <span><b>0-5</b> Dangerous &mdash; non-suji middle tiles, no suji protection</span>
+          <span><b>3-1 &mdash; Non-suji number tiles:</b> No suji protection. 2/8 = 3, 3/7 = 2, 4-5-6 = 1. Middle tiles without suji are the most dangerous discards.</span>
         </div>
       </div>
-      <p>Category <b>2B (Defense)</b> is assigned when Mortal chose a significantly safer tile (3+ point difference) over the pure-efficiency recommendation.</p>
+      <p>When an opponent is in riichi, their discard pool is shown below your hand. The sideways tile marks their riichi declaration. Tiles they discarded are genbutsu (safe) &mdash; study their discards to understand the safety ratings.</p>
     </div>
 
     <div class="help-section">
       <h3>EV Comparison Table</h3>
-      <p><span style="color:#81c784">Mortal Q</span> &mdash; Mortal AI's evaluation of each discard (higher = better overall strategy)</p>
-      <p><span style="color:#64b5f6">Tile Calc</span> &mdash; mahjong-cpp's pure tile efficiency score (ignores defense/strategy)</p>
-      <p>When both agree, the mistake is an efficiency error. When they disagree, Mortal sees strategic factors that pure efficiency misses.</p>
+      <p><span style="color:#81c784">Mortal Q</span> &mdash; Mortal AI's evaluation. Higher = better strategic play considering defense, hand value, game state. The <b>AI</b> marker shows Mortal's top pick.</p>
+      <p><span style="color:#64b5f6">Tile Calc</span> &mdash; Pure expected score from tile efficiency. Higher = better hand-building potential. The <b>Calc</b> marker shows the calculator's top pick.</p>
+      <p><span style="color:var(--sev-major)">You</span> &mdash; The tile you actually played. Compare your choice against both analyses.</p>
+      <p>When Mortal Q and Tile Calc agree, the correct play is clear. When they disagree, Mortal is weighing factors like defense or hand value that pure efficiency misses.</p>
     </div>
 
     <div class="help-section">
       <h3>Game Ratings</h3>
       <p>\u2605 <b>Great game</b> &mdash; EV/turn in the top 25% of your games</p>
       <p>\u2606 <b>Solid game</b> &mdash; EV/turn in the top 50% of your games</p>
-      <p>Ratings are relative to your own history, so they reflect personal improvement.</p>
+      <p>Ratings are relative to your own history, so they reflect personal improvement. Rounds with zero mistakes get a <span class="clean-badge" style="display:inline">Clean</span> badge.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>Practice Mode</h3>
+      <p>Practice replays your actual past mistakes as quizzes. You see the hand + draw and pick a discard. After answering, the full analysis is revealed.</p>
+      <p><b>Spaced repetition:</b> Problems you get wrong (or haven't seen) appear 3x more often. Problems you've answered correctly multiple times appear less. This focuses practice on your weakest areas.</p>
+      <p><b>Filters:</b> Focus on specific skill areas (Efficiency, Strategy, etc.), severity levels, or riichi-only situations.</p>
     </div>
 
     <div class="help-section">
