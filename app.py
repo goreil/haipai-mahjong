@@ -99,6 +99,16 @@ def api_game(game_id):
     return jsonify(data["games"][game_id])
 
 
+@app.route("/api/games/<int:game_id>", methods=["DELETE"])
+def api_delete_game(game_id):
+    data = load_games()
+    if game_id < 0 or game_id >= len(data["games"]):
+        return jsonify({"error": "Game not found"}), 404
+    data["games"].pop(game_id)
+    save_games(data)
+    return jsonify({"ok": True, "remaining": len(data["games"])})
+
+
 @app.route("/api/games/<int:game_id>/annotate", methods=["POST"])
 def api_annotate(game_id):
     data = load_games()

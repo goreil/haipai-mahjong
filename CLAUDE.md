@@ -70,6 +70,10 @@ Games in `games.json` have rounds, each with mistakes containing:
 
 Categories: 1A-1E (efficiency/dora/honors/pairs), 2A-2C (strategy), 3A-3C (melding), 4A-4B (riichi), 5A-5B (kan).
 
+Efficiency sub-categories: 1B (dora handling), 1C (honor ordering), 1D (honor vs number), 1E (pair management), 1A (general).
+
+Defense analysis uses suji-based safety ratings (0-15 scale, ported from Riichi-Trainer): genbutsu=15, suji terminals=13-14, honors by remaining count, non-suji middle tiles=1-3.
+
 ## Auto-Categorization Logic
 
 When adding a game (CLI or web), mistakes are automatically categorized:
@@ -97,4 +101,5 @@ SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, 
 
 - Downloads from mjai.ekyu.moe must use the `requests` library (not `urllib.request`) — Cloudflare blocks bare urllib User-Agent.
 - `mahjong-cpp` uses MPSZ notation (`1z`-`7z` for honors, `0m`/`0p`/`0s` for red fives) — conversion needed for integration.
+- Tile efficiency calculator runs locally via `mahjong-cpp/build/install/bin/nanikiru PORT` (falls back to pystyle.info remote API if not running).
 - `mahjong_curl` file has a working curl example hitting the pystyle.info hosted mahjong-cpp web API.

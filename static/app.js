@@ -157,7 +157,7 @@ function renderEvComparison(m) {
     <th>Tile</th>
     <th class="mortal-col">Mortal Q</th>
     <th class="mortal-col">Prob</th>
-    <th class="cpp-col">Cpp Score</th>
+    <th class="cpp-col">Tile Calc</th>
     <th class="cpp-col">Win%</th>
     <th class="cpp-col">Shanten</th>
   </tr></thead><tbody>`;
@@ -176,7 +176,7 @@ function renderEvComparison(m) {
     const markers = [];
     if (isActual) markers.push('<span class="marker played">You</span>');
     if (isExpected) markers.push('<span class="marker ai">AI</span>');
-    if (isCppBest) markers.push('<span class="marker cpp">Cpp</span>');
+    if (isCppBest) markers.push('<span class="marker cpp">Calc</span>');
 
     html += `<tr class="${rowClass}">`;
     html += `<td class="tile-cell">${renderTile(tile, "ev-tile")} ${markers.join("")}</td>`;
@@ -296,7 +296,9 @@ function renderGame() {
 
   let html = `
     <div class="game-header">
-      <h2>Game ${state.currentGame + 1} &mdash; ${game.date}</h2>
+      <h2>Game ${state.currentGame + 1} &mdash; ${game.date}
+        <button class="btn btn-delete" onclick="deleteGame(${state.currentGame})" title="Delete game">Delete</button>
+      </h2>
       ${game.log_url ? `<div class="log-link"><a href="${game.log_url}" target="_blank">${game.log_url}</a></div>` : ""}
     </div>
 
@@ -552,6 +554,20 @@ async function submitAddGame() {
   hideAddModal();
   await fetchGames();
   fetchGame(result.game_id);
+}
+
+// --- Delete game ---
+
+async function deleteGame(id) {
+  if (!confirm(`Delete game ${id + 1}? This cannot be undone.`)) return;
+  const res = await fetch(`/api/games/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (data.ok) {
+    state.currentGame = null;
+    state.currentGameData = null;
+    document.getElementById("content").innerHTML = '<div class="empty-state">Game deleted</div>';
+    await fetchGames();
+  }
 }
 
 // --- Trends ---

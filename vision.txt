@@ -82,8 +82,20 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
 
 === TODO ===
 
-4. More data analysis (future work)
+4. Defense visuals
+   - Show which tiles are safe/dangerous against riichi opponents
+   - Color-coded tile overlay showing safety ratings
+   - Don't clog the screen — maybe expandable panel or hover tooltip
+
+5. Mistake trainer
+   - Practice mode that replays common mistake hand shapes
+   - Show hand + draw, player picks a discard, get instant feedback
+   - Could group similar hand patterns using heuristics or clustering
+   - ML/unsupervised clustering of hand shapes is interesting but hard
+   - Start simple: replay your actual mistakes as practice problems
+
+6. More data analysis
    - Currently have 3 analyzed games, 1 unprocessed (9e9b37c38b06365e.json)
 
-5. Checkpoint 4: Web-UI with all features
+7. Checkpoint 4: Web-UI with all features
    - The end goal, combines everything above

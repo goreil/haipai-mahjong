@@ -10,8 +10,11 @@ import requests
 
 DIR = Path(__file__).parent
 
-API_URL = "https://pystyle.info/apps/mahjong-cpp_0.9.1/post.py"
-API_HEADERS = {
+# Local mahjong-cpp server (nanikiru binary)
+LOCAL_API_URL = "http://localhost:50000/"
+# Fallback: remote pystyle.info API
+REMOTE_API_URL = "https://pystyle.info/apps/mahjong-cpp_0.9.1/post.py"
+REMOTE_API_HEADERS = {
     "Content-Type": "application/x-www-form-urlencoded",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0",
     "Origin": "https://pystyle.info",
@@ -217,12 +220,41 @@ def build_api_request(hand_mjai, melds_mjai, round_wind_id, seat_wind_id, dora_i
     }
 
 
+_use_local = None  # cached: True/False/None (untested)
+
+
 def call_mahjong_cpp(request_data):
-    """Call the pystyle.info mahjong-cpp API."""
+    """Call the mahjong-cpp tile efficiency calculator.
+
+    Tries local nanikiru server first, falls back to remote pystyle.info API.
+    Sets _use_local so subsequent calls skip the probe.
+    """
+    global _use_local
+
+    if _use_local is not False:
+        try:
+            resp = requests.post(
+                LOCAL_API_URL,
+                json=request_data,
+                timeout=5,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if not data.get("success"):
+                raise RuntimeError(f"API error: {data.get('err_msg', 'unknown')}")
+            if _use_local is None:
+                _use_local = True
+                print("  Using local tile efficiency server", file=sys.stderr)
+            return data["response"]
+        except (requests.ConnectionError, requests.Timeout):
+            _use_local = False
+            print("  Local server not available, using remote API", file=sys.stderr)
+
+    # Fallback to remote API
     resp = requests.post(
-        API_URL,
+        REMOTE_API_URL,
         data=json.dumps(request_data),
-        headers=API_HEADERS,
+        headers=REMOTE_API_HEADERS,
         timeout=30,
     )
     resp.raise_for_status()
@@ -230,6 +262,11 @@ def call_mahjong_cpp(request_data):
     if not data.get("success"):
         raise RuntimeError(f"API error: {data.get('err_msg', 'unknown')}")
     return data["response"]
+
+
+def is_local_server():
+    """Returns True if using local server (no delay needed)."""
+    return _use_local is True
 
 
 def get_cpp_best_discard(response):
@@ -531,7 +568,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     # Build and send API request
     req = build_api_request(hand, melds, round_wind, seat_wind, dora_ids, wall)
 
-    if delay > 0:
+    if delay > 0 and not is_local_server():
         time.sleep(delay)
 
     try:

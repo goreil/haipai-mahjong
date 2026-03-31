@@ -20,21 +20,21 @@ CATEGORIES = [
 ]
 
 CATEGORY_INFO = {
-    "1A": {"group": "Efficiency", "label": "Shape",          "desc": "Hand shape / sequence building"},
-    "1B": {"group": "Efficiency", "label": "Dora",           "desc": "Dora-related tile handling"},
-    "1C": {"group": "Efficiency", "label": "Honor Priority", "desc": "Which honor tile to discard first"},
-    "1D": {"group": "Efficiency", "label": "Isolation",      "desc": "Isolated honor vs isolated number tile"},
-    "1E": {"group": "Efficiency", "label": "Pairs",          "desc": "Managing duplicate tiles / pairs"},
-    "2A": {"group": "Strategy",   "label": "Push/Fold",      "desc": "Mortal wanted a different tile than pure efficiency"},
-    "2B": {"group": "Strategy",   "label": "Defense",        "desc": "Specific defensive play"},
-    "2C": {"group": "Strategy",   "label": "Value",          "desc": "Hand value / yaku pursuit"},
-    "3A": {"group": "Meld",       "label": "Bad Call",       "desc": "Called chi/pon when shouldn't have"},
-    "3B": {"group": "Meld",       "label": "Missed Call",    "desc": "Didn't call chi/pon when should have"},
-    "3C": {"group": "Meld",       "label": "Wrong Choice",   "desc": "Called wrong combination"},
-    "4A": {"group": "Riichi",     "label": "Bad Riichi",     "desc": "Declared riichi when shouldn't have"},
-    "4B": {"group": "Riichi",     "label": "Missed Riichi",  "desc": "Didn't declare riichi when should have"},
-    "5A": {"group": "Kan",        "label": "Bad Kan",        "desc": "Declared kan when shouldn't have"},
-    "5B": {"group": "Kan",        "label": "Missed Kan",     "desc": "Didn't declare kan when should have"},
+    "1A": {"group": "Efficiency", "label": "Acceptance",     "desc": "Chose a discard with lower tile acceptance (ukeire)",                  "study": "Riichi Book Ch 3-4"},
+    "1B": {"group": "Efficiency", "label": "Dora",           "desc": "Mishandled dora or red five tile",                                     "study": "Riichi Book Ch 4.3"},
+    "1C": {"group": "Efficiency", "label": "Honor Tiles",    "desc": "Wrong discard priority among honor tiles (value vs valueless winds)",  "study": "Riichi Book Ch 3.2"},
+    "1D": {"group": "Efficiency", "label": "Connectivity",   "desc": "Discarded a more connected tile over a less connected one",            "study": "Riichi Book Ch 3.2-3.3"},
+    "1E": {"group": "Efficiency", "label": "Pairs",          "desc": "Wrong pair count or pair choice (ideally keep two pairs)",              "study": "Riichi Book Ch 3.2, 4.1"},
+    "2A": {"group": "Strategy",   "label": "Push/Fold",      "desc": "Strategic disagreement — neither pure defense nor efficiency",          "study": "Riichi Book Ch 8.1"},
+    "2B": {"group": "Strategy",   "label": "Defense",        "desc": "Mortal chose a safer tile against an opponent in riichi",               "study": "Riichi Book Ch 8.2-8.4"},
+    "2C": {"group": "Strategy",   "label": "Hand Value",     "desc": "Sacrificed speed for hand value or vice versa",                        "study": "Riichi Book Ch 5-6"},
+    "3A": {"group": "Meld",       "label": "Bad Call",       "desc": "Called chi/pon when shouldn't have",                                   "study": "Riichi Book Ch 9"},
+    "3B": {"group": "Meld",       "label": "Missed Call",    "desc": "Didn't call chi/pon when should have",                                 "study": "Riichi Book Ch 9"},
+    "3C": {"group": "Meld",       "label": "Wrong Choice",   "desc": "Called wrong combination",                                            "study": "Riichi Book Ch 9"},
+    "4A": {"group": "Riichi",     "label": "Bad Riichi",     "desc": "Declared riichi when shouldn't have",                                  "study": "Riichi Book Ch 7"},
+    "4B": {"group": "Riichi",     "label": "Missed Riichi",  "desc": "Didn't declare riichi when should have",                               "study": "Riichi Book Ch 7"},
+    "5A": {"group": "Kan",        "label": "Bad Kan",        "desc": "Declared kan when shouldn't have",                                     "study": "Riichi Book Ch 9.3"},
+    "5B": {"group": "Kan",        "label": "Missed Kan",     "desc": "Didn't declare kan when should have",                                  "study": "Riichi Book Ch 9.3"},
 }
 
 
@@ -508,6 +508,21 @@ def cmd_add(args):
     print(f"  Categorized {cat_n} mistakes ({api_calls} API calls)")
 
 
+def cmd_delete(args):
+    """Delete a game from games.json."""
+    data = load_games()
+    idx = args.game - 1
+    if idx < 0 or idx >= len(data["games"]):
+        print(f"Error: game {args.game} not found (have {len(data['games'])} games)", file=sys.stderr)
+        sys.exit(1)
+
+    game = data["games"][idx]
+    print(f"Deleting game {args.game}: {game['date']} ({game.get('summary', {}).get('total_mistakes', '?')} mistakes)")
+    data["games"].pop(idx)
+    save_games(data)
+    print(f"Done. {len(data['games'])} games remaining.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Mahjong game review manager")
     sub = parser.add_subparsers(dest="command")
@@ -541,6 +556,9 @@ def main():
     p_add.add_argument("url", help="mjai.ekyu.moe viewer URL")
     p_add.add_argument("--date", help="Game date (default: today)")
 
+    p_del = sub.add_parser("delete", help="Delete a game from games.json")
+    p_del.add_argument("game", type=int, help="Game number (1-based)")
+
     args = parser.parse_args()
     if args.command == "list":
         cmd_list(args)
@@ -554,6 +572,8 @@ def main():
         cmd_categorize(args)
     elif args.command == "add":
         cmd_add(args)
+    elif args.command == "delete":
+        cmd_delete(args)
     else:
         parser.print_help()
 
