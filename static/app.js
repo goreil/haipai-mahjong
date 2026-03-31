@@ -1285,7 +1285,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   const me = await meRes.json();
   document.getElementById("user-info").innerHTML =
-    `${me.username} <a href="/logout" style="color:var(--accent-dim);text-decoration:none;margin-left:6px">logout</a>`;
+    `${me.username} <a href="/logout">logout</a>`;
 
   const catRes = await fetch("/api/categories");
   CATEGORY_INFO = await catRes.json();

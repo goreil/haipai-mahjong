@@ -3,16 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mahjong Review</title>
+  <title>Haipai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <div class="app">
     <div class="sidebar">
       <div class="sidebar-header">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <h2>Mahjong Review</h2>
-          <span id="user-info" style="font-size:12px;color:var(--text-dim)"></span>
+        <div class="sidebar-brand">
+          <div class="brand-mark"><span class="bm-m">M</span><span class="bm-p">P</span><span class="bm-s">S</span></div>
+          <div>
+            <h2>Haipai</h2>
+            <div id="user-info" class="user-info"></div>
+          </div>
         </div>
         <button class="btn btn-primary" style="width:100%" onclick="showAddModal()">+ Add Game</button>
       </div>

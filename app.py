@@ -132,27 +132,109 @@ def close_conn(exception):
 
 LOGIN_PAGE = """<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Login - Mahjong Review</title>
+<title>{{ title }} - Haipai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh;display:flex;align-items:center;justify-content:center}
-.card{background:#16213e;border:1px solid #2a3a5a;border-radius:12px;padding:32px;width:360px;max-width:90vw}
-h2{color:#4fc3f7;margin-bottom:20px;font-size:20px}
-label{display:block;font-size:13px;color:#8892a4;margin-bottom:4px}
-input{width:100%;padding:10px 12px;border-radius:6px;border:1px solid #2a3a5a;background:#0f1a2e;color:#e0e0e0;font-size:14px;margin-bottom:14px}
-button{width:100%;padding:10px;border-radius:6px;border:none;background:#2a7aa3;color:#fff;font-size:14px;cursor:pointer;font-weight:600}
-button:hover{background:#4fc3f7;color:#000}
-.error{color:#ef5350;font-size:13px;margin-bottom:12px}
-.link{text-align:center;margin-top:16px;font-size:13px;color:#8892a4}
-.link a{color:#4fc3f7;text-decoration:none}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#0d0f1a;
+  color:#c8ccd8;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(79,195,247,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(67,160,71,0.05) 0%, transparent 70%);
+  pointer-events:none;
+}
+.login-wrap{position:relative;z-index:1;width:380px;max-width:92vw}
+.brand{text-align:center;margin-bottom:32px}
+.brand-tiles{
+  display:inline-flex;gap:4px;margin-bottom:16px;
+}
+.brand-tile{
+  width:28px;height:36px;border-radius:4px;
+  background:linear-gradient(135deg,#1e2a48 0%,#16213e 100%);
+  border:1px solid #2a3a5a;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;
+  animation:tileIn 0.5s ease backwards;
+}
+.brand-tile:nth-child(1){color:#e53935;animation-delay:0.1s}
+.brand-tile:nth-child(2){color:#43a047;animation-delay:0.2s}
+.brand-tile:nth-child(3){color:#4fc3f7;animation-delay:0.3s}
+@keyframes tileIn{from{opacity:0;transform:translateY(-12px)}}
+.brand h1{
+  font-family:'Outfit',sans-serif;font-weight:700;font-size:28px;
+  color:#e8eaf0;letter-spacing:-0.5px;
+  animation:fadeIn 0.6s ease 0.3s backwards;
+}
+.brand p{
+  font-size:13px;color:#5a6078;margin-top:4px;letter-spacing:0.5px;
+  animation:fadeIn 0.6s ease 0.45s backwards;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}}
+.card{
+  background:linear-gradient(160deg,#141828 0%,#111524 100%);
+  border:1px solid #1e2540;
+  border-radius:14px;padding:28px 30px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.02) inset;
+  animation:cardIn 0.5s ease 0.2s backwards;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(0.98)}}
+.card h2{
+  font-family:'Outfit',sans-serif;font-weight:500;font-size:18px;
+  color:#e0e4ee;margin-bottom:22px;letter-spacing:-0.2px;
+}
+label{display:block;font-size:12px;color:#5a6078;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.8px}
+input{
+  width:100%;padding:11px 14px;border-radius:8px;
+  border:1px solid #1e2540;background:#0d0f1a;color:#e0e4ee;
+  font-size:14px;font-family:'DM Sans',sans-serif;
+  margin-bottom:16px;transition:border-color 0.2s,box-shadow 0.2s;
+}
+input:focus{outline:none;border-color:#4fc3f7;box-shadow:0 0 0 3px rgba(79,195,247,0.1)}
+button{
+  width:100%;padding:12px;border-radius:8px;border:none;
+  background:linear-gradient(135deg,#2a7aa3 0%,#357a8f 100%);
+  color:#fff;font-size:14px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;letter-spacing:0.3px;
+  transition:all 0.2s;margin-top:4px;
+}
+button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shadow:0 4px 16px rgba(79,195,247,0.2)}
+.error{
+  color:#ef5350;font-size:13px;margin-bottom:14px;
+  padding:8px 12px;background:rgba(239,83,80,0.08);
+  border-radius:6px;border:1px solid rgba(239,83,80,0.15);
+}
+.link{text-align:center;margin-top:18px;font-size:13px;color:#5a6078}
+.link a{color:#4fc3f7;text-decoration:none;font-weight:500}
+.link a:hover{text-decoration:underline}
 </style></head><body>
+<div class="login-wrap">
+<div class="brand">
+  <div class="brand-tiles">
+    <div class="brand-tile">M</div>
+    <div class="brand-tile">P</div>
+    <div class="brand-tile">S</div>
+  </div>
+  <h1>Haipai</h1>
+  <p>Mahjong Mistake Trainer</p>
+</div>
 <div class="card">
 <h2>{{ title }}</h2>
 {% if error %}<div class="error">{{ error }}</div>{% endif %}
 <form method="POST">
-<label>Username</label><input name="username" required autofocus>
-<label>Password</label><input name="password" type="password" required>
-{% if register %}<label>Invite Code</label><input name="invite_code" required>{% endif %}
+<label>Username</label><input name="username" required autofocus autocomplete="username">
+<label>Password</label><input name="password" type="password" required autocomplete="{{ 'new-password' if register else 'current-password' }}">
+{% if register %}<label>Invite Code</label><input name="invite_code" required placeholder="From a club member">{% endif %}
 <button>{{ title }}</button>
 </form>
 {% if register %}
@@ -160,6 +242,7 @@ button:hover{background:#4fc3f7;color:#000}
 {% else %}
 <div class="link">Need an account? <a href="/register">Register</a></div>
 {% endif %}
+</div>
 </div></body></html>"""
 
 
