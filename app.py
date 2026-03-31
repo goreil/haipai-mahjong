@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Flask web server for mahjong game review."""
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, g, jsonify, request, send_from_directory
 from pathlib import Path
 import atexit
 import json
@@ -11,15 +11,16 @@ import time
 
 import requests as http_requests
 
+import db
 from mj_parse import parse_game
 from mj_games import compute_summary, CATEGORY_INFO
 
 DIR = Path(__file__).parent
-GAMES_FILE = DIR / "games.json"
 NANIKIRU_BIN = DIR / "mahjong-cpp" / "build" / "install" / "bin" / "nanikiru"
 NANIKIRU_PORT = 50000
 
 app = Flask(__name__, static_folder="static")
+app.secret_key = "dev-secret-change-in-production"
 
 # --- nanikiru server management ---
 
@@ -80,16 +81,28 @@ def stop_nanikiru():
         print("nanikiru stopped", file=sys.stderr)
 
 
-def load_games():
-    with open(GAMES_FILE) as f:
-        return json.load(f)
+# --- Database connection per request ---
+
+def get_conn():
+    if "db_conn" not in g:
+        g.db_conn = db.get_db()
+    return g.db_conn
 
 
-def save_games(data):
-    with open(GAMES_FILE, "w") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write("\n")
+@app.teardown_appcontext
+def close_conn(exception):
+    conn = g.pop("db_conn", None)
+    if conn is not None:
+        conn.close()
 
+
+def current_user_id():
+    """Get current user ID. For now, default to 1 (single-user mode).
+    Will be replaced by Flask-Login in the auth task."""
+    return 1
+
+
+# --- Routes ---
 
 @app.route("/")
 def index():
@@ -108,78 +121,44 @@ def api_categories():
 
 @app.route("/api/trends")
 def api_trends():
-    data = load_games()
-    games = []
-    for i, g in enumerate(data["games"]):
-        s = g.get("summary", {})
-        by_cat = s.get("by_category", {})
-        # Group categories by skill area
-        by_group = {}
-        for cat, info in by_cat.items():
-            grp = CATEGORY_INFO.get(cat, {}).get("group", cat)
-            if grp not in by_group:
-                by_group[grp] = {"count": 0, "ev": 0.0}
-            by_group[grp]["count"] += info["count"]
-            by_group[grp]["ev"] = round(by_group[grp]["ev"] + info["ev"], 2)
-        games.append({
-            "id": i,
-            "date": g["date"],
-            "total_mistakes": s.get("total_mistakes", 0),
-            "total_ev_loss": s.get("total_ev_loss", 0),
-            "total_turns": s.get("total_turns"),
-            "ev_per_turn": s.get("ev_per_turn"),
-            "by_severity": s.get("by_severity", {}),
-            "by_group": by_group,
-        })
-    # Sort by date then id
-    games.sort(key=lambda g: (g["date"], g["id"]))
-    return jsonify(games)
+    conn = get_conn()
+    uid = current_user_id()
+    return jsonify(db.get_trends(conn, uid))
 
 
 @app.route("/api/games")
 def api_games():
-    data = load_games()
-    # Return summary info for each game (not full mistake data)
-    games = []
-    for i, g in enumerate(data["games"]):
-        annotated = sum(
-            1 for rnd in g["rounds"] for m in rnd["mistakes"] if m.get("category")
-        )
-        total = g.get("summary", {}).get("total_mistakes", 0)
-        games.append({
-            "id": i,
-            "date": g["date"],
-            "log_url": g.get("log_url"),
-            "summary": g.get("summary"),
-            "annotated": annotated,
-            "total": total,
-        })
-    return jsonify(games)
+    conn = get_conn()
+    uid = current_user_id()
+    return jsonify(db.list_games(conn, uid))
 
 
 @app.route("/api/games/<int:game_id>")
 def api_game(game_id):
-    data = load_games()
-    if game_id < 0 or game_id >= len(data["games"]):
+    conn = get_conn()
+    uid = current_user_id()
+    game = db.get_game(conn, game_id, user_id=uid)
+    if not game:
         return jsonify({"error": "Game not found"}), 404
-    return jsonify(data["games"][game_id])
+    return jsonify(game)
 
 
 @app.route("/api/games/<int:game_id>", methods=["DELETE"])
 def api_delete_game(game_id):
-    data = load_games()
-    if game_id < 0 or game_id >= len(data["games"]):
+    conn = get_conn()
+    uid = current_user_id()
+    if not db.delete_game(conn, game_id, user_id=uid):
         return jsonify({"error": "Game not found"}), 404
-    data["games"].pop(game_id)
-    save_games(data)
-    return jsonify({"ok": True, "remaining": len(data["games"])})
+    remaining = conn.execute(
+        "SELECT COUNT(*) FROM games WHERE user_id = ?", (uid,)
+    ).fetchone()[0]
+    return jsonify({"ok": True, "remaining": remaining})
 
 
 @app.route("/api/games/<int:game_id>/annotate", methods=["POST"])
 def api_annotate(game_id):
-    data = load_games()
-    if game_id < 0 or game_id >= len(data["games"]):
-        return jsonify({"error": "Game not found"}), 404
+    conn = get_conn()
+    uid = current_user_id()
 
     body = request.json
     round_name = body.get("round")
@@ -188,58 +167,40 @@ def api_annotate(game_id):
     category = body.get("category")
     note = body.get("note")
 
-    game = data["games"][game_id]
-    target_round = None
-    for rnd in game["rounds"]:
-        if rnd["round"] == round_name:
-            target_round = rnd
-            break
-    if target_round is None:
-        return jsonify({"error": f"Round '{round_name}' not found"}), 404
+    result = db.annotate_mistake(conn, game_id, round_name, turn, index, category, note, user_id=uid)
+    if not result:
+        return jsonify({"error": "Mistake not found"}), 404
 
-    candidates = [m for m in target_round["mistakes"] if m["turn"] == turn]
-    if not candidates:
-        return jsonify({"error": f"Turn {turn} not found in {round_name}"}), 404
-    if index >= len(candidates):
-        return jsonify({"error": f"Index {index} out of range"}), 404
-
-    mistake = candidates[index]
-    if category is not None:
-        mistake["category"] = category if category else None
-    if note is not None:
-        mistake["note"] = note if note else None
-
-    compute_summary(game)
-    save_games(data)
-
-    return jsonify({"ok": True, "summary": game["summary"]})
+    stats = db.compute_summary_for_game(conn, game_id)
+    return jsonify({"ok": True, "summary": stats})
 
 
 @app.route("/api/games/<int:game_id>/categorize", methods=["POST"])
 def api_categorize(game_id):
-    from mj_categorize import categorize_game
+    conn = get_conn()
+    uid = current_user_id()
 
-    data = load_games()
-    if game_id < 0 or game_id >= len(data["games"]):
+    game = db.get_game(conn, game_id, user_id=uid)
+    if not game:
         return jsonify({"error": "Game not found"}), 404
 
     body = request.json or {}
     force = body.get("force", False)
 
-    game = data["games"][game_id]
-    n, api_calls = categorize_game(game, game_id, force=force)
+    from mj_categorize import categorize_game_db
+    n, api_calls = categorize_game_db(conn, game_id, force=force)
 
-    if n > 0:
-        compute_summary(game)
-        save_games(data)
-
-    return jsonify({"ok": True, "categorized": n, "api_calls": api_calls, "summary": game["summary"]})
+    stats = db.compute_summary_for_game(conn, game_id) if n > 0 else game.get("summary", {})
+    return jsonify({"ok": True, "categorized": n, "api_calls": api_calls, "summary": stats})
 
 
 @app.route("/api/games/add", methods=["POST"])
 def api_add():
     import urllib.parse
     from datetime import date
+
+    conn = get_conn()
+    uid = current_user_id()
 
     body = request.json
     url = body.get("url", "")
@@ -269,72 +230,44 @@ def api_add():
     with open(dest) as f:
         mortal_data = json.load(f)
 
-    game = parse_game(mortal_data, game_date=game_date)
-    game["mortal_file"] = str(dest.relative_to(DIR))
-    compute_summary(game)
+    game_dict = parse_game(mortal_data, game_date=game_date)
+    game_dict["mortal_file"] = str(dest.relative_to(DIR))
+    compute_summary(game_dict)
 
-    if GAMES_FILE.exists():
-        data = load_games()
-    else:
-        data = {"games": []}
-    data["games"].append(game)
-    game_id = len(data["games"]) - 1
-    save_games(data)
+    game_id = db.add_game(conn, uid, game_dict)
 
     # Auto-categorize
-    from mj_categorize import categorize_game
-    cat_n, api_calls = categorize_game(game, game_id)
-    if cat_n > 0:
-        compute_summary(game)
-        save_games(data)
+    from mj_categorize import categorize_game_db
+    cat_n, api_calls = categorize_game_db(conn, game_id)
 
-    return jsonify({"ok": True, "game_id": game_id, "summary": game["summary"],
+    stats = db.compute_summary_for_game(conn, game_id) if cat_n > 0 else game_dict.get("summary", {})
+    return jsonify({"ok": True, "game_id": game_id, "summary": stats,
                     "categorized": cat_n, "api_calls": api_calls})
 
 
 @app.route("/api/practice")
 def api_practice():
-    import random
-    data = load_games()
+    conn = get_conn()
+    uid = current_user_id()
 
-    # Filters
-    sev_filter = request.args.get("severity")       # "??" or "???"
-    group_filter = request.args.get("group")         # "Efficiency", "Strategy", etc.
-    defense_filter = request.args.get("defense")     # "1" = only riichi situations
+    sev = request.args.get("severity")
+    group = request.args.get("group")
+    defense = request.args.get("defense") == "1"
 
-    candidates = []
-    for i, g in enumerate(data["games"]):
-        for rnd in g["rounds"]:
-            for m in rnd["mistakes"]:
-                if ((m.get("actual") or {}).get("type") != "dahai" or
-                    (m.get("expected") or {}).get("type") != "dahai" or
-                    m.get("severity") not in ("??", "???") or
-                    not m.get("hand")):
-                    continue
-                if sev_filter and m["severity"] != sev_filter:
-                    continue
-                if group_filter:
-                    cat = m.get("category", "")
-                    cat_group = CATEGORY_INFO.get(cat, {}).get("group", "")
-                    if cat_group != group_filter:
-                        continue
-                if defense_filter == "1" and not m.get("safety_ratings"):
-                    continue
-                candidates.append({
-                    "game_id": i,
-                    "game_date": g["date"],
-                    "round": rnd["round"],
-                    "mistake": m,
-                })
-    if not candidates:
+    pick = db.get_practice_problem(conn, uid, severity=sev, group=group, defense_only=defense)
+    if not pick:
         return jsonify({"error": "No matching practice problems"}), 404
-    pick = random.choice(candidates)
-    pick["pool_size"] = len(candidates)
     return jsonify(pick)
 
 
 if __name__ == "__main__":
     import os
+
+    # Initialize database
+    conn = db.get_db()
+    db.init_db(conn)
+    conn.close()
+
     # Only start nanikiru in the reloader child (or when not using reloader)
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
         start_nanikiru()

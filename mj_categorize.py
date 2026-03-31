@@ -829,3 +829,112 @@ def recheck_game(game, game_idx, dry_run=False):
                 changed += 1
 
     return changed
+
+
+def categorize_game_db(conn, game_id, force=False):
+    """Categorize mistakes for a game using SQLite database.
+
+    Reads the mortal JSON, matches entries to DB mistakes, categorizes,
+    and updates the DB directly.
+
+    Returns (categorized_count, api_calls).
+    """
+    import db as dbmod
+
+    game_row = conn.execute(
+        "SELECT mortal_file FROM games WHERE id = ?", (game_id,)
+    ).fetchone()
+    if not game_row or not game_row["mortal_file"]:
+        return 0, 0
+
+    mortal_path = DIR / game_row["mortal_file"]
+    if not mortal_path.exists():
+        return 0, 0
+
+    with open(mortal_path) as f:
+        mortal_data = json.load(f)
+
+    kyokus = mortal_data["review"]["kyokus"]
+    events = flatten_mjai_log(mortal_data["mjai_log"])
+    start_events = [e for e in events if e.get("type") == "start_kyoku"]
+    start_positions = [i for i, e in enumerate(events) if e.get("type") == "start_kyoku"]
+    player_id = mortal_data["player_id"]
+
+    # Load all mistakes for this game, grouped by round
+    mistake_rows = conn.execute(
+        "SELECT * FROM mistakes WHERE game_id = ? ORDER BY round_idx, mistake_idx",
+        (game_id,),
+    ).fetchall()
+
+    # Group by round_name
+    rounds = {}
+    for mr in mistake_rows:
+        rn = mr["round_name"]
+        if rn not in rounds:
+            rounds[rn] = []
+        rounds[rn].append(mr)
+
+    categorized = 0
+    api_calls = 0
+
+    from mj_parse import round_header
+
+    for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
+        rnd_header = round_header(start)
+        db_mistakes = rounds.get(rnd_header, [])
+        if not db_mistakes:
+            continue
+
+        dora_indicators = [start["dora_marker"]]
+        start_pos = start_positions[kyoku_idx]
+        end_pos = start_positions[kyoku_idx + 1] if kyoku_idx + 1 < len(start_positions) else len(events)
+        defense_ctx = {
+            "mjai_events": events,
+            "start_pos": start_pos,
+            "end_pos": end_pos,
+            "player_id": player_id,
+        }
+
+        mistake_idx = 0
+        for entry in kyoku["entries"]:
+            if entry["is_equal"]:
+                continue
+
+            while mistake_idx < len(db_mistakes):
+                if db_mistakes[mistake_idx]["turn"] == entry["junme"]:
+                    break
+                mistake_idx += 1
+            else:
+                continue
+            if mistake_idx >= len(db_mistakes):
+                continue
+
+            mr = db_mistakes[mistake_idx]
+            mistake_idx += 1
+
+            if mr["category"] and not force:
+                continue
+
+            m = dbmod.row_to_mistake(mr)
+            needs_api = (m.get("actual", {}).get("type") == "dahai" and
+                         m.get("expected", {}).get("type") == "dahai")
+
+            if needs_api:
+                api_calls += 1
+
+            cat, cpp_data, safety_data = categorize_mistake(
+                m, mortal_data, kyoku_idx, entry, dora_indicators,
+                defense_ctx=defense_ctx,
+            )
+
+            if cat:
+                updates = {"category": cat}
+                if cpp_data:
+                    updates["cpp_best"] = cpp_data["best"]
+                    updates["cpp_stats"] = cpp_data["stats"]
+                if safety_data:
+                    updates["safety_ratings"] = safety_data
+                dbmod.update_mistake_data(conn, mr["id"], updates)
+                categorized += 1
+
+    return categorized, api_calls
