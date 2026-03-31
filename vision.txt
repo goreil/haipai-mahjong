@@ -184,10 +184,10 @@ Branding: "Haipai" (配牌, starting hand)
    - Riichi tile shown sideways with red glow
    - 177 mistakes include opponent_discards data
 
-2. Practice mode: spaced repetition
-   - Track which problems user got wrong, revisit them more often
-   - With SQLite: store practice_results table (user_id, mistake_id, correct, timestamp)
-   - Weight random selection toward previously-wrong and unreviewed problems
+2. [x] Practice mode: spaced repetition
+   - practice_results table tracks correct/wrong per mistake per user
+   - Weighted random: unseen/wrong x3, mastered x0.5
+   - POST /api/practice/result, GET /api/practice/stats
 
 3. Fix 73 uncategorized mistakes
    - All dahai-vs-dahai with wall reconstruction errors ("more tiles than wall")
