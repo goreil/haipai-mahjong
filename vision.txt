@@ -43,11 +43,11 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
 
 5. Automatic error categorization (vision item 2a)
    - mj_categorize.py: compares Mortal AI vs mahjong-cpp tile efficiency
-   - Uses pystyle.info web API (option a) for mahjong-cpp expected score calculation
+   - Local mahjong-cpp server only (no remote API dependency)
    - Built: mjai->tile ID conversion, wall state reconstruction from mjai_log, API integration
    - Categorization logic: cpp agrees with mortal -> efficiency (1A-1E), disagrees -> defense (2A)
    - Non-discard actions categorized by type (3A-3C meld, 4A-4B riichi, 5A-5B kan)
-   - CLI: python3 mj_games.py categorize [--game N] [--delay S] [--force] [--dry-run]
+   - CLI: python3 mj_games.py categorize [--game N] [--force] [--dry-run]
    - Web API: POST /api/games/<id>/categorize
 
 6. Category UX redesign
@@ -80,22 +80,40 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
      tile (3+ safety rating difference), classify as 2B Defense instead of 2A Push/Fold
 
 
+10. Defense visuals
+   - Safety ratings (0-15) computed and stored on mistakes with riichi opponents
+   - Color-coded tile borders on hand tiles: green (safe), orange (caution), red (danger)
+   - Safety column in EV comparison table
+   - "RIICHI" badge on affected hands, hover tooltips with exact ratings
+
+11. Local-only tile efficiency server
+   - app.py auto-starts nanikiru on 127.0.0.1:50000, shuts down on exit
+   - Removed remote pystyle.info API dependency entirely
+   - nanikiru default bind changed from 0.0.0.0 to 127.0.0.1
+
+12. Mistake trainer (practice mode)
+   - "Practice" button in web UI toolbar
+   - Random ??/??? discard mistakes (506 eligible problems from 26 games)
+   - Clickable hand tiles: pick a discard, get instant feedback
+   - Shows Mortal's recommendation, EV table, safety data, original play
+   - Session score tracking (correct/total)
+
+
 === TODO ===
 
-4. Defense visuals
-   - Show which tiles are safe/dangerous against riichi opponents
-   - Color-coded tile overlay showing safety ratings
-   - Don't clog the screen — maybe expandable panel or hover tooltip
-
-5. Mistake trainer
-   - Practice mode that replays common mistake hand shapes
-   - Show hand + draw, player picks a discard, get instant feedback
-   - Could group similar hand patterns using heuristics or clustering
-   - ML/unsupervised clustering of hand shapes is interesting but hard
-   - Start simple: replay your actual mistakes as practice problems
-
-6. More data analysis
-   - Currently have 3 analyzed games, 1 unprocessed (9e9b37c38b06365e.json)
+6. More data analysis (stale — now have 26 games, not 3)
 
 7. Checkpoint 4: Web-UI with all features
    - The end goal, combines everything above
+
+8. Publish-readiness
+   - Hosting decision (VPS, Railway, Fly.io)
+   - Multi-user support (auth, per-user game storage)
+   - mahjong-cpp: keep server-side or compile to WASM?
+   - Attribution/licenses page for dependencies
+   - App name and branding
+
+9. UX improvements
+   - Category explanation tooltips/help page
+   - Positive feedback for mistake-free games
+   - Practice mode: difficulty filters, category filters, spaced repetition
