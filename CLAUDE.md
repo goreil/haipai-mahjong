@@ -10,10 +10,10 @@ Personal Riichi Mahjong game analysis workspace. Analyzes Tenhou replays via Mor
 
 - `games.json` - Canonical data store (JSON). All game reviews with structured mistake data.
 - `mj_games.py` - Main CLI tool: `list`, `review`, `annotate`, `summary`, `add`, `categorize` subcommands.
-- `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp tile efficiency via pystyle.info API. Includes "reasonable agreement" check and defense-aware 2A/2B split.
+- `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs local mahjong-cpp server. Includes "reasonable agreement" check, defense-aware 2A/2B split, and safety rating computation.
 - `mj_defense.py` - Suji-based tile safety evaluator (ported from Riichi-Trainer). Rates tiles 0-15 against riichi opponents.
 - `mj_parse.py` - Core parser. `parse_game(data, date)` returns structured game dict from Mortal JSON. Also has `--text` legacy mode.
-- `app.py` - Flask web server (port 5000). Serves API + static frontend.
+- `app.py` - Flask web server (port 5000). Auto-starts nanikiru tile efficiency server. Serves API + static frontend.
 - `static/` - Web frontend: `index.html`, `style.css`, `app.js` (vanilla JS SPA).
 - `riichi-mahjong-tiles/` - Git submodule with SVG tile graphics. Served at `/tiles/<Name>.svg`.
 - `mahjong-cpp/` - Git submodule ([goreil/mahjong-cpp](https://github.com/goreil/mahjong-cpp)), a C++ mahjong library.
@@ -27,7 +27,7 @@ Personal Riichi Mahjong game analysis workspace. Analyzes Tenhou replays via Mor
 ## Commands
 
 ```bash
-# Web UI
+# Web UI (auto-starts nanikiru tile efficiency server)
 python3 app.py                                         # Start web server at http://localhost:5000
 
 # CLI workflow
@@ -53,13 +53,18 @@ python3 mj_parse.py analysis.json --text                # Parse → legacy text 
 ## Web UI
 
 Flask app (`app.py`) serving a vanilla JS SPA. Features:
-- Game list sidebar sorted by date (newest first)
+- Game list sidebar sorted by date (newest first), star ratings for top games
 - Review view with SVG tile graphics, severity-colored mistake cards
-- Inline annotation (category dropdown + note input, auto-saves)
+- Defense visuals: colored tile borders (safe/caution/danger), Safety column in EV table, "RIICHI" badge
+- Inline annotation (category dropdown with tooltip descriptions + note input, auto-saves)
 - Severity filter checkboxes (hide minor/medium)
+- Practice mode: random discard quizzes from your mistakes, clickable tiles, filters by category/severity/defense, session scoring, keyboard shortcuts (Space/Enter for next)
+- Trend analysis: EV/turn chart, severity breakdown, skill area progression
+- Help page: category reference, defense scale explanation, attribution/licenses
 - Add game modal (paste Mortal viewer URL)
+- Clean round badges, positive game rating banners
 
-API routes: `GET /api/games`, `GET /api/games/<id>`, `GET /api/trends`, `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`, `POST /api/games/add` (auto-categorizes).
+API routes: `GET /api/games`, `GET /api/games/<id>`, `GET /api/trends`, `GET /api/practice`, `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`, `POST /api/games/add`, `DELETE /api/games/<id>`.
 Tiles served at `/tiles/<Name>.svg` from `riichi-mahjong-tiles/Regular/`.
 
 ## Data Format
@@ -67,6 +72,8 @@ Tiles served at `/tiles/<Name>.svg` from `riichi-mahjong-tiles/Regular/`.
 Games in `games.json` have rounds, each with mistakes containing:
 - `turn`, `severity` (?/??/???), `ev_loss`, `category`, `note`
 - Rich data (from Mortal JSON): `hand`, `melds`, `shanten`, `draw`, `actual`/`expected` actions, `top_actions`
+- `safety_ratings` (optional): dict of mjai tile → safety rating (0-15), present when opponent in riichi
+- `cpp_best`, `cpp_stats`: mahjong-cpp tile efficiency analysis
 
 Categories: 1A-1E (efficiency/dora/honors/pairs), 2A-2C (strategy), 3A-3C (melding), 4A-4B (riichi), 5A-5B (kan).
 

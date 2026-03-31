@@ -1157,7 +1157,7 @@ function renderPractice() {
     html += `</div>`; // .practice-result
 
     html += `<div class="practice-actions">`;
-    html += `<button class="btn btn-primary" onclick="showPractice()">Next Problem</button>`;
+    html += `<button class="btn btn-primary" onclick="showPractice()">Next Problem <span class="shortcut-hint">Space</span></button>`;
     html += `<button class="btn" onclick="resetPracticeScore()">Reset Score</button>`;
     html += `</div>`;
   }
@@ -1261,6 +1261,18 @@ function showHelp() {
 
   content.innerHTML = html;
 }
+
+// --- Keyboard shortcuts ---
+
+document.addEventListener("keydown", (e) => {
+  // Practice mode: Space/Enter for next problem after answering
+  if (practice.problem && practice.answered) {
+    if (e.code === "Space" || e.code === "Enter") {
+      e.preventDefault();
+      showPractice();
+    }
+  }
+});
 
 // --- Init ---
 

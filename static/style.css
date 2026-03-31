@@ -1004,6 +1004,15 @@ body {
   margin-bottom: 20px;
 }
 
+.shortcut-hint {
+  font-size: 10px;
+  opacity: 0.5;
+  border: 1px solid currentColor;
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
 /* Help page */
 .help-group {
   background: var(--bg-card);
