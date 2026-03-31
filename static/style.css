@@ -244,6 +244,57 @@ body {
   font-size: 16px;
 }
 
+/* Game rating */
+.game-rating-icon {
+  font-size: 13px;
+  color: var(--sev-minor);
+}
+
+.game-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.game-rating.rating-excellent {
+  background: rgba(102, 187, 106, 0.1);
+  color: var(--sev-minor);
+  border: 1px solid rgba(102, 187, 106, 0.25);
+}
+
+.game-rating.rating-great {
+  background: rgba(79, 195, 247, 0.08);
+  color: var(--accent);
+  border: 1px solid rgba(79, 195, 247, 0.2);
+}
+
+.game-rating-star {
+  font-size: 18px;
+}
+
+.game-rating-detail {
+  font-weight: 400;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+/* Clean round */
+.clean-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(102, 187, 106, 0.15);
+  color: var(--sev-minor);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Mistake card */
 .mistake {
   padding: 10px 14px;

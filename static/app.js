@@ -125,6 +125,33 @@ function sevClass(sev) {
   return "";
 }
 
+// --- Game rating ---
+
+function computeRatingThresholds() {
+  // Compute percentile thresholds from all games with ev_per_turn
+  const evpts = state.games
+    .map(g => (g.summary || {}).ev_per_turn)
+    .filter(v => v != null)
+    .sort((a, b) => a - b);
+  if (evpts.length < 3) return { p25: 0.14, p50: 0.19 };
+  const p25 = evpts[Math.floor(evpts.length * 0.25)];
+  const p50 = evpts[Math.floor(evpts.length * 0.50)];
+  return { p25, p50 };
+}
+
+function gameRating(summary) {
+  if (!summary || !summary.total_turns) return { icon: "", label: "", cls: "" };
+  const evpt = summary.ev_per_turn;
+  if (evpt == null) return { icon: "", label: "", cls: "" };
+
+  const th = computeRatingThresholds();
+  // Top 25%: excellent
+  if (evpt <= th.p25) return { icon: "\u2605", label: "Great game", cls: "rating-excellent" };
+  // Top 50%: good
+  if (evpt <= th.p50) return { icon: "\u2606", label: "Solid game", cls: "rating-great" };
+  return { icon: "", label: "", cls: "" };
+}
+
 // --- EV Comparison ---
 
 function renderEvComparison(m) {
@@ -315,9 +342,11 @@ function renderGameList() {
     const s = g.summary || {};
     const active = g.id === state.currentGame ? "active" : "";
     const pct = g.total > 0 ? Math.round((g.annotated / g.total) * 100) : 100;
+    const noMajor = !(s.by_severity || {})["???"];
+    const rating = gameRating(s);
     return `
       <div class="game-item ${active}" onclick="fetchGame(${g.id})">
-        <div class="date">Game ${g.id + 1} &mdash; ${g.date}</div>
+        <div class="date">Game ${g.id + 1} &mdash; ${g.date}${rating.icon ? ` <span class="game-rating-icon" title="${rating.label}">${rating.icon}</span>` : ""}</div>
         <div class="stats">
           ${s.total_mistakes || 0} mistakes &middot; ${(s.total_ev_loss || 0).toFixed(2)} EV
           ${s.total_turns ? ` &middot; ${s.ev_per_turn.toFixed(4)}/T` : ""}
@@ -357,6 +386,17 @@ function renderGame() {
     </div>
   `;
 
+  // Positive feedback banner
+  const rating = gameRating(s);
+  if (rating.icon) {
+    const cleanRounds = game.rounds.filter(r => r.mistakes.length === 0).length;
+    html += `<div class="game-rating ${rating.cls}">
+      <span class="game-rating-star">${rating.icon}</span>
+      <span>${rating.label}</span>
+      ${cleanRounds > 0 ? `<span class="game-rating-detail">${cleanRounds}/${game.rounds.length} clean rounds</span>` : ""}
+    </div>`;
+  }
+
   // Rounds
   for (const rnd of game.rounds) {
     const visible = rnd.mistakes.filter(m => {
@@ -368,12 +408,13 @@ function renderGame() {
     const outcomeStr = rnd.outcome ? (OUTCOME_EMOJI[rnd.outcome] || rnd.outcome) : "";
     const turnStr = rnd.turn_count ? `T${rnd.turn_count}` : "";
 
-    html += `<div class="round">`;
+    const isClean = rnd.mistakes.length === 0;
+    html += `<div class="round${isClean ? " round-clean" : ""}">`;
     html += `<div class="round-header">
       <span>${rnd.round}${turnStr}</span>
       ${outcomeStr ? `<span class="outcome">${outcomeStr}</span>` : ""}
-      ${visible.length === 0 && rnd.mistakes.length === 0 ? "" :
-        visible.length !== rnd.mistakes.length ?
+      ${isClean ? '<span class="clean-badge">Clean</span>' : ""}
+      ${!isClean && visible.length !== rnd.mistakes.length ?
         `<span style="font-size:12px;color:var(--text-dim)">(${visible.length}/${rnd.mistakes.length})</span>` : ""}
     </div>`;
 
