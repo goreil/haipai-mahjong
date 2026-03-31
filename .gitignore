@@ -65,8 +65,27 @@ db.sqlite3-journal
 instance/
 .webassets-cache
 
-# App database
+# App data (user-specific, not shared)
 games.db
+games.json
+mortal_analysis/
+Mahjong Mistakes.txt
+
+# Personal notes & data
+ylue-next-prompt.txt
+new-todo.txt
+project-briefing.md
+Richii Mahjong Learning.txt
+mahjong_curl
+
+# Editor swap files
+*.swp
+*.swo
+*~
+
+# Misc
+log.txt
+*.pdf
 
 # Scrapy stuff:
 .scrapy

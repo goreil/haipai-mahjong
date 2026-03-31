@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from pathlib import Path
 import atexit
 import json
+import os
 import subprocess
 import sys
 import time
@@ -22,7 +23,9 @@ NANIKIRU_BIN = DIR / "mahjong-cpp" / "build" / "install" / "bin" / "nanikiru"
 NANIKIRU_PORT = 50000
 
 app = Flask(__name__, static_folder="static")
-app.secret_key = "dev-secret-change-in-production"
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # --- Auth ---
 
@@ -385,8 +388,6 @@ def api_practice():
 
 
 if __name__ == "__main__":
-    import os
-
     # Initialize database
     conn = db.get_db()
     db.init_db(conn)

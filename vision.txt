@@ -16,6 +16,29 @@ make some money with since there are currently
 no good english apps like that online.
 
 
+=== COMPETITIVE LANDSCAPE (researched 2026-03-31) ===
+
+What English riichi players have today:
+- Mortal (mjai.ekyu.moe): free per-turn AI review, but raw viewer only. No categorization,
+  no practice mode, no trend tracking, no "why" explanation.
+- NAGA: paid replay analysis, but needs Nicovideo account + Japanese knowledge. Inaccessible
+  to most English speakers.
+- Akochan Reviewer: CLI tool, static HTML output, no web UI, no taxonomy.
+- Euophrys' Efficiency Trainer (itch.io): generic random hands, not your own games.
+- Riichi Scoring Trainer, Waits Trainer: specific skill drills, no game review.
+
+What nobody has:
+- Mistake categorization across a taxonomy (our 15-category system)
+- Practice quizzes from your own past errors
+- Trend analytics over time (EV/turn progression)
+- Mortal-vs-mahjong-cpp comparison to classify WHY a mistake happened
+- The closest analogue is chess's "personal mistake database" concept,
+  but even there nothing automates categorization like our pipeline does.
+
+Differentiation story: Mortal tells you WHAT you did wrong. This app tells you WHY,
+tracks it over time, and lets you drill your actual weak spots.
+
+
 === DONE ===
 
 1. QoL -> Less typing
@@ -62,7 +85,6 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
    - Rows tagged with "You" (actual), "AI" (mortal best), "Cpp" (cpp best) markers
    - Best values highlighted, color-coded columns (green=Mortal, blue=Cpp)
 
-
 8. Trend analysis across games
    - /api/trends endpoint with per-game stats sorted by date
    - SVG line chart: EV/turn over time with 3-game moving average
@@ -78,7 +100,6 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
      cpp's best, classify as efficiency instead of 2A (reclassifies ~74% of old 2A cases)
    - Defense-aware 2A/2B split: if opponent is in riichi and mortal chose a significantly safer
      tile (3+ safety rating difference), classify as 2B Defense instead of 2A Push/Fold
-
 
 10. Defense visuals
    - Safety ratings (0-15) computed and stored on mistakes with riichi opponents
@@ -114,7 +135,49 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
    - Category badges have tooltip descriptions on hover
 
 
-=== TODO ===
+=== TODO: PUBLISH (target: 2 weeks) ===
+
+Decisions made:
+- Hosting: Hetzner Cloud VPS (CX22, 2 vCPU/4GB, ~4 EUR/mo). EU location = low latency.
+  PaaS (Railway/Fly) is awkward because of the mahjong-cpp binary sidecar.
+- mahjong-cpp: keep server-side for now. WASM is a future optimization, not needed for 20 users.
+- Database: migrate from games.json to SQLite with user_id column.
+  SQLite handles 20 users fine and avoids a painful migration later.
+- Auth: Flask-Login + SQLite user table. Invite-code registration (no open signup yet).
+- Licensing: GPLv3 deps (mahjong-cpp, Riichi-Trainer) are fine for SaaS.
+  No source disclosure needed unless distributing the binary.
+- Monetization (later): freemium SaaS. Free tier = limited games, paid = unlimited + practice + trends.
+  ~$5/mo. Small niche but passionate — even 100 users covers costs.
+
+Phase 1: Containerize + multi-user (Week 1)
+  1. [ ] Dockerfile: Flask + Gunicorn + mahjong-cpp binary
+  2. [ ] docker-compose.yml: app container + nginx reverse proxy
+  3. [x] SQLite migration: games.json -> games.db via db.py + mj_migrate_sqlite.py
+     - users, invite_codes, games, mistakes tables
+     - 28 games / 1282 mistakes migrated and verified
+  4. [x] Flask-Login: login/register/logout, session auth, per-user data isolation
+     - All API routes return 401 when unauthenticated
+     - /api/me endpoint for frontend, username+logout in sidebar
+  5. [x] Invite-code registration (CLI: mj_games.py invite --create/--list)
+  6. [x] app.py fully refactored to use SQLite (no more games.json)
+  7. [x] categorize_game_db() for DB-backed auto-categorization
+
+Phase 2: Deploy + polish (Week 2)
+  6. Provision Hetzner CX22, install Docker
+  7. Nginx config with Certbot (Let's Encrypt HTTPS)
+  8. Domain setup (need to pick a name — see branding below)
+  9. Deploy, test with own account
+  10. Create club member accounts, share URL
+  11. Fix rough edges from real multi-user usage
+
+Branding (open):
+  - "Mahjong Mistake Trainer" is descriptive but not catchy
+  - Need a name. Ideas to explore: something tile-themed, something about
+    reading/reviewing, Japanese term reference?
+  - Mascot: probably too early, but fun to think about
+
+
+=== TODO: FEATURES (after publish) ===
 
 1. Show opponent discards in defense situations
    - Safety calc already uses opponent discards internally
@@ -123,17 +186,10 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
 
 2. Practice mode: spaced repetition
    - Track which problems user got wrong, revisit them more often
-   - Could use localStorage for persistence
-   - Weight random selection toward previously-wrong problems
+   - With SQLite: store practice_results table (user_id, mistake_id, correct, timestamp)
+   - Weight random selection toward previously-wrong and unreviewed problems
 
-3. Publish-readiness
-   - Hosting decision (VPS, Railway, Fly.io)
-   - Multi-user support (auth, per-user game storage)
-   - mahjong-cpp: keep server-side or compile to WASM?
-   - App name and branding
-   - Note: mahjong-cpp and Riichi-Trainer are GPLv3 (SaaS OK, must share source if distributing)
-
-4. Fix 73 uncategorized mistakes
+3. Fix 73 uncategorized mistakes
    - All dahai-vs-dahai with wall reconstruction errors ("more tiles than wall")
    - Bug in reconstruct_context: tile counts go negative in some edge cases
    - Affects ~6% of mistakes
