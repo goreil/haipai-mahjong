@@ -296,22 +296,38 @@ def api_add():
 def api_practice():
     import random
     data = load_games()
+
+    # Filters
+    sev_filter = request.args.get("severity")       # "??" or "???"
+    group_filter = request.args.get("group")         # "Efficiency", "Strategy", etc.
+    defense_filter = request.args.get("defense")     # "1" = only riichi situations
+
     candidates = []
     for i, g in enumerate(data["games"]):
         for rnd in g["rounds"]:
             for m in rnd["mistakes"]:
-                if ((m.get("actual") or {}).get("type") == "dahai" and
-                    (m.get("expected") or {}).get("type") == "dahai" and
-                    m.get("severity") in ("??", "???") and
-                    m.get("hand")):
-                    candidates.append({
-                        "game_id": i,
-                        "game_date": g["date"],
-                        "round": rnd["round"],
-                        "mistake": m,
-                    })
+                if ((m.get("actual") or {}).get("type") != "dahai" or
+                    (m.get("expected") or {}).get("type") != "dahai" or
+                    m.get("severity") not in ("??", "???") or
+                    not m.get("hand")):
+                    continue
+                if sev_filter and m["severity"] != sev_filter:
+                    continue
+                if group_filter:
+                    cat = m.get("category", "")
+                    cat_group = CATEGORY_INFO.get(cat, {}).get("group", "")
+                    if cat_group != group_filter:
+                        continue
+                if defense_filter == "1" and not m.get("safety_ratings"):
+                    continue
+                candidates.append({
+                    "game_id": i,
+                    "game_date": g["date"],
+                    "round": rnd["round"],
+                    "mistake": m,
+                })
     if not candidates:
-        return jsonify({"error": "No eligible practice problems"}), 404
+        return jsonify({"error": "No matching practice problems"}), 404
     pick = random.choice(candidates)
     pick["pool_size"] = len(candidates)
     return jsonify(pick)

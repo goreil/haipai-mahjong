@@ -52,6 +52,9 @@ let practice = {
   correct: 0,
   total: 0,
   poolSize: 0,
+  filterSeverity: "",
+  filterGroup: "",
+  filterDefense: false,
 };
 
 // --- Tile rendering ---
@@ -967,7 +970,12 @@ function renderGroupStackedChart(games, groups) {
 // --- Practice mode ---
 
 async function fetchPractice() {
-  const res = await fetch("/api/practice");
+  const params = new URLSearchParams();
+  if (practice.filterSeverity) params.set("severity", practice.filterSeverity);
+  if (practice.filterGroup) params.set("group", practice.filterGroup);
+  if (practice.filterDefense) params.set("defense", "1");
+  const qs = params.toString();
+  const res = await fetch(`/api/practice${qs ? "?" + qs : ""}`);
   if (!res.ok) return null;
   return await res.json();
 }
@@ -1027,6 +1035,12 @@ function renderPractice() {
   const sc = sevClass(m.severity);
   const shantenStr = m.shanten != null ? `${m.shanten}-shanten` : "";
 
+  // Build group options from CATEGORY_INFO
+  const groups = [...new Set(Object.values(CATEGORY_INFO).map(c => c.group))];
+  const groupOpts = groups.map(g =>
+    `<option value="${g}" ${practice.filterGroup === g ? "selected" : ""}>${g}</option>`
+  ).join("");
+
   let html = `
     <div class="practice-header">
       <h2>Practice</h2>
@@ -1034,6 +1048,18 @@ function renderPractice() {
         <span class="practice-score-num">${practice.correct}</span>/<span>${practice.total}</span> correct
         <span class="practice-pool">${practice.poolSize} problems</span>
       </div>
+    </div>
+    <div class="practice-filters">
+      <select onchange="setPracticeFilter('group', this.value)">
+        <option value="">All categories</option>
+        ${groupOpts}
+      </select>
+      <select onchange="setPracticeFilter('severity', this.value)">
+        <option value="" ${!practice.filterSeverity ? "selected" : ""}>All severity</option>
+        <option value="???" ${practice.filterSeverity === "???" ? "selected" : ""}>??? only</option>
+        <option value="??" ${practice.filterSeverity === "??" ? "selected" : ""}>?? only</option>
+      </select>
+      <label class="practice-filter-check"><input type="checkbox" ${practice.filterDefense ? "checked" : ""} onchange="setPracticeFilter('defense', this.checked)"> Riichi only</label>
     </div>
 
     <div class="practice-context">
@@ -1143,6 +1169,16 @@ function resetPracticeScore() {
   practice.correct = 0;
   practice.total = 0;
   renderPractice();
+}
+
+function setPracticeFilter(key, value) {
+  if (key === "group") practice.filterGroup = value;
+  else if (key === "severity") practice.filterSeverity = value;
+  else if (key === "defense") practice.filterDefense = value;
+  // Reset score and fetch new problem with new filters
+  practice.correct = 0;
+  practice.total = 0;
+  showPractice();
 }
 
 // --- Help ---

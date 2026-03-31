@@ -852,6 +852,36 @@ body {
   color: var(--text-dim);
 }
 
+.practice-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.practice-filters select {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.practice-filter-check {
+  font-size: 13px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.practice-filter-check input {
+  accent-color: var(--accent);
+}
+
 .practice-melds {
   display: flex;
   gap: 10px;
