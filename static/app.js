@@ -1277,6 +1277,16 @@ document.addEventListener("keydown", (e) => {
 // --- Init ---
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // Load user info
+  const meRes = await fetch("/api/me");
+  if (meRes.status === 401) {
+    window.location.href = "/login";
+    return;
+  }
+  const me = await meRes.json();
+  document.getElementById("user-info").innerHTML =
+    `${me.username} <a href="/logout" style="color:var(--accent-dim);text-decoration:none;margin-left:6px">logout</a>`;
+
   const catRes = await fetch("/api/categories");
   CATEGORY_INFO = await catRes.json();
   fetchGames();

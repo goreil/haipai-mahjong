@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Flask web server for mahjong game review."""
 
-from flask import Flask, g, jsonify, request, send_from_directory
+from flask import Flask, g, jsonify, redirect, render_template_string, request, send_from_directory, url_for
+from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
+from werkzeug.security import check_password_hash, generate_password_hash
 from pathlib import Path
 import atexit
 import json
@@ -21,6 +23,35 @@ NANIKIRU_PORT = 50000
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = "dev-secret-change-in-production"
+
+# --- Auth ---
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
+
+class User(UserMixin):
+    def __init__(self, id, username):
+        self.id = id
+        self.username = username
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    conn = db.get_db()
+    row = db.get_user_by_id(conn, int(user_id))
+    if row:
+        return User(row["id"], row["username"])
+    return None
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Login required"}), 401
+    return redirect(url_for("login"))
+
 
 # --- nanikiru server management ---
 
@@ -96,15 +127,94 @@ def close_conn(exception):
         conn.close()
 
 
-def current_user_id():
-    """Get current user ID. For now, default to 1 (single-user mode).
-    Will be replaced by Flask-Login in the auth task."""
-    return 1
+LOGIN_PAGE = """<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login - Mahjong Review</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:#16213e;border:1px solid #2a3a5a;border-radius:12px;padding:32px;width:360px;max-width:90vw}
+h2{color:#4fc3f7;margin-bottom:20px;font-size:20px}
+label{display:block;font-size:13px;color:#8892a4;margin-bottom:4px}
+input{width:100%;padding:10px 12px;border-radius:6px;border:1px solid #2a3a5a;background:#0f1a2e;color:#e0e0e0;font-size:14px;margin-bottom:14px}
+button{width:100%;padding:10px;border-radius:6px;border:none;background:#2a7aa3;color:#fff;font-size:14px;cursor:pointer;font-weight:600}
+button:hover{background:#4fc3f7;color:#000}
+.error{color:#ef5350;font-size:13px;margin-bottom:12px}
+.link{text-align:center;margin-top:16px;font-size:13px;color:#8892a4}
+.link a{color:#4fc3f7;text-decoration:none}
+</style></head><body>
+<div class="card">
+<h2>{{ title }}</h2>
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+<form method="POST">
+<label>Username</label><input name="username" required autofocus>
+<label>Password</label><input name="password" type="password" required>
+{% if register %}<label>Invite Code</label><input name="invite_code" required>{% endif %}
+<button>{{ title }}</button>
+</form>
+{% if register %}
+<div class="link">Already have an account? <a href="/login">Login</a></div>
+{% else %}
+<div class="link">Need an account? <a href="/register">Register</a></div>
+{% endif %}
+</div></body></html>"""
 
 
 # --- Routes ---
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect("/")
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        conn = get_conn()
+        user_row = db.get_user_by_username(conn, username)
+        if user_row and check_password_hash(user_row["password_hash"], password):
+            login_user(User(user_row["id"], user_row["username"]))
+            return redirect("/")
+        error = "Invalid username or password"
+    return render_template_string(LOGIN_PAGE, title="Login", error=error, register=False)
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect("/")
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        invite_code = request.form.get("invite_code", "").strip()
+        conn = get_conn()
+
+        if not username or not password:
+            error = "Username and password required"
+        elif len(password) < 4:
+            error = "Password must be at least 4 characters"
+        elif not db.validate_invite_code(conn, invite_code):
+            error = "Invalid or already used invite code"
+        else:
+            try:
+                pw_hash = generate_password_hash(password)
+                user_id = db.create_user(conn, username, pw_hash, invite_code)
+                login_user(User(user_id, username))
+                return redirect("/")
+            except Exception:
+                error = "Username already taken"
+    return render_template_string(LOGIN_PAGE, title="Register", error=error, register=True)
+
+
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect("/login")
+
+
 @app.route("/")
+@login_required
 def index():
     return send_from_directory("static", "index.html")
 
@@ -114,29 +224,38 @@ def tiles(filename):
     return send_from_directory(DIR / "riichi-mahjong-tiles" / "Regular", filename)
 
 
+@app.route("/api/me")
+@login_required
+def api_me():
+    return jsonify({"username": current_user.username, "id": current_user.id})
+
+
 @app.route("/api/categories")
 def api_categories():
     return jsonify(CATEGORY_INFO)
 
 
 @app.route("/api/trends")
+@login_required
 def api_trends():
     conn = get_conn()
-    uid = current_user_id()
+    uid = current_user.id
     return jsonify(db.get_trends(conn, uid))
 
 
 @app.route("/api/games")
+@login_required
 def api_games():
     conn = get_conn()
-    uid = current_user_id()
+    uid = current_user.id
     return jsonify(db.list_games(conn, uid))
 
 
 @app.route("/api/games/<int:game_id>")
+@login_required
 def api_game(game_id):
     conn = get_conn()
-    uid = current_user_id()
+    uid = current_user.id
     game = db.get_game(conn, game_id, user_id=uid)
     if not game:
         return jsonify({"error": "Game not found"}), 404
@@ -144,9 +263,10 @@ def api_game(game_id):
 
 
 @app.route("/api/games/<int:game_id>", methods=["DELETE"])
+@login_required
 def api_delete_game(game_id):
     conn = get_conn()
-    uid = current_user_id()
+    uid = current_user.id
     if not db.delete_game(conn, game_id, user_id=uid):
         return jsonify({"error": "Game not found"}), 404
     remaining = conn.execute(
@@ -156,9 +276,10 @@ def api_delete_game(game_id):
 
 
 @app.route("/api/games/<int:game_id>/annotate", methods=["POST"])
+@login_required
 def api_annotate(game_id):
     conn = get_conn()
-    uid = current_user_id()
+    uid = current_user.id
 
     body = request.json
     round_name = body.get("round")
@@ -176,9 +297,10 @@ def api_annotate(game_id):
 
 
 @app.route("/api/games/<int:game_id>/categorize", methods=["POST"])
+@login_required
 def api_categorize(game_id):
     conn = get_conn()
-    uid = current_user_id()
+    uid = current_user.id
 
     game = db.get_game(conn, game_id, user_id=uid)
     if not game:
@@ -195,12 +317,13 @@ def api_categorize(game_id):
 
 
 @app.route("/api/games/add", methods=["POST"])
+@login_required
 def api_add():
     import urllib.parse
     from datetime import date
 
     conn = get_conn()
-    uid = current_user_id()
+    uid = current_user.id
 
     body = request.json
     url = body.get("url", "")
@@ -246,9 +369,10 @@ def api_add():
 
 
 @app.route("/api/practice")
+@login_required
 def api_practice():
     conn = get_conn()
-    uid = current_user_id()
+    uid = current_user.id
 
     sev = request.args.get("severity")
     group = request.args.get("group")
