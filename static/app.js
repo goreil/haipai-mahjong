@@ -1041,6 +1041,15 @@ function submitPracticeAnswer(tile) {
   const isCorrect = tile === expected || normalizeRed(tile) === normalizeRed(expected);
   if (isCorrect) practice.correct++;
 
+  // Record result for spaced repetition
+  if (practice.problem.mistake_id) {
+    fetch("/api/practice/result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mistake_id: practice.problem.mistake_id, correct: isCorrect }),
+    });
+  }
+
   renderPractice();
 }
 

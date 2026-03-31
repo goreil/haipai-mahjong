@@ -37,6 +37,16 @@ CREATE TABLE IF NOT EXISTS games (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS practice_results (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    mistake_id INTEGER NOT NULL,
+    correct INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (mistake_id) REFERENCES mistakes(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS mistakes (
     id INTEGER PRIMARY KEY,
     game_id INTEGER NOT NULL,
@@ -328,8 +338,43 @@ def update_mistake_data(conn, mistake_id, updates):
         conn.commit()
 
 
+def record_practice_result(conn, user_id, mistake_id, correct):
+    """Record a practice attempt."""
+    conn.execute(
+        "INSERT INTO practice_results (user_id, mistake_id, correct) VALUES (?, ?, ?)",
+        (user_id, mistake_id, 1 if correct else 0),
+    )
+    conn.commit()
+
+
+def get_practice_stats(conn, user_id):
+    """Get practice accuracy stats by category group."""
+    from mj_games import CATEGORY_INFO
+    rows = conn.execute(
+        """SELECT m.category, pr.correct, COUNT(*) as cnt
+           FROM practice_results pr
+           JOIN mistakes m ON pr.mistake_id = m.id
+           WHERE pr.user_id = ?
+           GROUP BY m.category, pr.correct""",
+        (user_id,),
+    ).fetchall()
+    groups = {}
+    for row in rows:
+        cat = row["category"] or "Unknown"
+        grp = CATEGORY_INFO.get(cat, {}).get("group", "Other")
+        if grp not in groups:
+            groups[grp] = {"correct": 0, "total": 0}
+        groups[grp]["total"] += row["cnt"]
+        if row["correct"]:
+            groups[grp]["correct"] += row["cnt"]
+    return groups
+
+
 def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=False):
-    """Get a random eligible practice problem."""
+    """Get a weighted-random eligible practice problem.
+
+    Weighting: unseen problems x3, previously wrong x3, right once x1, right 2+ times x0.5.
+    """
     from mj_games import CATEGORY_INFO
     import random
 
@@ -347,8 +392,24 @@ def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=
         params,
     ).fetchall()
 
-    # Filter in Python for data_json conditions (dahai type, group, defense)
+    # Get practice history for this user
+    history = {}
+    hist_rows = conn.execute(
+        "SELECT mistake_id, correct FROM practice_results WHERE user_id = ? ORDER BY created_at",
+        (user_id,),
+    ).fetchall()
+    for hr in hist_rows:
+        mid = hr["mistake_id"]
+        if mid not in history:
+            history[mid] = {"attempts": 0, "correct": 0, "last_correct": None}
+        history[mid]["attempts"] += 1
+        if hr["correct"]:
+            history[mid]["correct"] += 1
+        history[mid]["last_correct"] = bool(hr["correct"])
+
+    # Filter and weight candidates
     candidates = []
+    weights = []
     for row in rows:
         data = json.loads(row["data_json"])
         actual = data.get("actual") or {}
@@ -364,17 +425,31 @@ def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=
             cat_group = CATEGORY_INFO.get(cat, {}).get("group", "")
             if cat_group != group:
                 continue
+
+        mid = row["id"]
+        h = history.get(mid)
+        if h is None:
+            w = 3.0  # never seen
+        elif h["last_correct"] is False:
+            w = 3.0  # got wrong last time
+        elif h["correct"] >= 2:
+            w = 0.5  # mastered
+        else:
+            w = 1.0  # seen, got right once
+
         candidates.append({
             "game_id": row["gid"],
             "game_date": row["game_date"],
             "round": row["round_name"],
             "mistake": row_to_mistake(row),
+            "mistake_id": mid,
         })
+        weights.append(w)
 
     if not candidates:
         return None
 
-    pick = random.choice(candidates)
+    pick = random.choices(candidates, weights=weights, k=1)[0]
     pick["pool_size"] = len(candidates)
     return pick
 

@@ -470,6 +470,28 @@ def api_practice():
     return jsonify(pick)
 
 
+@app.route("/api/practice/result", methods=["POST"])
+@login_required
+def api_practice_result():
+    conn = get_conn()
+    uid = current_user.id
+    body = request.json
+    mistake_id = body.get("mistake_id")
+    correct = body.get("correct", False)
+    if mistake_id is None:
+        return jsonify({"error": "mistake_id required"}), 400
+    db.record_practice_result(conn, uid, mistake_id, correct)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/practice/stats")
+@login_required
+def api_practice_stats():
+    conn = get_conn()
+    uid = current_user.id
+    return jsonify(db.get_practice_stats(conn, uid))
+
+
 def init_app():
     """Initialize database and start nanikiru. Called once on startup."""
     conn = db.get_db()
