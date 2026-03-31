@@ -149,18 +149,17 @@ Decisions made:
 - Monetization (later): freemium SaaS. Free tier = limited games, paid = unlimited + practice + trends.
   ~$5/mo. Small niche but passionate — even 100 users covers costs.
 
-Phase 1: Containerize + multi-user (Week 1)
-  1. [ ] Dockerfile: Flask + Gunicorn + mahjong-cpp binary
-  2. [ ] docker-compose.yml: app container + nginx reverse proxy
+Phase 1: Containerize + multi-user (Week 1) — COMPLETE
+  1. [x] Dockerfile: multi-stage (build nanikiru from source, Python 3.12 + gunicorn runtime)
+  2. [x] docker-compose.yml: app + nginx reverse proxy + certbot for HTTPS
   3. [x] SQLite migration: games.json -> games.db via db.py + mj_migrate_sqlite.py
-     - users, invite_codes, games, mistakes tables
-     - 28 games / 1282 mistakes migrated and verified
   4. [x] Flask-Login: login/register/logout, session auth, per-user data isolation
-     - All API routes return 401 when unauthenticated
-     - /api/me endpoint for frontend, username+logout in sidebar
   5. [x] Invite-code registration (CLI: mj_games.py invite --create/--list)
   6. [x] app.py fully refactored to use SQLite (no more games.json)
   7. [x] categorize_game_db() for DB-backed auto-categorization
+  8. [x] Branding: "Haipai" name, Outfit/DM Sans fonts, tile brand mark, polished login page
+  9. [x] Repo cleanup: personal data gitignored, requirements.txt, security hardening
+  10. [x] Env-configurable: SECRET_KEY, NANIKIRU_BIN, DB_PATH
 
 Phase 2: Deploy + polish (Week 2)
   6. Provision Hetzner CX22, install Docker
@@ -170,11 +169,11 @@ Phase 2: Deploy + polish (Week 2)
   10. Create club member accounts, share URL
   11. Fix rough edges from real multi-user usage
 
-Branding (open):
-  - "Mahjong Mistake Trainer" is descriptive but not catchy
-  - Need a name. Ideas to explore: something tile-themed, something about
-    reading/reviewing, Japanese term reference?
-  - Mascot: probably too early, but fun to think about
+Branding: "Haipai" (配牌, starting hand)
+  - Tile brand mark: M/P/S in suit colors (red/green/blue)
+  - Typography: Outfit (headings), DM Sans (body)
+  - Dark theme with subtle ambient gradients on login
+  - Mascot: not yet, but name is set
 
 
 === TODO: FEATURES (after publish) ===
