@@ -1,0 +1,515 @@
+#!/usr/bin/env python3
+"""SQLite database module for mahjong game review data."""
+
+import json
+import sqlite3
+from pathlib import Path
+
+DIR = Path(__file__).parent
+DB_FILE = DIR / "games.db"
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS invite_codes (
+    code TEXT PRIMARY KEY,
+    used_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used_at TIMESTAMP,
+    FOREIGN KEY (used_by) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS games (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    log_url TEXT,
+    mortal_file TEXT,
+    stats_json TEXT,
+    rounds_json TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS mistakes (
+    id INTEGER PRIMARY KEY,
+    game_id INTEGER NOT NULL,
+    round_name TEXT NOT NULL,
+    round_idx INTEGER NOT NULL,
+    mistake_idx INTEGER NOT NULL,
+    data_json TEXT NOT NULL,
+    category TEXT,
+    severity TEXT,
+    ev_loss REAL,
+    turn INTEGER,
+    note TEXT,
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+);
+"""
+
+# Fields stored as columns (not in data_json)
+MISTAKE_COLUMNS = {"category", "severity", "ev_loss", "turn", "note"}
+
+
+def get_db(db_path=None):
+    """Get a database connection."""
+    path = db_path or DB_FILE
+    conn = sqlite3.connect(str(path))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+
+def init_db(conn):
+    """Create tables if they don't exist."""
+    conn.executescript(SCHEMA)
+    conn.commit()
+
+
+# --- Mistake serialization ---
+
+def mistake_to_row(mistake, game_id, round_name, round_idx, mistake_idx):
+    """Convert a mistake dict to DB row values."""
+    # Separate column fields from the data blob
+    data = {k: v for k, v in mistake.items() if k not in MISTAKE_COLUMNS}
+    return {
+        "game_id": game_id,
+        "round_name": round_name,
+        "round_idx": round_idx,
+        "mistake_idx": mistake_idx,
+        "data_json": json.dumps(data, ensure_ascii=False),
+        "category": mistake.get("category"),
+        "severity": mistake.get("severity"),
+        "ev_loss": mistake.get("ev_loss"),
+        "turn": mistake.get("turn"),
+        "note": mistake.get("note"),
+    }
+
+
+def row_to_mistake(row):
+    """Convert a DB row back to a mistake dict."""
+    m = json.loads(row["data_json"])
+    m["category"] = row["category"]
+    m["severity"] = row["severity"]
+    m["ev_loss"] = row["ev_loss"]
+    m["turn"] = row["turn"]
+    m["note"] = row["note"]
+    return m
+
+
+# --- Games ---
+
+def list_games(conn, user_id):
+    """List all games for a user (summary info for sidebar)."""
+    rows = conn.execute(
+        "SELECT id, date, log_url, stats_json FROM games WHERE user_id = ? ORDER BY date DESC, id DESC",
+        (user_id,),
+    ).fetchall()
+    result = []
+    for row in rows:
+        stats = json.loads(row["stats_json"]) if row["stats_json"] else {}
+        # Count annotated mistakes
+        annotated = conn.execute(
+            "SELECT COUNT(*) FROM mistakes WHERE game_id = ? AND category IS NOT NULL",
+            (row["id"],),
+        ).fetchone()[0]
+        total = conn.execute(
+            "SELECT COUNT(*) FROM mistakes WHERE game_id = ?",
+            (row["id"],),
+        ).fetchone()[0]
+        result.append({
+            "id": row["id"],
+            "date": row["date"],
+            "log_url": row["log_url"],
+            "summary": stats,
+            "annotated": annotated,
+            "total": total,
+        })
+    return result
+
+
+def get_game(conn, game_id, user_id=None):
+    """Get full game data with rounds and mistakes (for detail view)."""
+    where = "id = ?"
+    params = [game_id]
+    if user_id is not None:
+        where += " AND user_id = ?"
+        params.append(user_id)
+
+    game_row = conn.execute(
+        f"SELECT * FROM games WHERE {where}", params
+    ).fetchone()
+    if not game_row:
+        return None
+
+    stats = json.loads(game_row["stats_json"]) if game_row["stats_json"] else {}
+    rounds_meta = json.loads(game_row["rounds_json"]) if game_row["rounds_json"] else []
+
+    # Load mistakes grouped by round
+    mistake_rows = conn.execute(
+        "SELECT * FROM mistakes WHERE game_id = ? ORDER BY round_idx, mistake_idx",
+        (game_id,),
+    ).fetchall()
+
+    # Build rounds structure
+    rounds_map = {}
+    for mr in mistake_rows:
+        ri = mr["round_idx"]
+        if ri not in rounds_map:
+            rounds_map[ri] = {
+                "round": mr["round_name"],
+                "mistakes": [],
+            }
+        rounds_map[ri]["mistakes"].append(row_to_mistake(mr))
+
+    # Merge with round metadata (outcome, turn_count)
+    rounds = []
+    for idx, meta in enumerate(rounds_meta):
+        rnd = rounds_map.get(idx, {"round": meta["round_name"], "mistakes": []})
+        rnd["round"] = meta["round_name"]
+        rnd["outcome"] = meta.get("outcome")
+        rnd["turn_count"] = meta.get("turn_count")
+        rounds.append(rnd)
+
+    # Add any rounds that have mistakes but no metadata (shouldn't happen but be safe)
+    for idx in sorted(rounds_map.keys()):
+        if idx >= len(rounds):
+            rounds.append(rounds_map[idx])
+
+    return {
+        "id": game_row["id"],
+        "date": game_row["date"],
+        "log_url": game_row["log_url"],
+        "mortal_file": game_row["mortal_file"],
+        "summary": stats,
+        "rounds": rounds,
+    }
+
+
+def add_game(conn, user_id, game_dict):
+    """Insert a full game dict (as produced by mj_parse.parse_game).
+
+    Returns the new game_id.
+    """
+    # Build rounds metadata
+    rounds_meta = []
+    for rnd in game_dict.get("rounds", []):
+        rounds_meta.append({
+            "round_name": rnd["round"],
+            "outcome": rnd.get("outcome"),
+            "turn_count": rnd.get("turn_count"),
+        })
+
+    cur = conn.execute(
+        """INSERT INTO games (user_id, date, log_url, mortal_file, stats_json, rounds_json)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (
+            user_id,
+            game_dict.get("date"),
+            game_dict.get("log_url"),
+            game_dict.get("mortal_file"),
+            json.dumps(game_dict.get("summary") or {}, ensure_ascii=False),
+            json.dumps(rounds_meta, ensure_ascii=False),
+        ),
+    )
+    game_id = cur.lastrowid
+
+    # Insert mistakes
+    for round_idx, rnd in enumerate(game_dict.get("rounds", [])):
+        for mistake_idx, m in enumerate(rnd.get("mistakes", [])):
+            row = mistake_to_row(m, game_id, rnd["round"], round_idx, mistake_idx)
+            conn.execute(
+                """INSERT INTO mistakes
+                   (game_id, round_name, round_idx, mistake_idx, data_json,
+                    category, severity, ev_loss, turn, note)
+                   VALUES (:game_id, :round_name, :round_idx, :mistake_idx, :data_json,
+                           :category, :severity, :ev_loss, :turn, :note)""",
+                row,
+            )
+
+    conn.commit()
+    return game_id
+
+
+def delete_game(conn, game_id, user_id=None):
+    """Delete a game and its mistakes. Returns True if deleted."""
+    where = "id = ?"
+    params = [game_id]
+    if user_id is not None:
+        where += " AND user_id = ?"
+        params.append(user_id)
+
+    cur = conn.execute(f"DELETE FROM games WHERE {where}", params)
+    conn.commit()
+    return cur.rowcount > 0
+
+
+def update_game_stats(conn, game_id, stats):
+    """Update the stats_json for a game."""
+    conn.execute(
+        "UPDATE games SET stats_json = ? WHERE id = ?",
+        (json.dumps(stats, ensure_ascii=False), game_id),
+    )
+    conn.commit()
+
+
+# --- Mistakes ---
+
+def annotate_mistake(conn, game_id, round_name, turn, index, category, note, user_id=None):
+    """Update category/note on a specific mistake. Returns the updated mistake or None."""
+    # Verify game ownership
+    if user_id is not None:
+        owner = conn.execute("SELECT user_id FROM games WHERE id = ?", (game_id,)).fetchone()
+        if not owner or owner["user_id"] != user_id:
+            return None
+
+    # Find the mistake
+    rows = conn.execute(
+        "SELECT id, category, note FROM mistakes WHERE game_id = ? AND round_name = ? AND turn = ? ORDER BY mistake_idx",
+        (game_id, round_name, turn),
+    ).fetchall()
+
+    if index >= len(rows):
+        return None
+
+    mistake_id = rows[index]["id"]
+    updates = {}
+    if category is not None:
+        updates["category"] = category if category else None
+    if note is not None:
+        updates["note"] = note if note else None
+
+    if updates:
+        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"UPDATE mistakes SET {set_clause} WHERE id = ?",
+            list(updates.values()) + [mistake_id],
+        )
+        conn.commit()
+
+    return True
+
+
+def update_mistake_data(conn, mistake_id, updates):
+    """Update columns and/or data_json fields on a mistake.
+
+    `updates` can contain column names (category, severity, etc.)
+    and data fields (cpp_best, cpp_stats, safety_ratings, etc.).
+    """
+    col_updates = {}
+    data_updates = {}
+    for k, v in updates.items():
+        if k in MISTAKE_COLUMNS:
+            col_updates[k] = v
+        else:
+            data_updates[k] = v
+
+    if data_updates:
+        # Merge into existing data_json
+        row = conn.execute("SELECT data_json FROM mistakes WHERE id = ?", (mistake_id,)).fetchone()
+        if row:
+            data = json.loads(row["data_json"])
+            data.update(data_updates)
+            col_updates["data_json"] = json.dumps(data, ensure_ascii=False)
+
+    if col_updates:
+        set_clause = ", ".join(f"{k} = ?" for k in col_updates)
+        conn.execute(
+            f"UPDATE mistakes SET {set_clause} WHERE id = ?",
+            list(col_updates.values()) + [mistake_id],
+        )
+        conn.commit()
+
+
+def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=False):
+    """Get a random eligible practice problem."""
+    from mj_games import CATEGORY_INFO
+    import random
+
+    where = ["g.user_id = ?", "m.severity IN ('??', '???' )"]
+    params = [user_id]
+
+    if severity:
+        where.append("m.severity = ?")
+        params.append(severity)
+
+    rows = conn.execute(
+        f"""SELECT m.*, g.date as game_date, g.id as gid
+            FROM mistakes m JOIN games g ON m.game_id = g.id
+            WHERE {' AND '.join(where)}""",
+        params,
+    ).fetchall()
+
+    # Filter in Python for data_json conditions (dahai type, group, defense)
+    candidates = []
+    for row in rows:
+        data = json.loads(row["data_json"])
+        actual = data.get("actual") or {}
+        expected = data.get("expected") or {}
+        if actual.get("type") != "dahai" or expected.get("type") != "dahai":
+            continue
+        if not data.get("hand"):
+            continue
+        if defense_only and not data.get("safety_ratings"):
+            continue
+        if group:
+            cat = row["category"] or ""
+            cat_group = CATEGORY_INFO.get(cat, {}).get("group", "")
+            if cat_group != group:
+                continue
+        candidates.append({
+            "game_id": row["gid"],
+            "game_date": row["game_date"],
+            "round": row["round_name"],
+            "mistake": row_to_mistake(row),
+        })
+
+    if not candidates:
+        return None
+
+    pick = random.choice(candidates)
+    pick["pool_size"] = len(candidates)
+    return pick
+
+
+def get_trends(conn, user_id):
+    """Get per-game trend data."""
+    from mj_games import CATEGORY_INFO
+    rows = conn.execute(
+        "SELECT id, date, stats_json FROM games WHERE user_id = ? ORDER BY date, id",
+        (user_id,),
+    ).fetchall()
+    games = []
+    for row in rows:
+        s = json.loads(row["stats_json"]) if row["stats_json"] else {}
+        by_cat = s.get("by_category", {})
+        by_group = {}
+        for cat, info in by_cat.items():
+            grp = CATEGORY_INFO.get(cat, {}).get("group", cat)
+            if grp not in by_group:
+                by_group[grp] = {"count": 0, "ev": 0.0}
+            by_group[grp]["count"] += info["count"]
+            by_group[grp]["ev"] = round(by_group[grp]["ev"] + info["ev"], 2)
+        games.append({
+            "id": row["id"],
+            "date": row["date"],
+            "total_mistakes": s.get("total_mistakes", 0),
+            "total_ev_loss": s.get("total_ev_loss", 0),
+            "total_turns": s.get("total_turns"),
+            "ev_per_turn": s.get("ev_per_turn"),
+            "by_severity": s.get("by_severity", {}),
+            "by_group": by_group,
+        })
+    return games
+
+
+# --- Summary computation ---
+
+def compute_summary_for_game(conn, game_id):
+    """Recompute stats from mistakes and update the game row. Returns the stats dict."""
+    rows = conn.execute(
+        "SELECT severity, ev_loss, category FROM mistakes WHERE game_id = ?",
+        (game_id,),
+    ).fetchall()
+
+    total = len(rows)
+    ev = sum(r["ev_loss"] for r in rows if r["ev_loss"])
+    by_sev = {}
+    by_cat = {}
+    for r in rows:
+        s = r["severity"] or "?"
+        by_sev[s] = by_sev.get(s, 0) + 1
+        cat = r["category"]
+        if cat:
+            if cat not in by_cat:
+                by_cat[cat] = {"count": 0, "ev": 0.0}
+            by_cat[cat]["count"] += 1
+            by_cat[cat]["ev"] = round(by_cat[cat]["ev"] + (r["ev_loss"] or 0), 2)
+
+    # Get total turns from rounds_json
+    game_row = conn.execute("SELECT rounds_json FROM games WHERE id = ?", (game_id,)).fetchone()
+    total_turns = None
+    if game_row and game_row["rounds_json"]:
+        rounds = json.loads(game_row["rounds_json"])
+        turns = [r.get("turn_count") for r in rounds if r.get("turn_count")]
+        if turns:
+            total_turns = sum(turns)
+
+    stats = {
+        "total_mistakes": total,
+        "total_ev_loss": round(ev, 2),
+        "total_turns": total_turns,
+        "ev_per_turn": round(ev / total_turns, 4) if total_turns else None,
+        "by_severity": by_sev,
+        "by_category": by_cat,
+    }
+
+    update_game_stats(conn, game_id, stats)
+    return stats
+
+
+# --- Users ---
+
+def create_user(conn, username, password_hash, invite_code=None):
+    """Create a new user. Returns user_id or raises on duplicate."""
+    cur = conn.execute(
+        "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+        (username, password_hash),
+    )
+    user_id = cur.lastrowid
+
+    if invite_code:
+        conn.execute(
+            "UPDATE invite_codes SET used_by = ?, used_at = CURRENT_TIMESTAMP WHERE code = ?",
+            (user_id, invite_code),
+        )
+
+    conn.commit()
+    return user_id
+
+
+def get_user_by_username(conn, username):
+    """Get user row by username."""
+    return conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+
+
+def get_user_by_id(conn, user_id):
+    """Get user row by id."""
+    return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+
+# --- Invite codes ---
+
+def create_invite_codes(conn, n):
+    """Generate n invite codes. Returns list of code strings."""
+    import secrets
+    codes = []
+    for _ in range(n):
+        code = secrets.token_urlsafe(8)
+        conn.execute("INSERT INTO invite_codes (code) VALUES (?)", (code,))
+        codes.append(code)
+    conn.commit()
+    return codes
+
+
+def list_invite_codes(conn):
+    """List all invite codes with status."""
+    return conn.execute(
+        """SELECT ic.code, ic.created_at, ic.used_at, u.username as used_by_name
+           FROM invite_codes ic LEFT JOIN users u ON ic.used_by = u.id
+           ORDER BY ic.created_at""",
+    ).fetchall()
+
+
+def validate_invite_code(conn, code):
+    """Check if an invite code is valid (exists and unused). Returns True/False."""
+    row = conn.execute(
+        "SELECT used_by FROM invite_codes WHERE code = ?", (code,)
+    ).fetchone()
+    return row is not None and row["used_by"] is None
