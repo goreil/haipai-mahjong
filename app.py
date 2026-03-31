@@ -3,15 +3,81 @@
 
 from flask import Flask, jsonify, request, send_from_directory
 from pathlib import Path
+import atexit
 import json
+import subprocess
+import sys
+import time
+
+import requests as http_requests
 
 from mj_parse import parse_game
 from mj_games import compute_summary, CATEGORY_INFO
 
 DIR = Path(__file__).parent
 GAMES_FILE = DIR / "games.json"
+NANIKIRU_BIN = DIR / "mahjong-cpp" / "build" / "install" / "bin" / "nanikiru"
+NANIKIRU_PORT = 50000
 
 app = Flask(__name__, static_folder="static")
+
+# --- nanikiru server management ---
+
+_nanikiru_proc = None
+
+
+def start_nanikiru():
+    """Start the local mahjong-cpp tile efficiency server."""
+    global _nanikiru_proc
+
+    if not NANIKIRU_BIN.exists():
+        print(f"Warning: nanikiru binary not found at {NANIKIRU_BIN}", file=sys.stderr)
+        return
+
+    # Check if already running
+    try:
+        resp = http_requests.post(
+            f"http://127.0.0.1:{NANIKIRU_PORT}/",
+            json={"version": "0.9.1", "hand": [0], "wall": [0]*37},
+            timeout=1,
+        )
+        print(f"nanikiru already running on port {NANIKIRU_PORT}", file=sys.stderr)
+        return
+    except (http_requests.ConnectionError, http_requests.Timeout):
+        pass
+
+    print(f"Starting nanikiru on 127.0.0.1:{NANIKIRU_PORT}...", file=sys.stderr)
+    _nanikiru_proc = subprocess.Popen(
+        [str(NANIKIRU_BIN), str(NANIKIRU_PORT)],
+        cwd=str(NANIKIRU_BIN.parent),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    # Wait for it to be ready
+    for _ in range(20):
+        time.sleep(0.25)
+        try:
+            http_requests.post(
+                f"http://127.0.0.1:{NANIKIRU_PORT}/",
+                json={"version": "0.9.1", "hand": [0], "wall": [0]*37},
+                timeout=1,
+            )
+            print(f"nanikiru ready (pid {_nanikiru_proc.pid})", file=sys.stderr)
+            return
+        except (http_requests.ConnectionError, http_requests.Timeout):
+            continue
+
+    print("Warning: nanikiru started but not responding", file=sys.stderr)
+
+
+def stop_nanikiru():
+    """Stop the nanikiru server if we started it."""
+    global _nanikiru_proc
+    if _nanikiru_proc and _nanikiru_proc.poll() is None:
+        _nanikiru_proc.terminate()
+        _nanikiru_proc.wait(timeout=5)
+        print("nanikiru stopped", file=sys.stderr)
 
 
 def load_games():
@@ -161,7 +227,7 @@ def api_categorize(game_id):
     force = body.get("force", False)
 
     game = data["games"][game_id]
-    n, api_calls = categorize_game(game, game_id, delay=0.5, force=force)
+    n, api_calls = categorize_game(game, game_id, force=force)
 
     if n > 0:
         compute_summary(game)
@@ -174,7 +240,6 @@ def api_categorize(game_id):
 def api_add():
     import urllib.parse
     from datetime import date
-    import requests as http_requests
 
     body = request.json
     url = body.get("url", "")
@@ -218,7 +283,7 @@ def api_add():
 
     # Auto-categorize
     from mj_categorize import categorize_game
-    cat_n, api_calls = categorize_game(game, game_id, delay=0.5)
+    cat_n, api_calls = categorize_game(game, game_id)
     if cat_n > 0:
         compute_summary(game)
         save_games(data)
@@ -228,4 +293,9 @@ def api_add():
 
 
 if __name__ == "__main__":
+    import os
+    # Only start nanikiru in the reloader child (or when not using reloader)
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
+        start_nanikiru()
+        atexit.register(stop_nanikiru)
     app.run(debug=True, port=5000)

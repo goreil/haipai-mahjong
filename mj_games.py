@@ -425,7 +425,6 @@ def cmd_categorize(args):
         print(f"Categorizing game {idx+1} ({game['date']})...")
         n, api = categorize_game(
             game, idx,
-            delay=args.delay,
             force=args.force,
             dry_run=args.dry_run,
         )
@@ -501,7 +500,7 @@ def cmd_add(args):
     # Auto-categorize
     from mj_categorize import categorize_game
     print(f"\nAuto-categorizing...")
-    cat_n, api_calls = categorize_game(game, n - 1, delay=0.5)
+    cat_n, api_calls = categorize_game(game, n - 1)
     if cat_n > 0:
         compute_summary(game)
         save_games(data)
@@ -547,7 +546,6 @@ def main():
 
     p_cat = sub.add_parser("categorize", help="Auto-categorize mistakes via mahjong-cpp")
     p_cat.add_argument("--game", "-g", type=int, help="Game number (1-based)")
-    p_cat.add_argument("--delay", type=float, default=1.0, help="Seconds between API calls (default: 1.0)")
     p_cat.add_argument("--force", action="store_true", help="Re-categorize already categorized mistakes (re-queries API)")
     p_cat.add_argument("--recheck", action="store_true", help="Re-run categorization logic on stored data (no API calls)")
     p_cat.add_argument("--dry-run", action="store_true", help="Show categories without saving")

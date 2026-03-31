@@ -3,7 +3,6 @@
 
 import json
 import sys
-import time
 from pathlib import Path
 
 import requests
@@ -11,15 +10,7 @@ import requests
 DIR = Path(__file__).parent
 
 # Local mahjong-cpp server (nanikiru binary)
-LOCAL_API_URL = "http://localhost:50000/"
-# Fallback: remote pystyle.info API
-REMOTE_API_URL = "https://pystyle.info/apps/mahjong-cpp_0.9.1/post.py"
-REMOTE_API_HEADERS = {
-    "Content-Type": "application/x-www-form-urlencoded",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0",
-    "Origin": "https://pystyle.info",
-    "Referer": "https://pystyle.info/apps/mahjong-nanikiru-simulator/",
-}
+LOCAL_API_URL = "http://127.0.0.1:50000/"
 
 # --- Tile notation conversion (mjai <-> tile IDs) ---
 
@@ -220,53 +211,18 @@ def build_api_request(hand_mjai, melds_mjai, round_wind_id, seat_wind_id, dora_i
     }
 
 
-_use_local = None  # cached: True/False/None (untested)
-
-
 def call_mahjong_cpp(request_data):
-    """Call the mahjong-cpp tile efficiency calculator.
-
-    Tries local nanikiru server first, falls back to remote pystyle.info API.
-    Sets _use_local so subsequent calls skip the probe.
-    """
-    global _use_local
-
-    if _use_local is not False:
-        try:
-            resp = requests.post(
-                LOCAL_API_URL,
-                json=request_data,
-                timeout=5,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            if not data.get("success"):
-                raise RuntimeError(f"API error: {data.get('err_msg', 'unknown')}")
-            if _use_local is None:
-                _use_local = True
-                print("  Using local tile efficiency server", file=sys.stderr)
-            return data["response"]
-        except (requests.ConnectionError, requests.Timeout):
-            _use_local = False
-            print("  Local server not available, using remote API", file=sys.stderr)
-
-    # Fallback to remote API
+    """Call the local mahjong-cpp tile efficiency calculator (nanikiru server)."""
     resp = requests.post(
-        REMOTE_API_URL,
-        data=json.dumps(request_data),
-        headers=REMOTE_API_HEADERS,
-        timeout=30,
+        LOCAL_API_URL,
+        json=request_data,
+        timeout=10,
     )
     resp.raise_for_status()
     data = resp.json()
     if not data.get("success"):
         raise RuntimeError(f"API error: {data.get('err_msg', 'unknown')}")
     return data["response"]
-
-
-def is_local_server():
-    """Returns True if using local server (no delay needed)."""
-    return _use_local is True
 
 
 def get_cpp_best_discard(response):
@@ -522,7 +478,7 @@ def _cpp_reasonably_agrees(mortal_tile_id, cpp_stats):
 
 
 def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
-                       delay=1.0, defense_ctx=None):
+                       defense_ctx=None):
     """Categorize a single mistake.
 
     Args:
@@ -531,12 +487,11 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
         kyoku_idx: Index into review.kyokus
         entry: The original review entry from Mortal JSON
         dora_indicators: List of dora indicator mjai strings for this round
-        delay: Seconds to wait before API calls
         defense_ctx: Optional dict with keys (mjai_events, start_pos, end_pos, player_id)
                      for defense analysis
 
     Returns:
-        (category, cpp_data) where cpp_data is a dict with cpp results
+        (category, cpp_data, safety_data) where cpp_data is a dict with cpp results
         (or None if no API call was made).
     """
     actual = mistake["actual"]
@@ -579,9 +534,6 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
 
     # Build and send API request
     req = build_api_request(hand, melds, round_wind, seat_wind, dora_ids, wall)
-
-    if delay > 0 and not is_local_server():
-        time.sleep(delay)
 
     try:
         response = call_mahjong_cpp(req)
@@ -629,13 +581,12 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     return cat, cpp_data, safety_data
 
 
-def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
+def categorize_game(game, game_idx, force=False, dry_run=False):
     """Categorize all mistakes in a game.
 
     Args:
         game: Game dict from games.json
         game_idx: 0-based game index (for display)
-        delay: Seconds between API calls
         force: Re-categorize even if already categorized
         dry_run: Don't save, just print what would happen
 
@@ -729,7 +680,6 @@ def categorize_game(game, game_idx, delay=1.0, force=False, dry_run=False):
 
             cat, cpp_data, safety_data = categorize_mistake(
                 m, mortal_data, kyoku_idx, entry, dora_indicators,
-                delay=delay if needs_api else 0,
                 defense_ctx=defense_ctx,
             )
 

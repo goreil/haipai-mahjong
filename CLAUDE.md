@@ -101,5 +101,4 @@ SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, 
 
 - Downloads from mjai.ekyu.moe must use the `requests` library (not `urllib.request`) — Cloudflare blocks bare urllib User-Agent.
 - `mahjong-cpp` uses MPSZ notation (`1z`-`7z` for honors, `0m`/`0p`/`0s` for red fives) — conversion needed for integration.
-- Tile efficiency calculator runs locally via `mahjong-cpp/build/install/bin/nanikiru PORT` (falls back to pystyle.info remote API if not running).
-- `mahjong_curl` file has a working curl example hitting the pystyle.info hosted mahjong-cpp web API.
+- Tile efficiency calculator runs locally via `mahjong-cpp/build/install/bin/nanikiru PORT [BIND_ADDR]` (default: 127.0.0.1:50000). Auto-started by `app.py`.
