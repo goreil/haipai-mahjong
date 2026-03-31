@@ -484,6 +484,24 @@ function renderGame() {
         </div>`;
       }
 
+      // Opponent discards (defense context)
+      if (m.opponent_discards && m.opponent_discards.length) {
+        html += `<div class="opp-discards">`;
+        for (const opp of m.opponent_discards) {
+          const seatNames = ["East", "South", "West", "North"];
+          const seatName = seatNames[opp.seat] || `P${opp.seat}`;
+          html += `<div class="opp-discard-row">`;
+          html += `<span class="opp-label">${seatName}</span>`;
+          html += `<span class="tiles">`;
+          for (let di = 0; di < opp.discards.length; di++) {
+            const isRiichi = di === opp.riichi_idx;
+            html += renderTile(opp.discards[di], `action-tile-sm${isRiichi ? " riichi-tile" : ""}`);
+          }
+          html += `</span></div>`;
+        }
+        html += `</div>`;
+      }
+
       // EV Comparison table (Mortal vs mahjong-cpp)
       if (m.top_actions && m.top_actions.length && m.cpp_stats && m.cpp_stats.length) {
         html += renderEvComparison(m);

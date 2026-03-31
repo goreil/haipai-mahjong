@@ -500,7 +500,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     # Try action-type categorization first
     cat = categorize_by_action_type(actual, expected)
     if cat is not None:
-        return cat, None, None
+        return cat, None, None, None
 
     # dahai vs dahai -> call mahjong-cpp
     hand = mistake["hand"]
@@ -520,10 +520,11 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
             print(f"  Warning: wall[{i}] = {count} (negative), clamping to 0", file=sys.stderr)
             wall[i] = 0
 
-    # Compute safety ratings for defense visuals
+    # Compute safety ratings and opponent discards for defense visuals
     safety_data = None
+    opp_discards = None
     if defense_ctx:
-        from mj_defense import get_tile_safety_for_mistake
+        from mj_defense import get_tile_safety_for_mistake, get_opponent_discards
         safety_data = get_tile_safety_for_mistake(
             hand, defense_ctx["mjai_events"], defense_ctx["start_pos"],
             defense_ctx["end_pos"], defense_ctx["player_id"],
@@ -531,6 +532,11 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
         )
         if safety_data:
             safety_data = {k: round(v, 1) for k, v in safety_data.items()}
+            opp_discards = get_opponent_discards(
+                defense_ctx["mjai_events"], defense_ctx["start_pos"],
+                defense_ctx["end_pos"], defense_ctx["player_id"],
+                tiles_left,
+            )
 
     # Build and send API request
     req = build_api_request(hand, melds, round_wind, seat_wind, dora_ids, wall)
@@ -539,11 +545,11 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
         response = call_mahjong_cpp(req)
     except Exception as e:
         print(f"  API error: {e}", file=sys.stderr)
-        return None, None, safety_data
+        return None, None, safety_data, opp_discards
 
     cpp_best_id, cpp_shanten = get_cpp_best_discard(response)
     if cpp_best_id is None:
-        return None, None, safety_data
+        return None, None, safety_data, opp_discards
 
     cpp_best_mjai = ID_TO_MJAI.get(cpp_best_id)
     cpp_stats = extract_cpp_stats(response)
@@ -578,7 +584,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
         if defense_ctx:
             cat = _classify_strategic(mistake, defense_ctx, tiles_left, wall)
 
-    return cat, cpp_data, safety_data
+    return cat, cpp_data, safety_data, opp_discards
 
 
 def categorize_game(game, game_idx, force=False, dry_run=False):
@@ -678,7 +684,7 @@ def categorize_game(game, game_idx, force=False, dry_run=False):
             if needs_api:
                 api_calls += 1
 
-            cat, cpp_data, safety_data = categorize_mistake(
+            cat, cpp_data, safety_data, opp_discards = categorize_mistake(
                 m, mortal_data, kyoku_idx, entry, dora_indicators,
                 defense_ctx=defense_ctx,
             )
@@ -696,6 +702,8 @@ def categorize_game(game, game_idx, force=False, dry_run=False):
                         m["cpp_stats"] = cpp_data["stats"]
                     if safety_data:
                         m["safety_ratings"] = safety_data
+                    if opp_discards:
+                        m["opponent_discards"] = opp_discards
 
                 categorized += 1
             else:
@@ -798,8 +806,8 @@ def recheck_game(game, game_idx, dry_run=False):
                 if wall[i] < 0:
                     wall[i] = 0
 
-            # Compute safety ratings for defense visuals
-            from mj_defense import get_tile_safety_for_mistake
+            # Compute safety ratings and opponent discards for defense visuals
+            from mj_defense import get_tile_safety_for_mistake, get_opponent_discards
             safety = get_tile_safety_for_mistake(
                 m["hand"], events, start_pos, end_pos,
                 player_id, tiles_left, wall,
@@ -808,6 +816,9 @@ def recheck_game(game, game_idx, dry_run=False):
                 safety = {k: round(v, 1) for k, v in safety.items()}
             if not dry_run and safety:
                 m["safety_ratings"] = safety
+                opp_disc = get_opponent_discards(events, start_pos, end_pos, player_id, tiles_left)
+                if opp_disc:
+                    m["opponent_discards"] = opp_disc
 
             cpp_best_mjai = m["cpp_best"]
             cpp_best_id = mjai_to_tile_id(cpp_best_mjai)
@@ -922,7 +933,7 @@ def categorize_game_db(conn, game_id, force=False):
             if needs_api:
                 api_calls += 1
 
-            cat, cpp_data, safety_data = categorize_mistake(
+            cat, cpp_data, safety_data, opp_discards = categorize_mistake(
                 m, mortal_data, kyoku_idx, entry, dora_indicators,
                 defense_ctx=defense_ctx,
             )
@@ -934,6 +945,8 @@ def categorize_game_db(conn, game_id, force=False):
                     updates["cpp_stats"] = cpp_data["stats"]
                 if safety_data:
                     updates["safety_ratings"] = safety_data
+                if opp_discards:
+                    updates["opponent_discards"] = opp_discards
                 dbmod.update_mistake_data(conn, mr["id"], updates)
                 categorized += 1
 

@@ -410,9 +410,8 @@ def cmd_categorize(args):
             print(f"Rechecking game {idx+1} ({game['date']})...")
             n = recheck_game(game, idx, dry_run=args.dry_run)
             total_changed += n
-            if not args.dry_run and n > 0:
-                compute_summary(game)
-                save_games(data)
+        if not args.dry_run:
+            save_games(data)
         print(f"\nDone: {total_changed} categories changed (0 API calls)")
         return
 

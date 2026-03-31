@@ -179,6 +179,51 @@ def extract_riichi_state(mjai_log_events, start_pos, end_pos, player_id, target_
     return [opp for opp in opponents.values() if opp["in_riichi"]]
 
 
+def get_opponent_discards(mjai_log_events, start_pos, end_pos, player_id, target_tiles_left):
+    """Extract opponent discard pools (in mjai notation, ordered) up to a point.
+
+    Returns list of dicts for opponents in riichi:
+        {"seat": int, "discards": [mjai tiles], "riichi_idx": int (index in discards where riichi was declared)}
+    Returns None if no opponents are in riichi.
+    """
+    opponents = {}  # actor -> {"discards": [], "in_riichi": False, "riichi_idx": None}
+    tiles_left = 70
+
+    for pos in range(start_pos + 1, end_pos):
+        e = mjai_log_events[pos]
+        etype = e.get("type")
+        actor = e.get("actor")
+
+        if etype == "tsumo":
+            tiles_left -= 1
+
+        elif etype == "dahai" and actor != player_id:
+            if actor not in opponents:
+                opponents[actor] = {"discards": [], "in_riichi": False, "riichi_idx": None}
+            opponents[actor]["discards"].append(e["pai"])
+
+        elif etype == "reach" and actor != player_id:
+            if actor not in opponents:
+                opponents[actor] = {"discards": [], "in_riichi": False, "riichi_idx": None}
+            opp = opponents[actor]
+            opp["in_riichi"] = True
+            opp["riichi_idx"] = len(opp["discards"]) - 1  # last discard was the riichi tile
+
+        if tiles_left <= target_tiles_left:
+            break
+
+    riichi_opps = []
+    for actor, opp in opponents.items():
+        if opp["in_riichi"]:
+            riichi_opps.append({
+                "seat": actor,
+                "discards": opp["discards"],
+                "riichi_idx": opp["riichi_idx"],
+            })
+
+    return riichi_opps if riichi_opps else None
+
+
 def get_tile_safety_for_mistake(hand_mjai, mjai_log_events, start_pos, end_pos,
                                 player_id, tiles_left, wall_remaining):
     """Get safety ratings for tiles in hand against all riichi'd opponents.
