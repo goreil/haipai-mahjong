@@ -1213,6 +1213,14 @@ function showHelp() {
       <p>\u2606 <b>Solid game</b> &mdash; EV/turn in the top 50% of your games</p>
       <p>Ratings are relative to your own history, so they reflect personal improvement.</p>
     </div>
+
+    <div class="help-section">
+      <h3>Attribution & Licenses</h3>
+      <div class="help-cat"><span class="help-cat-label">Mortal AI</span><span class="help-cat-desc">Mahjong AI engine for game analysis &mdash; <a href="https://mjai.ekyu.moe" target="_blank" style="color:var(--accent-dim)">mjai.ekyu.moe</a></span></div>
+      <div class="help-cat"><span class="help-cat-label">mahjong-cpp</span><span class="help-cat-desc">Tile efficiency calculator by nekobean &mdash; GPLv3 &mdash; <a href="https://github.com/nekobean/mahjong-cpp" target="_blank" style="color:var(--accent-dim)">GitHub</a></span></div>
+      <div class="help-cat"><span class="help-cat-label">Riichi Trainer</span><span class="help-cat-desc">Defense analysis ported from Euophrys &mdash; GPLv3 &mdash; <a href="https://github.com/Euophrys/Riichi-Trainer" target="_blank" style="color:var(--accent-dim)">GitHub</a></span></div>
+      <div class="help-cat"><span class="help-cat-label">Tile Graphics</span><span class="help-cat-desc">SVG tiles by FluffyStuff &mdash; CC0 (Public Domain) &mdash; <a href="https://github.com/FluffyStuff/riichi-mahjong-tiles" target="_blank" style="color:var(--accent-dim)">GitHub</a></span></div>
+    </div>
   `;
 
   content.innerHTML = html;
