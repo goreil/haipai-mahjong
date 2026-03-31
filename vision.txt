@@ -178,10 +178,11 @@ Branding: "Haipai" (配牌, starting hand)
 
 === TODO: FEATURES (after publish) ===
 
-1. Show opponent discards in defense situations
-   - Safety calc already uses opponent discards internally
-   - Displaying them would help user understand why tiles are safe/dangerous
-   - Could show as a collapsible section under the hand when riichi is active
+1. [x] Show opponent discards in defense situations
+   - Opponent discard pools extracted and stored during categorization
+   - Displayed under hand row when riichi is active
+   - Riichi tile shown sideways with red glow
+   - 177 mistakes include opponent_discards data
 
 2. Practice mode: spaced repetition
    - Track which problems user got wrong, revisit them more often
