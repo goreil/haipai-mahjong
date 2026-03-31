@@ -1,9 +1,21 @@
 In this file I'll prepare the next prompt. CLAUDE DO NOT EDIT
 
-So at some point I'll have to think about the whole categories thing:
+# Publishing
+The next big project is transitioning to a publishable web app.
+First goal: show it to my mahjong club (3-20 users).
 
-First off, I think visually it's not helpful to have these codes in the app.
-There should be a more UX-helpful way to look at them
-2. I don't know if these categories still make sense. They were just chosen randomly in the beginning. A few thoughts:
-a) The catories should be `relatively easy` to classify them given the stuff we have. Especially when we add another tool that calculates defense, then we can do the defense vs push comparison more easily
-b) The categories should be educational meaning a user can see. "Ohh, my worst mistakes are in tile efficiency, let's look at that more.
+Open questions:
+1. Users and user data management
+2. Whether mahjong-cpp runs server-side or compiled to WASM
+3. Where to publish? VPS, Railway, Fly.io?
+4. App name and branding (mascot? probably too early)
+5. Workflow — do I want multi-agent setup? Folder restructuring?
+
+Note: mahjong-cpp and Riichi-Trainer are GPLv3.
+SaaS is fine, but source must be available if distributing.
+
+# Next features
+- Show opponent discards in defense situations
+  (the safety calc uses their discards, would help to see them)
+
+- Practice mode: spaced repetition (revisit mistakes you got wrong)

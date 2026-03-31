@@ -93,27 +93,47 @@ a) One script fits all: mj_games.py handles the full pipeline (add/review/annota
 
 12. Mistake trainer (practice mode)
    - "Practice" button in web UI toolbar
-   - Random ??/??? discard mistakes (506 eligible problems from 26 games)
+   - Random ??/??? discard mistakes (506 eligible from 28 games)
    - Clickable hand tiles: pick a discard, get instant feedback
    - Shows Mortal's recommendation, EV table, safety data, original play
    - Session score tracking (correct/total)
+   - Filters: category group, severity, riichi-only
+   - Keyboard shortcuts: Space/Enter for next problem
+
+13. Positive feedback & game ratings
+   - Games rated by EV/turn percentile: top 25% = filled star, top 50% = outline star
+   - Stars shown in sidebar and summary banner with clean round count
+   - "Clean" badge on rounds with 0 mistakes
+
+14. Help page & category tooltips
+   - Full category reference with codes, labels, descriptions, study references
+   - Defense safety scale explanation (0-15)
+   - EV comparison table guide (Mortal Q vs Tile Calc)
+   - Game rating explanation
+   - Attribution section: Mortal AI, mahjong-cpp (GPLv3), Riichi-Trainer (GPLv3), tiles (CC0)
+   - Category badges have tooltip descriptions on hover
 
 
 === TODO ===
 
-6. More data analysis (stale — now have 26 games, not 3)
+1. Show opponent discards in defense situations
+   - Safety calc already uses opponent discards internally
+   - Displaying them would help user understand why tiles are safe/dangerous
+   - Could show as a collapsible section under the hand when riichi is active
 
-7. Checkpoint 4: Web-UI with all features
-   - The end goal, combines everything above
+2. Practice mode: spaced repetition
+   - Track which problems user got wrong, revisit them more often
+   - Could use localStorage for persistence
+   - Weight random selection toward previously-wrong problems
 
-8. Publish-readiness
+3. Publish-readiness
    - Hosting decision (VPS, Railway, Fly.io)
    - Multi-user support (auth, per-user game storage)
    - mahjong-cpp: keep server-side or compile to WASM?
-   - Attribution/licenses page for dependencies
    - App name and branding
+   - Note: mahjong-cpp and Riichi-Trainer are GPLv3 (SaaS OK, must share source if distributing)
 
-9. UX improvements
-   - Category explanation tooltips/help page
-   - Positive feedback for mistake-free games
-   - Practice mode: difficulty filters, category filters, spaced repetition
+4. Fix 73 uncategorized mistakes
+   - All dahai-vs-dahai with wall reconstruction errors ("more tiles than wall")
+   - Bug in reconstruct_context: tile counts go negative in some edge cases
+   - Affects ~6% of mistakes
