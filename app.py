@@ -417,7 +417,18 @@ def api_add():
     if not mortal_data or not isinstance(mortal_data, dict):
         return jsonify({"error": "mortal_data is required (Mortal analysis JSON)"}), 400
 
+    # Save Mortal JSON to disk (needed by categorizer for wall reconstruction)
+    import hashlib
+    mortal_dir = DIR / "mortal_analysis"
+    mortal_dir.mkdir(exist_ok=True)
+    mortal_bytes = json.dumps(mortal_data, ensure_ascii=False).encode()
+    filename = hashlib.sha256(mortal_bytes).hexdigest()[:16] + ".json"
+    dest = mortal_dir / filename
+    if not dest.exists():
+        dest.write_bytes(mortal_bytes)
+
     game_dict = parse_game(mortal_data, game_date=game_date)
+    game_dict["mortal_file"] = str(dest.relative_to(DIR))
     compute_summary(game_dict)
 
     game_id = db.add_game(conn, uid, game_dict)
