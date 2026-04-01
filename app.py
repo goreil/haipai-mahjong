@@ -405,42 +405,19 @@ def api_categorize(game_id):
 @app.route("/api/games/add", methods=["POST"])
 @login_required
 def api_add():
-    import urllib.parse
     from datetime import date
 
     conn = get_conn()
     uid = current_user.id
 
     body = request.json
-    url = body.get("url", "")
+    mortal_data = body.get("mortal_data")
     game_date = body.get("date") or date.today().isoformat()
 
-    parsed = urllib.parse.urlparse(url)
-    qs = urllib.parse.parse_qs(parsed.query)
-    if "data" not in qs:
-        return jsonify({"error": "URL must contain ?data= parameter"}), 400
-
-    data_path = qs["data"][0]
-    download_url = f"https://mjai.ekyu.moe{data_path}"
-    filename = Path(data_path).name
-
-    mortal_dir = DIR / "mortal_analysis"
-    mortal_dir.mkdir(exist_ok=True)
-    dest = mortal_dir / filename
-
-    if not dest.exists():
-        try:
-            resp = http_requests.get(download_url, timeout=30)
-            resp.raise_for_status()
-            dest.write_bytes(resp.content)
-        except Exception as e:
-            return jsonify({"error": f"Download failed: {e}"}), 500
-
-    with open(dest) as f:
-        mortal_data = json.load(f)
+    if not mortal_data or not isinstance(mortal_data, dict):
+        return jsonify({"error": "mortal_data is required (Mortal analysis JSON)"}), 400
 
     game_dict = parse_game(mortal_data, game_date=game_date)
-    game_dict["mortal_file"] = str(dest.relative_to(DIR))
     compute_summary(game_dict)
 
     game_id = db.add_game(conn, uid, game_dict)

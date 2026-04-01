@@ -352,11 +352,11 @@ async function saveAnnotation(gameId, round, turn, index, category, note) {
   return data;
 }
 
-async function addGame(url, date) {
+async function addGame(mortalData, date) {
   const res = await fetch("/api/games/add", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url, date: date || undefined }),
+    body: JSON.stringify({ mortal_data: mortalData, date: date || undefined }),
   });
   return await res.json();
 }
@@ -663,7 +663,7 @@ function onToggleMedium(cb) {
 
 function showAddModal() {
   document.getElementById("add-modal").classList.add("show");
-  document.getElementById("add-url").value = "";
+  document.getElementById("add-file").value = "";
   document.getElementById("add-date").value = "";
   document.getElementById("add-error").textContent = "";
 }
@@ -673,13 +673,13 @@ function hideAddModal() {
 }
 
 async function submitAddGame() {
-  const url = document.getElementById("add-url").value.trim();
+  const fileInput = document.getElementById("add-file");
   const date = document.getElementById("add-date").value.trim();
   const errEl = document.getElementById("add-error");
   const btn = document.getElementById("add-submit-btn");
 
-  if (!url) {
-    errEl.textContent = "URL is required";
+  if (!fileInput.files.length) {
+    errEl.textContent = "Please select a Mortal analysis JSON file";
     return;
   }
 
@@ -687,19 +687,27 @@ async function submitAddGame() {
   btn.innerHTML = 'Adding...<span class="spinner"></span>';
   errEl.textContent = "";
 
-  const result = await addGame(url, date);
+  try {
+    const text = await fileInput.files[0].text();
+    const mortalData = JSON.parse(text);
+    const result = await addGame(mortalData, date);
 
-  btn.disabled = false;
-  btn.textContent = "Add Game";
+    btn.disabled = false;
+    btn.textContent = "Add Game";
 
-  if (result.error) {
-    errEl.textContent = result.error;
-    return;
+    if (result.error) {
+      errEl.textContent = result.error;
+      return;
+    }
+
+    hideAddModal();
+    await fetchGames();
+    fetchGame(result.game_id);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = "Add Game";
+    errEl.textContent = "Invalid JSON file: " + e.message;
   }
-
-  hideAddModal();
-  await fetchGames();
-  fetchGame(result.game_id);
 }
 
 // --- Delete game ---
