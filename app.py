@@ -457,18 +457,12 @@ def api_add():
 @app.route("/api/games/import", methods=["POST"])
 @login_required
 def api_import():
-    """Import games from games.json into the database for the current user."""
+    """Import games from uploaded JSON into the database for the current user."""
     conn = get_conn()
     uid = current_user.id
 
-    games_file = DIR / "games.json"
-    if not games_file.exists():
-        return jsonify({"error": "games.json not found"}), 404
-
-    with open(games_file) as f:
-        data = json.load(f)
-
-    all_games = data.get("games", [])
+    body = request.json
+    all_games = body.get("games", [])
     if not all_games:
         return jsonify({"error": "No games found in games.json"}), 400
 

@@ -9,6 +9,14 @@ services:
     volumes:
       - app-data:/app/data
       - mortal-files:/app/mortal_analysis
+      - ./app.py:/app/app.py:ro
+      - ./db.py:/app/db.py:ro
+      - ./mj_categorize.py:/app/mj_categorize.py:ro
+      - ./mj_defense.py:/app/mj_defense.py:ro
+      - ./mj_games.py:/app/mj_games.py:ro
+      - ./mj_parse.py:/app/mj_parse.py:ro
+      - ./static:/app/static:ro
+    command: ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "--reload", "app:app"]
     expose:
       - "5000"
 

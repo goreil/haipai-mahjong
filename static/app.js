@@ -718,26 +718,43 @@ async function deleteGame(id) {
 
 // --- Import from games.json ---
 
-async function importGamesJson() {
-  const btn = document.getElementById("import-btn");
-  if (!confirm("Import all games from games.json? Duplicates will be skipped.")) return;
+function importGamesJson() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
 
-  btn.disabled = true;
-  btn.textContent = "Importing...";
+    const btn = document.getElementById("import-btn");
+    btn.disabled = true;
+    btn.textContent = "Importing...";
 
-  const res = await fetch("/api/games/import", { method: "POST" });
-  const data = await res.json();
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
 
-  btn.disabled = false;
-  btn.textContent = "Import from games.json";
+      const res = await fetch("/api/games/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ games: json.games || [] }),
+      });
+      const data = await res.json();
 
-  if (data.error) {
-    alert("Import failed: " + data.error);
-    return;
-  }
+      if (data.error) {
+        alert("Import failed: " + data.error);
+      } else {
+        alert(`Imported ${data.imported} games (${data.skipped} skipped as duplicates)`);
+        if (data.imported > 0) await fetchGames();
+      }
+    } catch (e) {
+      alert("Failed to read file: " + e.message);
+    }
 
-  alert(`Imported ${data.imported} games (${data.skipped} skipped as duplicates)`);
-  if (data.imported > 0) await fetchGames();
+    btn.disabled = false;
+    btn.textContent = "Import games.json";
+  };
+  input.click();
 }
 
 // --- Trends ---
