@@ -207,16 +207,23 @@ Branding: "Haipai" (配牌, starting hand)
    - Filters to category 1A-1E (efficiency) where mortal+cpp agree
    - API: calc_agree=1 query param on GET /api/practice
 
-6. Testing
-   - Add test suite so updates don't break the server
-   - Cover: API routes, data parsing, categorization logic
+6. [x] Testing
+   - pytest suite in tests/test_core.py (21 tests)
+   - Covers: severity, parsing, tile conversion, board state, DB CRUD, API routes
+   - Temp DB fixture for isolated testing
 
 7. CI/CD pipeline
    - GitHub Actions: run tests, auto-deploy to Hetzner on push to main
 
-8. Security review
-   - Audit auth, input validation, file upload handling
-   - Rate limiting, CSRF protection
+8. [x] Security hardening
+   - Flask-Limiter: 10/min login, 5/min register, 200/min API default
+   - SESSION_COOKIE_SECURE in production
+   - Path traversal fix in /tiles/ endpoint
+   - Password minimum increased to 8 chars
+   - Security headers: X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+   - Remaining: CSRF tokens (Flask-WTF), HTTPS enforcement, input schema validation
 
-9. Feedback form
-   - In-app form for users to report bugs/request features
+9. [x] Feedback form
+   - Modal in toolbar with type (bug/feature/general) and message
+   - POST /api/feedback, stored in feedback table
+   - 2000 char limit
