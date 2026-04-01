@@ -33,6 +33,7 @@
         <button class="btn" id="trends-btn" onclick="showTrends()">Trends</button>
         <button class="btn" id="practice-btn" onclick="showPractice()">Practice</button>
         <button class="btn" id="help-btn" onclick="showHelp()">Help</button>
+        <button class="btn" onclick="showFeedbackModal()">Feedback</button>
       </div>
       <div class="content" id="content">
         <div class="empty-state">Select a game to review</div>
@@ -56,6 +57,30 @@
       <div class="btn-row">
         <button class="btn" onclick="hideAddModal()">Cancel</button>
         <button class="btn btn-primary" id="add-submit-btn" onclick="submitAddGame()">Add Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div class="modal-overlay" id="feedback-modal" onclick="if(event.target===this)hideFeedbackModal()">
+    <div class="modal">
+      <h3>Send Feedback</h3>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="feedback-type">
+          <option value="bug">Bug Report</option>
+          <option value="feature">Feature Request</option>
+          <option value="general" selected>General Feedback</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea id="feedback-message" rows="5" maxlength="2000" placeholder="What's on your mind?"></textarea>
+      </div>
+      <div class="error" id="feedback-error"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="hideFeedbackModal()">Cancel</button>
+        <button class="btn btn-primary" id="feedback-submit-btn" onclick="submitFeedback()">Send</button>
       </div>
     </div>
   </div>

@@ -47,6 +47,15 @@ CREATE TABLE IF NOT EXISTS practice_results (
     FOREIGN KEY (mistake_id) REFERENCES mistakes(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS feedback (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS mistakes (
     id INTEGER PRIMARY KEY,
     game_id INTEGER NOT NULL,

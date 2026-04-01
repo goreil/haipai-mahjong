@@ -542,6 +542,26 @@ def api_practice_stats():
     return jsonify(db.get_practice_stats(conn, uid))
 
 
+@app.route("/api/feedback", methods=["POST"])
+@login_required
+def api_feedback():
+    conn = get_conn()
+    uid = current_user.id
+    body = request.json or {}
+    fb_type = body.get("type", "general")
+    message = (body.get("message") or "").strip()
+    if not message:
+        return jsonify({"error": "Message is required"}), 400
+    if len(message) > 2000:
+        return jsonify({"error": "Message too long (max 2000 chars)"}), 400
+    conn.execute(
+        "INSERT INTO feedback (user_id, type, message) VALUES (?, ?, ?)",
+        (uid, fb_type, message),
+    )
+    conn.commit()
+    return jsonify({"ok": True})
+
+
 def init_app():
     """Initialize database and start nanikiru. Called once on startup."""
     conn = db.get_db()

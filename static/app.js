@@ -1492,6 +1492,50 @@ function showHelp() {
   content.innerHTML = html;
 }
 
+// --- Feedback ---
+
+function showFeedbackModal() {
+  document.getElementById("feedback-modal").style.display = "flex";
+  document.getElementById("feedback-message").value = "";
+  document.getElementById("feedback-error").textContent = "";
+}
+
+function hideFeedbackModal() {
+  document.getElementById("feedback-modal").style.display = "none";
+}
+
+async function submitFeedback() {
+  const type = document.getElementById("feedback-type").value;
+  const message = document.getElementById("feedback-message").value.trim();
+  const errEl = document.getElementById("feedback-error");
+  const btn = document.getElementById("feedback-submit-btn");
+
+  if (!message) {
+    errEl.textContent = "Please enter a message.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Sending...";
+  errEl.textContent = "";
+
+  const res = await fetch("/api/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, message }),
+  });
+  const data = await res.json();
+
+  btn.disabled = false;
+  btn.textContent = "Send";
+
+  if (data.ok) {
+    hideFeedbackModal();
+  } else {
+    errEl.textContent = data.error || "Failed to send feedback.";
+  }
+}
+
 // --- Keyboard shortcuts ---
 
 document.addEventListener("keydown", (e) => {

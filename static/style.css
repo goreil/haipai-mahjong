@@ -825,7 +825,7 @@ body {
   margin-bottom: 4px;
 }
 
-.modal input {
+.modal input, .modal textarea, .modal select {
   width: 100%;
   padding: 8px 12px;
   border-radius: 6px;
@@ -833,6 +833,12 @@ body {
   background: var(--bg-input);
   color: var(--text);
   font-size: 14px;
+  font-family: inherit;
+}
+
+.modal textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
 .modal .btn-row {
