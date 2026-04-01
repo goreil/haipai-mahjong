@@ -194,15 +194,18 @@ Branding: "Haipai" (配牌, starting hand)
    - Bug in reconstruct_context: tile counts go negative in some edge cases
    - Affects ~6% of mistakes
 
-4. Full board view for each mistake
-   - Show dora indicator(s), seat wind, round wind on every mistake
-   - Show all 4 players' discard pools (not just riichi situations)
+4. [x] Full board view for each mistake
+   - extract_board_state() in mj_categorize.py: dora, winds, scores, all discards, opponent melds
+   - board_state stored on each mistake during categorize_game_db()
+   - renderBoardContext() in app.js: wind badges, dora indicator tiles, all 4 player discard pools
    - Collapsible "Details" section: player points, opponent melds
-   - Applies to both review and practice mode
+   - Works in both review and practice mode
+   - POST /api/games/backfill-board-state to populate existing games
 
-5. Practice mode: only mortal+calc agreement
-   - Filter to efficiency mistakes where mortal and mahjong-cpp agree
-   - Makes practice answers more definite (no subjective strategy calls)
+5. [x] Practice mode: only mortal+calc agreement
+   - "Calc agrees" checkbox in practice filters
+   - Filters to category 1A-1E (efficiency) where mortal+cpp agree
+   - API: calc_agree=1 query param on GET /api/practice
 
 6. Testing
    - Add test suite so updates don't break the server
