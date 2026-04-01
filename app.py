@@ -2,6 +2,8 @@
 """Flask web server for mahjong game review."""
 
 from flask import Flask, g, jsonify, redirect, render_template_string, request, send_from_directory, url_for
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from pathlib import Path
@@ -26,6 +28,10 @@ app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_ENV") != "development"
+
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per minute"],
+                  storage_uri="memory://")
 
 # --- Auth ---
 
@@ -249,6 +255,7 @@ button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shad
 # --- Routes ---
 
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect("/")
@@ -266,6 +273,7 @@ def login():
 
 
 @app.route("/register", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def register():
     if current_user.is_authenticated:
         return redirect("/")
@@ -278,8 +286,8 @@ def register():
 
         if not username or not password:
             error = "Username and password required"
-        elif len(password) < 4:
-            error = "Password must be at least 4 characters"
+        elif len(password) < 8:
+            error = "Password must be at least 8 characters"
         elif not db.validate_invite_code(conn, invite_code):
             error = "Invalid or already used invite code"
         else:
@@ -305,7 +313,7 @@ def index():
     return send_from_directory("static", "index.html")
 
 
-@app.route("/tiles/<path:filename>")
+@app.route("/tiles/<filename>")
 def tiles(filename):
     return send_from_directory(DIR / "riichi-mahjong-tiles" / "Regular", filename)
 
