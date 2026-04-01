@@ -402,6 +402,25 @@ def api_categorize(game_id):
     return jsonify({"ok": True, "categorized": n, "api_calls": api_calls, "summary": stats})
 
 
+@app.route("/api/games/backfill-board-state", methods=["POST"])
+@login_required
+def api_backfill_board_state():
+    """Populate board_state on all mistakes missing it (no API calls needed)."""
+    conn = get_conn()
+    uid = current_user.id
+
+    game_ids = [r["id"] for r in conn.execute(
+        "SELECT id FROM games WHERE user_id = ?", (uid,)
+    ).fetchall()]
+
+    from mj_categorize import categorize_game_db
+    total = 0
+    for gid in game_ids:
+        n, _ = categorize_game_db(conn, gid)
+        total += n
+    return jsonify({"ok": True, "games_processed": len(game_ids)})
+
+
 @app.route("/api/games/add", methods=["POST"])
 @login_required
 def api_add():

@@ -484,6 +484,129 @@ body {
   margin: 0 4px;
 }
 
+/* Board context */
+.board-context {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.board-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.wind-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wind-badge.round-wind {
+  background: rgba(74, 158, 255, 0.15);
+  color: var(--accent);
+}
+
+.wind-badge.seat-wind {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+.dora-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dora-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tile.tile-sm {
+  height: 24px;
+}
+
+.tile.dora-indicator {
+  border-color: #ffa94d;
+  box-shadow: 0 0 4px rgba(255, 169, 77, 0.3);
+}
+
+.all-discards {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.discard-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.discard-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 40px;
+}
+
+.board-details {
+  margin-top: 6px;
+}
+
+.board-details summary {
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.board-details summary:hover {
+  color: var(--text);
+}
+
+.scores-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.score-item {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.score-seat {
+  color: var(--text-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-right: 2px;
+}
+
+.opponent-melds {
+  margin-top: 4px;
+}
+
+.opp-meld-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
 /* Safety indicators on hand tiles */
 .tile.safety-safe { border-bottom: 3px solid var(--sev-minor); }
 .tile.safety-caution { border-bottom: 3px solid var(--sev-medium); }

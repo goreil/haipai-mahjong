@@ -94,6 +94,86 @@ function renderHand(tiles, draw, safetyRatings) {
   }).join("");
 }
 
+// --- Board context rendering ---
+
+const WIND_DISPLAY = { "E": "East", "S": "South", "W": "West", "N": "North" };
+const SEAT_NAMES = ["East", "South", "West", "North"];
+
+function renderBoardContext(m) {
+  const b = m.board_state;
+  if (!b) return "";
+
+  let html = `<div class="board-context">`;
+
+  // Wind + Dora bar
+  html += `<div class="board-info-bar">`;
+  if (b.round_wind) {
+    html += `<span class="wind-badge round-wind" title="Round wind">${WIND_DISPLAY[b.round_wind] || b.round_wind}</span>`;
+  }
+  if (b.seat_wind) {
+    html += `<span class="wind-badge seat-wind" title="Seat wind">${WIND_DISPLAY[b.seat_wind] || b.seat_wind}</span>`;
+  }
+  if (b.dora_indicators && b.dora_indicators.length) {
+    html += `<span class="dora-section"><span class="dora-label">Dora</span>`;
+    for (const d of b.dora_indicators) {
+      html += renderTile(d, "tile-sm dora-indicator");
+    }
+    html += `</span>`;
+  }
+  html += `</div>`;
+
+  // All player discards
+  if (b.all_discards && b.all_discards.length) {
+    html += `<div class="all-discards">`;
+    for (const d of b.all_discards) {
+      if (!d.discards.length) continue;
+      const seatName = SEAT_NAMES[d.seat] || `P${d.seat}`;
+      html += `<div class="discard-row">`;
+      html += `<span class="discard-label">${seatName}</span>`;
+      html += `<span class="tiles">`;
+      for (let di = 0; di < d.discards.length; di++) {
+        const isRiichi = di === d.riichi_idx;
+        html += renderTile(d.discards[di], `action-tile-sm${isRiichi ? " riichi-tile" : ""}`);
+      }
+      html += `</span></div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Collapsible details (scores, opponent melds)
+  const hasDetails = (b.scores && b.scores.length) || (b.opponent_melds && b.opponent_melds.length);
+  if (hasDetails) {
+    html += `<details class="board-details"><summary>Details</summary>`;
+    if (b.scores && b.scores.length) {
+      html += `<div class="scores-row">`;
+      for (let i = 0; i < b.scores.length; i++) {
+        const name = SEAT_NAMES[i] || `P${i}`;
+        html += `<span class="score-item"><span class="score-seat">${name}</span> ${b.scores[i].toLocaleString()}</span>`;
+      }
+      html += `</div>`;
+    }
+    if (b.opponent_melds && b.opponent_melds.length) {
+      html += `<div class="opponent-melds">`;
+      for (const om of b.opponent_melds) {
+        const seatName = SEAT_NAMES[om.seat] || `P${om.seat}`;
+        html += `<div class="opp-meld-row">`;
+        html += `<span class="discard-label">${seatName}</span>`;
+        for (const meld of om.melds) {
+          const tiles = [...(meld.consumed || [])];
+          if (meld.pai) tiles.push(meld.pai);
+          html += `<span class="meld-group">${meld.type} ${tiles.map(t => renderTile(t, "action-tile-sm")).join("")}</span> `;
+        }
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+    html += `</details>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
 // --- Action formatting ---
 
 function formatAction(action) {
@@ -514,12 +594,14 @@ function renderGame() {
         html += `</span></div>`;
       }
 
-      // Opponent discards (defense context)
-      if (m.opponent_discards && m.opponent_discards.length) {
+      // Board context (dora, winds, all discards, scores, opponent melds)
+      html += renderBoardContext(m);
+
+      // Fallback: old opponent_discards (for mistakes without board_state)
+      if (!m.board_state && m.opponent_discards && m.opponent_discards.length) {
         html += `<div class="opp-discards">`;
         for (const opp of m.opponent_discards) {
-          const seatNames = ["East", "South", "West", "North"];
-          const seatName = seatNames[opp.seat] || `P${opp.seat}`;
+          const seatName = SEAT_NAMES[opp.seat] || `P${opp.seat}`;
           html += `<div class="opp-discard-row">`;
           html += `<span class="opp-label">${seatName}</span>`;
           html += `<span class="tiles">`;
@@ -1216,23 +1298,8 @@ function renderPractice() {
     }).join("");
     html += `</span></div>`;
 
-    // Opponent discards
-    if (m.opponent_discards && m.opponent_discards.length) {
-      html += `<div class="opp-discards">`;
-      for (const opp of m.opponent_discards) {
-        const seatNames = ["East", "South", "West", "North"];
-        const seatName = seatNames[opp.seat] || `P${opp.seat}`;
-        html += `<div class="opp-discard-row">`;
-        html += `<span class="opp-label">${seatName}</span>`;
-        html += `<span class="tiles">`;
-        for (let di = 0; di < opp.discards.length; di++) {
-          const isRiichi = di === opp.riichi_idx;
-          html += renderTile(opp.discards[di], `action-tile-sm${isRiichi ? " riichi-tile" : ""}`);
-        }
-        html += `</span></div>`;
-      }
-      html += `</div>`;
-    }
+    // Board context
+    html += renderBoardContext(m);
 
     html += `</div>`; // .practice-hand-area
   } else {
@@ -1241,7 +1308,10 @@ function renderPractice() {
     html += `<div class="practice-prompt">Pick a tile to discard</div>`;
     html += `<div class="hand-row"><span class="label">Hand</span>`;
     html += `<span class="tiles">${renderPracticeHand(m.hand, m.draw)}</span>`;
-    html += `</div></div>`;
+    html += `</div>`;
+    // Board context (dora, discards, etc.)
+    html += renderBoardContext(m);
+    html += `</div>`;
   }
 
   // Answer section

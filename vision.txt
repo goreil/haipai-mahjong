@@ -193,3 +193,27 @@ Branding: "Haipai" (配牌, starting hand)
    - All dahai-vs-dahai with wall reconstruction errors ("more tiles than wall")
    - Bug in reconstruct_context: tile counts go negative in some edge cases
    - Affects ~6% of mistakes
+
+4. Full board view for each mistake
+   - Show dora indicator(s), seat wind, round wind on every mistake
+   - Show all 4 players' discard pools (not just riichi situations)
+   - Collapsible "Details" section: player points, opponent melds
+   - Applies to both review and practice mode
+
+5. Practice mode: only mortal+calc agreement
+   - Filter to efficiency mistakes where mortal and mahjong-cpp agree
+   - Makes practice answers more definite (no subjective strategy calls)
+
+6. Testing
+   - Add test suite so updates don't break the server
+   - Cover: API routes, data parsing, categorization logic
+
+7. CI/CD pipeline
+   - GitHub Actions: run tests, auto-deploy to Hetzner on push to main
+
+8. Security review
+   - Audit auth, input validation, file upload handling
+   - Rate limiting, CSRF protection
+
+9. Feedback form
+   - In-app form for users to report bugs/request features

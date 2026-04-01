@@ -172,6 +172,124 @@ def reconstruct_context(mortal_data, kyoku_idx, tiles_left_target):
     return wall, round_wind_id, seat_wind_id, dora_ids
 
 
+def extract_board_state(mortal_data, kyoku_idx, tiles_left_target):
+    """Extract full board state at a given point in a kyoku.
+
+    Returns a dict with:
+        dora_indicators: list of mjai tile strings (dora marker tiles)
+        seat_wind: "E"/"S"/"W"/"N"
+        round_wind: "E"/"S"
+        scores: [int, int, int, int] at start of round
+        all_discards: list of {seat, discards, riichi_idx} for all 4 players
+        opponent_melds: list of {seat, melds} for non-player seats
+    """
+    player_id = mortal_data["player_id"]
+    events = flatten_mjai_log(mortal_data["mjai_log"])
+
+    start_positions = []
+    for i, e in enumerate(events):
+        if e.get("type") == "start_kyoku":
+            start_positions.append(i)
+
+    start_pos = start_positions[kyoku_idx]
+    start = events[start_pos]
+
+    # Winds
+    bakaze = start["bakaze"]
+    oya = start["oya"]
+    seat_idx = (player_id - oya) % 4
+    wind_names = ["E", "S", "W", "N"]
+    seat_wind = wind_names[seat_idx]
+    round_wind = bakaze
+
+    # Scores at start of round
+    scores = start.get("scores", [])
+
+    # Dora indicators
+    dora_indicators = [start["dora_marker"]]
+
+    # Track discards and melds for all players
+    discards = {i: {"tiles": [], "riichi_idx": None} for i in range(4)}
+    melds = {i: [] for i in range(4)}
+
+    tiles_left = 70
+    next_start = start_positions[kyoku_idx + 1] if kyoku_idx + 1 < len(start_positions) else len(events)
+
+    for pos in range(start_pos + 1, next_start):
+        e = events[pos]
+        etype = e.get("type")
+        actor = e.get("actor")
+
+        if etype == "tsumo":
+            tiles_left -= 1
+
+        elif etype == "dahai" and actor is not None:
+            discards[actor]["tiles"].append(e["pai"])
+
+        elif etype == "reach" and actor is not None:
+            d = discards[actor]
+            d["riichi_idx"] = len(d["tiles"]) - 1
+
+        elif etype in ("chi", "pon", "daiminkan") and actor is not None:
+            melds[actor].append({
+                "type": etype,
+                "consumed": e.get("consumed", []),
+                "pai": e.get("pai"),
+            })
+            # Called tile is removed from the caller's discard pool
+            # (the target's last dahai gets "consumed" by the call)
+            target = e.get("target")
+            if target is not None and discards[target]["tiles"]:
+                discards[target]["tiles"].pop()
+
+        elif etype == "ankan" and actor is not None:
+            melds[actor].append({
+                "type": "ankan",
+                "consumed": e.get("consumed", []),
+            })
+
+        elif etype == "kakan" and actor is not None:
+            melds[actor].append({
+                "type": "kakan",
+                "consumed": e.get("consumed", []),
+                "pai": e.get("pai"),
+            })
+
+        elif etype == "dora":
+            dora_indicators.append(e["dora_marker"])
+
+        if tiles_left <= tiles_left_target:
+            break
+
+    # Build all_discards (all 4 players)
+    all_discards = []
+    for seat in range(4):
+        d = discards[seat]
+        all_discards.append({
+            "seat": seat,
+            "discards": d["tiles"],
+            "riichi_idx": d["riichi_idx"],
+        })
+
+    # Build opponent_melds (non-player seats only)
+    opponent_melds = []
+    for seat in range(4):
+        if seat != player_id and melds[seat]:
+            opponent_melds.append({
+                "seat": seat,
+                "melds": melds[seat],
+            })
+
+    return {
+        "dora_indicators": dora_indicators,
+        "seat_wind": seat_wind,
+        "round_wind": round_wind,
+        "scores": scores,
+        "all_discards": all_discards,
+        "opponent_melds": opponent_melds,
+    }
+
+
 def subtract_hand_from_wall(wall, hand_tiles):
     """Subtract player's hand tiles from wall. Returns a copy."""
     w = wall[:]
@@ -923,10 +1041,17 @@ def categorize_game_db(conn, game_id, force=False):
             mr = db_mistakes[mistake_idx]
             mistake_idx += 1
 
+            m = dbmod.row_to_mistake(mr)
+            tiles_left = entry["tiles_left"]
+
+            # Extract board state if missing
+            if not m.get("board_state"):
+                board = extract_board_state(mortal_data, kyoku_idx, tiles_left)
+                dbmod.update_mistake_data(conn, mr["id"], {"board_state": board})
+
             if mr["category"] and not force:
                 continue
 
-            m = dbmod.row_to_mistake(mr)
             needs_api = (m.get("actual", {}).get("type") == "dahai" and
                          m.get("expected", {}).get("type") == "dahai")
 
