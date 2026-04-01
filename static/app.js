@@ -716,6 +716,30 @@ async function deleteGame(id) {
   }
 }
 
+// --- Import from games.json ---
+
+async function importGamesJson() {
+  const btn = document.getElementById("import-btn");
+  if (!confirm("Import all games from games.json? Duplicates will be skipped.")) return;
+
+  btn.disabled = true;
+  btn.textContent = "Importing...";
+
+  const res = await fetch("/api/games/import", { method: "POST" });
+  const data = await res.json();
+
+  btn.disabled = false;
+  btn.textContent = "Import from games.json";
+
+  if (data.error) {
+    alert("Import failed: " + data.error);
+    return;
+  }
+
+  alert(`Imported ${data.imported} games (${data.skipped} skipped as duplicates)`);
+  if (data.imported > 0) await fetchGames();
+}
+
 // --- Trends ---
 
 async function fetchTrends() {

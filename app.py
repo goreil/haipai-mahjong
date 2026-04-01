@@ -454,6 +454,53 @@ def api_add():
                     "categorized": cat_n, "api_calls": api_calls})
 
 
+@app.route("/api/games/import", methods=["POST"])
+@login_required
+def api_import():
+    """Import games from games.json into the database for the current user."""
+    conn = get_conn()
+    uid = current_user.id
+
+    games_file = DIR / "games.json"
+    if not games_file.exists():
+        return jsonify({"error": "games.json not found"}), 404
+
+    with open(games_file) as f:
+        data = json.load(f)
+
+    all_games = data.get("games", [])
+    if not all_games:
+        return jsonify({"error": "No games found in games.json"}), 400
+
+    # Get existing games to skip duplicates (by date + log_url)
+    existing = conn.execute(
+        "SELECT date, log_url FROM games WHERE user_id = ?", (uid,)
+    ).fetchall()
+    existing_keys = {(r["date"], r["log_url"]) for r in existing}
+
+    imported = 0
+    skipped = 0
+    for game in all_games:
+        key = (game.get("date"), game.get("log_url"))
+        if key in existing_keys:
+            skipped += 1
+            continue
+        db.add_game(conn, uid, game)
+        existing_keys.add(key)
+        imported += 1
+
+    # Recompute summaries for imported games
+    if imported > 0:
+        game_rows = conn.execute(
+            "SELECT id FROM games WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+            (uid, imported),
+        ).fetchall()
+        for row in game_rows:
+            db.compute_summary_for_game(conn, row["id"])
+
+    return jsonify({"ok": True, "imported": imported, "skipped": skipped, "total": len(all_games)})
+
+
 @app.route("/api/practice")
 @login_required
 def api_practice():
