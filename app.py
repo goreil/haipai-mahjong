@@ -511,8 +511,10 @@ def api_practice():
     sev = request.args.get("severity")
     group = request.args.get("group")
     defense = request.args.get("defense") == "1"
+    calc_agree = request.args.get("calc_agree") == "1"
 
-    pick = db.get_practice_problem(conn, uid, severity=sev, group=group, defense_only=defense)
+    pick = db.get_practice_problem(conn, uid, severity=sev, group=group,
+                                   defense_only=defense, calc_agree=calc_agree)
     if not pick:
         return jsonify({"error": "No matching practice problems"}), 404
     return jsonify(pick)

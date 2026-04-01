@@ -55,6 +55,7 @@ let practice = {
   filterSeverity: "",
   filterGroup: "",
   filterDefense: false,
+  filterCalcAgree: false,
 };
 
 // --- Tile rendering ---
@@ -1153,6 +1154,7 @@ async function fetchPractice() {
   if (practice.filterSeverity) params.set("severity", practice.filterSeverity);
   if (practice.filterGroup) params.set("group", practice.filterGroup);
   if (practice.filterDefense) params.set("defense", "1");
+  if (practice.filterCalcAgree) params.set("calc_agree", "1");
   const qs = params.toString();
   const res = await fetch(`/api/practice${qs ? "?" + qs : ""}`);
   if (!res.ok) return null;
@@ -1248,6 +1250,7 @@ function renderPractice() {
         <option value="??" ${practice.filterSeverity === "??" ? "selected" : ""}>?? only</option>
       </select>
       <label class="practice-filter-check"><input type="checkbox" ${practice.filterDefense ? "checked" : ""} onchange="setPracticeFilter('defense', this.checked)"> Riichi only</label>
+      <label class="practice-filter-check"><input type="checkbox" ${practice.filterCalcAgree ? "checked" : ""} onchange="setPracticeFilter('calc_agree', this.checked)"> Calc agrees</label>
     </div>
 
     <div class="practice-context">
@@ -1371,6 +1374,7 @@ function setPracticeFilter(key, value) {
   if (key === "group") practice.filterGroup = value;
   else if (key === "severity") practice.filterSeverity = value;
   else if (key === "defense") practice.filterDefense = value;
+  else if (key === "calc_agree") practice.filterCalcAgree = value;
   // Reset score and fetch new problem with new filters
   practice.correct = 0;
   practice.total = 0;

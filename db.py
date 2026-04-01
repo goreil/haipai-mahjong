@@ -370,7 +370,8 @@ def get_practice_stats(conn, user_id):
     return groups
 
 
-def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=False):
+def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=False,
+                         calc_agree=False):
     """Get a weighted-random eligible practice problem.
 
     Weighting: unseen problems x3, previously wrong x3, right once x1, right 2+ times x0.5.
@@ -384,6 +385,9 @@ def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=
     if severity:
         where.append("m.severity = ?")
         params.append(severity)
+
+    if calc_agree:
+        where.append("m.category IN ('1A','1B','1C','1D','1E')")
 
     rows = conn.execute(
         f"""SELECT m.*, g.date as game_date, g.id as gid
