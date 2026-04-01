@@ -15,6 +15,10 @@ Personal Riichi Mahjong game analysis tool. Analyzes Tenhou replays via Mortal A
 git clone <repo-url> && cd haipai-mahjong
 git submodule update --init --recursive
 
+# Create nginx config from template, then edit YOUR_DOMAIN
+cp nginx.conf.template nginx.conf
+# Edit nginx.conf — replace YOUR_DOMAIN with your actual domain
+
 # Build (compiles mahjong-cpp C++ binary — takes a few minutes)
 docker compose build
 
@@ -30,6 +34,19 @@ conn.close()
 "
 ```
 
+### HTTPS with certbot
+
+```bash
+# Get initial certificate (server must be running on port 80 first)
+docker compose run --rm --entrypoint "certbot" certbot certonly \
+  --webroot --webroot-path=/var/lib/letsencrypt -d YOUR_DOMAIN
+
+# Then edit nginx.conf:
+# 1. Uncomment the HTTPS redirect in the port 80 block
+# 2. Uncomment the port 443 server block
+docker compose exec nginx nginx -s reload
+```
+
 ### Deploying updates
 
 After `git pull`, the type of restart depends on what changed:
@@ -42,7 +59,7 @@ After `git pull`, the type of restart depends on what changed:
 | `Dockerfile` | `docker compose build && docker compose up -d` |
 | `docker-compose.yml` | `docker compose up -d` (recreates containers with new config) |
 | `mahjong-cpp/` submodule | `docker compose build && docker compose up -d` |
-| `nginx.conf` | `docker compose exec nginx nginx -s reload` |
+| `nginx.conf.template` | `cp nginx.conf.template nginx.conf`, edit domain, `docker compose exec nginx nginx -s reload` |
 
 **TL;DR for most code changes:** just `git pull` and it's live.
 

@@ -72,6 +72,9 @@ mortal_analysis/
 Mahjong Mistakes.txt
 invite-codes.txt
 
+# Deployment config (customized per server, copy from nginx.conf.template)
+nginx.conf
+
 # Personal notes & data
 ylue-next-prompt.txt
 ylue-manual-labor.txt
