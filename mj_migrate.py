@@ -198,8 +198,8 @@ def compute_summary(game):
     game["summary"] = {
         "total_mistakes": total,
         "total_ev_loss": round(total_ev, 2),
-        "total_turns": total_turns if total_turns > 0 else None,
-        "ev_per_turn": round(total_ev / total_turns, 4) if total_turns > 0 else None,
+        "total_decisions": total_turns if total_turns > 0 else None,
+        "ev_per_decision": round(total_ev / total_turns, 4) if total_turns > 0 else None,
         "by_severity": by_severity,
         "by_category": by_category,
     }

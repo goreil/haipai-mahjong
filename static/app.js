@@ -220,9 +220,9 @@ function sevClass(sev) {
 // --- Game rating ---
 
 function computeRatingThresholds() {
-  // Compute percentile thresholds from all games with ev_per_turn
+  // Compute percentile thresholds from all games with ev_per_decision
   const evpts = state.games
-    .map(g => (g.summary || {}).ev_per_turn)
+    .map(g => (g.summary || {}).ev_per_decision)
     .filter(v => v != null)
     .sort((a, b) => a - b);
   if (evpts.length < 3) return { p25: 0.14, p50: 0.19 };
@@ -232,8 +232,8 @@ function computeRatingThresholds() {
 }
 
 function gameRating(summary) {
-  if (!summary || !summary.total_turns) return { icon: "", label: "", cls: "" };
-  const evpt = summary.ev_per_turn;
+  if (!summary || !summary.total_decisions) return { icon: "", label: "", cls: "" };
+  const evpt = summary.ev_per_decision;
   if (evpt == null) return { icon: "", label: "", cls: "" };
 
   const th = computeRatingThresholds();
@@ -458,7 +458,7 @@ function renderGameList() {
         <div class="date">Game ${g.id + 1} &mdash; ${g.date}${rating.icon ? ` <span class="game-rating-icon" title="${rating.label}">${rating.icon}</span>` : ""}</div>
         <div class="stats">
           ${s.total_mistakes || 0} mistakes &middot; ${(s.total_ev_loss || 0).toFixed(2)} EV
-          ${s.total_turns ? ` &middot; ${s.ev_per_turn.toFixed(4)}/T` : ""}
+          ${s.total_decisions ? ` &middot; ${s.ev_per_decision.toFixed(4)}/D` : ""}
         </div>
         <div class="annotation-bar"><div class="fill" style="width:${pct}%"></div></div>
       </div>
@@ -487,8 +487,8 @@ function renderGame() {
     <div class="summary-bar">
       <div class="stat"><span class="value">${s.total_mistakes || 0}</span><span class="label">Mistakes</span></div>
       <div class="stat"><span class="value">${(s.total_ev_loss || 0).toFixed(2)}</span><span class="label">EV Loss</span></div>
-      ${s.total_turns ? `<div class="stat"><span class="value">${s.total_turns}</span><span class="label">Turns</span></div>
-      <div class="stat"><span class="value">${s.ev_per_turn.toFixed(4)}</span><span class="label">EV/Turn</span></div>` : ""}
+      ${s.total_decisions ? `<div class="stat"><span class="value">${s.total_decisions}</span><span class="label">Decisions</span></div>
+      <div class="stat"><span class="value">${s.ev_per_decision.toFixed(4)}</span><span class="label">EV/Decision</span></div>` : ""}
       <div class="stat"><span class="value" style="color:var(--sev-major)">${sev["???"] || 0}</span><span class="label">???</span></div>
       <div class="stat"><span class="value" style="color:var(--sev-medium)">${sev["??"] || 0}</span><span class="label">??</span></div>
       <div class="stat"><span class="value" style="color:var(--sev-minor)">${sev["?"] || 0}</span><span class="label">?</span></div>
@@ -877,18 +877,18 @@ function renderTrends(games) {
   const totalGames = games.length;
   const totalMistakes = games.reduce((s, g) => s + g.total_mistakes, 0);
   const totalEv = games.reduce((s, g) => s + g.total_ev_loss, 0);
-  const gamesWithTurns = games.filter(g => g.ev_per_turn != null);
-  const avgEvPerTurn = gamesWithTurns.length > 0
-    ? gamesWithTurns.reduce((s, g) => s + g.ev_per_turn, 0) / gamesWithTurns.length : null;
+  const gamesWithDecisions = games.filter(g => g.ev_per_decision != null);
+  const avgEvPerDecision = gamesWithDecisions.length > 0
+    ? gamesWithDecisions.reduce((s, g) => s + g.ev_per_decision, 0) / gamesWithDecisions.length : null;
 
-  // Trend direction (last 5 vs first 5 for ev_per_turn)
+  // Trend direction (last 5 vs first 5 for ev_per_decision)
   let trendArrow = "";
-  if (gamesWithTurns.length >= 4) {
-    const half = Math.floor(gamesWithTurns.length / 2);
-    const firstHalf = gamesWithTurns.slice(0, half);
-    const secondHalf = gamesWithTurns.slice(-half);
-    const avgFirst = firstHalf.reduce((s, g) => s + g.ev_per_turn, 0) / firstHalf.length;
-    const avgSecond = secondHalf.reduce((s, g) => s + g.ev_per_turn, 0) / secondHalf.length;
+  if (gamesWithDecisions.length >= 4) {
+    const half = Math.floor(gamesWithDecisions.length / 2);
+    const firstHalf = gamesWithDecisions.slice(0, half);
+    const secondHalf = gamesWithDecisions.slice(-half);
+    const avgFirst = firstHalf.reduce((s, g) => s + g.ev_per_decision, 0) / firstHalf.length;
+    const avgSecond = secondHalf.reduce((s, g) => s + g.ev_per_decision, 0) / secondHalf.length;
     const pctChange = ((avgSecond - avgFirst) / avgFirst * 100).toFixed(0);
     if (avgSecond < avgFirst) {
       trendArrow = `<span class="trend-down">${pctChange}%</span>`;
@@ -903,20 +903,20 @@ function renderTrends(games) {
       <div class="stat"><span class="value">${totalGames}</span><span class="label">Games</span></div>
       <div class="stat"><span class="value">${totalMistakes}</span><span class="label">Total Mistakes</span></div>
       <div class="stat"><span class="value">${totalEv.toFixed(1)}</span><span class="label">Total EV Loss</span></div>
-      ${avgEvPerTurn != null ? `<div class="stat"><span class="value">${avgEvPerTurn.toFixed(4)}</span><span class="label">Avg EV/Turn</span></div>` : ""}
-      ${trendArrow ? `<div class="stat"><span class="value">${trendArrow}</span><span class="label">EV/Turn Trend</span></div>` : ""}
+      ${avgEvPerDecision != null ? `<div class="stat"><span class="value">${avgEvPerDecision.toFixed(4)}</span><span class="label">Avg EV/Decision</span></div>` : ""}
+      ${trendArrow ? `<div class="stat"><span class="value">${trendArrow}</span><span class="label">EV/Decision Trend</span></div>` : ""}
     </div>
   `;
 
-  // Chart 1: EV per turn over time
-  if (gamesWithTurns.length >= 2) {
+  // Chart 1: EV per decision over time
+  if (gamesWithDecisions.length >= 2) {
     html += `<div class="trend-chart-card">
-      <h3>EV Loss per Turn</h3>
-      <div class="trend-chart">${renderLineChart(gamesWithTurns, "ev_per_turn", {
+      <h3>EV Loss per Decision</h3>
+      <div class="trend-chart">${renderLineChart(gamesWithDecisions, "ev_per_decision", {
         color: "#4fc3f7",
         avgColor: "#4fc3f740",
         format: v => v.toFixed(3),
-        yLabel: "EV/Turn",
+        yLabel: "EV/Decision",
       })}</div>
     </div>`;
   }
@@ -1468,8 +1468,8 @@ function showHelp() {
 
     <div class="help-section">
       <h3>Game Ratings</h3>
-      <p>\u2605 <b>Great game</b> &mdash; EV/turn in the top 25% of your games</p>
-      <p>\u2606 <b>Solid game</b> &mdash; EV/turn in the top 50% of your games</p>
+      <p>\u2605 <b>Great game</b> &mdash; EV/decision in the top 25% of your games</p>
+      <p>\u2606 <b>Solid game</b> &mdash; EV/decision in the top 50% of your games</p>
       <p>Ratings are relative to your own history, so they reflect personal improvement. Rounds with zero mistakes get a <span class="clean-badge" style="display:inline">Clean</span> badge.</p>
     </div>
 

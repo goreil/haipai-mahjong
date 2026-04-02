@@ -227,3 +227,11 @@ Branding: "Haipai" (配牌, starting hand)
    - Modal in toolbar with type (bug/feature/general) and message
    - POST /api/feedback, stored in feedback table
    - 2000 char limit
+
+10. [x] EV/Decision metric (replaces EV/Turn)
+   - EV/Turn was unfair: declaring riichi removes future decision opportunities, skewing
+     results toward riichi-heavy games
+   - decision_count = len(Mortal entries) per round (each entry is one player decision point,
+     includes discard/pon/chi/riichi/kan, excludes post-riichi auto-discards)
+   - ev_per_decision = total EV loss / total decisions across all rounds
+   - Updated: parser, DB summary, CLI, web UI (sidebar, detail, trends, help, ratings)

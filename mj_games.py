@@ -101,13 +101,15 @@ def compute_summary(game):
     """Compute summary stats for a game. Mutates game dict."""
     total = 0
     total_ev = 0.0
-    total_turns = 0
+    total_decisions = 0
     by_severity = {"???": 0, "??": 0, "?": 0, "!": 0}
     by_category = {}
 
     for rnd in game["rounds"]:
-        if rnd.get("turn_count"):
-            total_turns += rnd["turn_count"]
+        # Prefer decision_count (excludes post-riichi), fall back to turn_count
+        dc = rnd.get("decision_count") or rnd.get("turn_count")
+        if dc:
+            total_decisions += dc
         for m in rnd["mistakes"]:
             total += 1
             total_ev += m["ev_loss"]
@@ -124,8 +126,8 @@ def compute_summary(game):
     game["summary"] = {
         "total_mistakes": total,
         "total_ev_loss": round(total_ev, 2),
-        "total_turns": total_turns if total_turns > 0 else None,
-        "ev_per_turn": round(total_ev / total_turns, 4) if total_turns > 0 else None,
+        "total_decisions": total_decisions if total_decisions > 0 else None,
+        "ev_per_decision": round(total_ev / total_decisions, 4) if total_decisions > 0 else None,
         "by_severity": by_severity,
         "by_category": by_category,
     }
@@ -138,7 +140,7 @@ def cmd_list(args):
         s = game.get("summary", {})
         n = s.get("total_mistakes", 0)
         ev = s.get("total_ev_loss", 0)
-        turns = s.get("total_turns")
+        decisions = s.get("total_decisions")
 
         # Count annotated vs total
         annotated = sum(
@@ -148,8 +150,8 @@ def cmd_list(args):
         )
 
         line = f"  {i+1}. {game['date']}  {n} mistakes  {ev:.2f} EV"
-        if turns:
-            line += f"  {turns}T  {s.get('ev_per_turn', 0):.4f}/T"
+        if decisions:
+            line += f"  {decisions}D  {s.get('ev_per_decision', 0):.4f}/D"
         if annotated < n:
             line += f"  [{annotated}/{n} annotated]"
         print(line)
@@ -250,8 +252,8 @@ def cmd_review(args):
             sev = s.get("by_severity", {})
             print(f"TOTAL: {s['total_mistakes']} mistakes, {s['total_ev_loss']:.2f} EV"
                   f" | ???:{sev.get('???',0)} ??:{sev.get('??',0)} ?:{sev.get('?',0)} !:{sev.get('!',0)}")
-            if s.get("total_turns"):
-                print(f"TURNS: {s['total_turns']} | EV/Turn: {s['ev_per_turn']:.4f}")
+            if s.get("total_decisions"):
+                print(f"DECISIONS: {s['total_decisions']} | EV/Decision: {s['ev_per_decision']:.4f}")
         print()
 
 
@@ -334,7 +336,7 @@ def cmd_summary(args):
     # Print all summaries
     all_mistakes = 0
     all_ev = 0.0
-    all_turns = 0
+    all_decisions = 0
     all_by_cat = {}
     all_by_sev = {"???": 0, "??": 0, "?": 0, "!": 0}
 
@@ -354,8 +356,8 @@ def cmd_summary(args):
         s = games[idx]["summary"]
         print(f"Game {idx+1} ({games[idx]['date']}):")
         print(f"  {s['total_mistakes']} mistakes, {s['total_ev_loss']:.2f} EV", end="")
-        if s.get("total_turns"):
-            print(f"  | {s['total_turns']}T, {s['ev_per_turn']:.4f}/T", end="")
+        if s.get("total_decisions"):
+            print(f"  | {s['total_decisions']}D, {s['ev_per_decision']:.4f}/D", end="")
         print()
         cats = format_cats_grouped(s.get("by_category", {}))
         if cats:
@@ -364,8 +366,8 @@ def cmd_summary(args):
 
         all_mistakes += s["total_mistakes"]
         all_ev += s["total_ev_loss"]
-        if s.get("total_turns"):
-            all_turns += s["total_turns"]
+        if s.get("total_decisions"):
+            all_decisions += s["total_decisions"]
         for k, v in s.get("by_severity", {}).items():
             all_by_sev[k] = all_by_sev.get(k, 0) + v
         for k, v in s.get("by_category", {}).items():
@@ -377,8 +379,8 @@ def cmd_summary(args):
     if len(indices) > 1:
         print("--- All Games ---")
         print(f"  {all_mistakes} mistakes, {all_ev:.2f} EV", end="")
-        if all_turns:
-            print(f"  | {all_turns}T, {all_ev/all_turns:.4f}/T", end="")
+        if all_decisions:
+            print(f"  | {all_decisions}D, {all_ev/all_decisions:.4f}/D", end="")
         print()
         cats = format_cats_grouped(all_by_cat)
         if cats:
@@ -490,8 +492,8 @@ def cmd_add(args):
     n = len(data["games"])
     print(f"\nAdded game {n}: {game_date}")
     print(f"  {s['total_mistakes']} mistakes, {s['total_ev_loss']:.2f} EV", end="")
-    if s.get("total_turns"):
-        print(f"  | {s['total_turns']}T, {s['ev_per_turn']:.4f}/T", end="")
+    if s.get("total_decisions"):
+        print(f"  | {s['total_decisions']}D, {s['ev_per_decision']:.4f}/D", end="")
     print()
     sev = s["by_severity"]
     print(f"  ???:{sev['???']} ??:{sev['??']} ?:{sev['?']} !:{sev['!']}")

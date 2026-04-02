@@ -66,6 +66,7 @@ def parse_game(data, game_date=None):
     for kyoku, start in zip(kyokus, start_events):
         entries = kyoku["entries"]
         turn_count = (max(e["junme"] for e in entries) + 1) if entries else 0
+        decision_count = len(entries)
 
         mistakes = []
         for entry in entries:
@@ -111,6 +112,7 @@ def parse_game(data, game_date=None):
             "round": round_header(start),
             "honba": start["honba"],
             "turn_count": turn_count,
+            "decision_count": decision_count,
             "outcome": None,
             "mistakes": mistakes,
         })

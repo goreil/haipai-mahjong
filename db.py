@@ -195,6 +195,7 @@ def get_game(conn, game_id, user_id=None):
         rnd["round"] = meta["round_name"]
         rnd["outcome"] = meta.get("outcome")
         rnd["turn_count"] = meta.get("turn_count")
+        rnd["decision_count"] = meta.get("decision_count")
         rounds.append(rnd)
 
     # Add any rounds that have mistakes but no metadata (shouldn't happen but be safe)
@@ -224,6 +225,7 @@ def add_game(conn, user_id, game_dict):
             "round_name": rnd["round"],
             "outcome": rnd.get("outcome"),
             "turn_count": rnd.get("turn_count"),
+            "decision_count": rnd.get("decision_count"),
         })
 
     cur = conn.execute(
@@ -490,8 +492,8 @@ def get_trends(conn, user_id):
             "date": row["date"],
             "total_mistakes": s.get("total_mistakes", 0),
             "total_ev_loss": s.get("total_ev_loss", 0),
-            "total_turns": s.get("total_turns"),
-            "ev_per_turn": s.get("ev_per_turn"),
+            "total_decisions": s.get("total_decisions"),
+            "ev_per_decision": s.get("ev_per_decision"),
             "by_severity": s.get("by_severity", {}),
             "by_group": by_group,
         })
@@ -521,20 +523,21 @@ def compute_summary_for_game(conn, game_id):
             by_cat[cat]["count"] += 1
             by_cat[cat]["ev"] = round(by_cat[cat]["ev"] + (r["ev_loss"] or 0), 2)
 
-    # Get total turns from rounds_json
+    # Get total decisions from rounds_json (fall back to turn_count for old data)
     game_row = conn.execute("SELECT rounds_json FROM games WHERE id = ?", (game_id,)).fetchone()
-    total_turns = None
+    total_decisions = None
     if game_row and game_row["rounds_json"]:
         rounds = json.loads(game_row["rounds_json"])
-        turns = [r.get("turn_count") for r in rounds if r.get("turn_count")]
-        if turns:
-            total_turns = sum(turns)
+        decisions = [r.get("decision_count") or r.get("turn_count") for r in rounds]
+        decisions = [d for d in decisions if d]
+        if decisions:
+            total_decisions = sum(decisions)
 
     stats = {
         "total_mistakes": total,
         "total_ev_loss": round(ev, 2),
-        "total_turns": total_turns,
-        "ev_per_turn": round(ev / total_turns, 4) if total_turns else None,
+        "total_decisions": total_decisions,
+        "ev_per_decision": round(ev / total_decisions, 4) if total_decisions else None,
         "by_severity": by_sev,
         "by_category": by_cat,
     }
