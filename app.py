@@ -91,8 +91,8 @@ def start_nanikiru():
     _nanikiru_proc = subprocess.Popen(
         [str(NANIKIRU_BIN), str(NANIKIRU_PORT)],
         cwd=str(NANIKIRU_BIN.parent),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
 
     # Wait for it to be ready
@@ -109,7 +109,13 @@ def start_nanikiru():
         except (http_requests.ConnectionError, http_requests.Timeout):
             continue
 
-    print("Warning: nanikiru started but not responding", file=sys.stderr)
+    # Show why nanikiru failed
+    rc = _nanikiru_proc.poll()
+    if rc is not None:
+        stderr_out = _nanikiru_proc.stderr.read().decode(errors="replace") if _nanikiru_proc.stderr else ""
+        print(f"Warning: nanikiru exited with code {rc}. stderr: {stderr_out[:500]}", file=sys.stderr)
+    else:
+        print("Warning: nanikiru started but not responding on port", file=sys.stderr)
 
 
 def stop_nanikiru():
