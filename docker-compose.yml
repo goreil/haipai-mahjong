@@ -3,7 +3,7 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in .env file}
       - NANIKIRU_BIN=/opt/nanikiru/nanikiru
       - DB_PATH=/app/data/games.db
     volumes:

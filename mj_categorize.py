@@ -60,14 +60,6 @@ def is_red_five_mjai(tile):
     return tile in ("5mr", "5pr", "5sr")
 
 
-def is_wind_mjai(tile):
-    return tile in ("E", "S", "W", "N")
-
-
-def is_dragon_mjai(tile):
-    return tile in ("P", "F", "C")
-
-
 # --- Wall reconstruction ---
 
 def flatten_mjai_log(mjai_log):

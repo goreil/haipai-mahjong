@@ -130,7 +130,7 @@ def get_conn():
 
 
 @app.teardown_appcontext
-def close_conn(exception):
+def close_conn(_exception):
     conn = g.pop("db_conn", None)
     if conn is not None:
         conn.close()

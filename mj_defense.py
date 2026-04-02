@@ -23,11 +23,6 @@ MJAI_TO_RT = {
 }
 
 
-def mjai_to_rt(tile):
-    """Convert mjai tile notation to Riichi-Trainer index."""
-    return MJAI_TO_RT[tile]
-
-
 def _is_suji(tile, opponent_discards, remaining, riichi_tile):
     """Check if tile is suji-safe against opponent's discards."""
     suji_a = tile - 3
