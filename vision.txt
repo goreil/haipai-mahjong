@@ -4,12 +4,9 @@ study my mahjong mistakes. My current workflow is:
 1. Play a game
 2. Paste the game link into the mortal analysis engine
 Note: This must be done by hand, since it is protected by cloudflare
-3. Run: python3 mj_games.py add '<mjai-viewer-url>'
-   This fetches the JSON, parses all mistakes with full hand/discard data,
-   and stores everything in games.json.
-4. Review with: python3 mj_games.py review --game N
-5. Annotate categories/notes: python3 mj_games.py annotate ...
-6. View summaries: python3 mj_games.py summary
+3. Upload the analysis JSON to haipai.ylue.de
+4. Review mistakes with dora highlighting, board context, EV comparison
+5. Practice weak spots with discard quizzes
 
 The grand vision would be to build a web-app that I may even
 make some money with since there are currently
@@ -39,88 +36,58 @@ tracks it over time, and lets you drill your actual weak spots.
 
 === DONE (summary) ===
 
-Core pipeline: CLI (add/review/annotate/summary/list/categorize), JSON->SQLite data store,
-Mortal JSON parser, auto-categorization (mortal vs mahjong-cpp), 15-category taxonomy.
+Core: CLI + web pipeline, SQLite data store, Mortal JSON parser, auto-categorization
+(mortal vs mahjong-cpp), 15-category taxonomy, EV/Decision metric.
 
-Web UI: Flask app with game list, review view (SVG tiles, severity colors), inline annotation,
-severity filters, add-game modal, positive game ratings (star system).
+Web UI: game list (star ratings), review (SVG tiles, dora highlighting, tile hover,
+board context, defense visuals), annotation, severity filters, add-game modal,
+new user onboarding, help page, feedback form.
 
-Analysis: EV comparison tables (Mortal Q vs mahjong-cpp), defense analysis (suji safety 0-15),
-2A/2B defense-aware split, trend charts (EV/decision, severity, skill area), board state view.
+Analysis: EV comparison tables, defense analysis (suji safety 0-15), 2A/2B defense-aware
+split, trend charts (EV/decision, severity, skill area), personal best/recent stats.
 
-Practice mode: discard quizzes from own mistakes, clickable tiles, filters (category/severity/
-riichi/calc-agrees), spaced repetition, session scoring, keyboard shortcuts.
+Practice: discard quizzes, dora highlighting, spaced repetition, filters, board context.
 
-Multi-user: Docker + nginx + certbot, SQLite with user isolation, Flask-Login,
-invite-code registration, branding ("Haipai"), security hardening, feedback form.
+Multi-user: Docker + nginx + certbot, Flask-Login, invite-code registration, branding.
+Security: input validation, rate limiting, secure cookies, non-root container, HSTS/CSP.
+Testing: pytest (26 tests), CI via GitHub Actions.
+Deployment: auto-deploy workflow, DEPLOY.md documentation.
 
-Testing: pytest suite (21 tests), local-only nanikiru server.
-
-See git log for detailed history. Archived details in archive/.
+See git log for detailed history.
 
 
-=== TODO: DEPLOY (Phase 2) ===
+=== TODO: DEPLOY ===
 
-Deployment guide: see archive/ylue-manual-labor.txt
-
-  1. Provision Hetzner CX22, install Docker
-  2. Nginx config with Certbot (Let's Encrypt HTTPS)
-  3. Domain setup (haipai.???)
-  4. Deploy, test with own account
-  5. Create club member accounts, share URL
-  6. Fix rough edges from real multi-user usage
+haipai.ylue.de is live. Remaining:
+  1. Set up auto-deploy (see DEPLOY.md — add SSH key + GitHub secrets)
+  2. Run backfill: POST /api/games/backfill-decisions
+  3. Create club member accounts, share URL
+  4. Fix rough edges from real multi-user usage
 
 
 === TODO: UX IMPROVEMENTS ===
 
-1. [x] New user onboarding
-   - Welcome screen when no games: explains workflow, links to Tenhou/MJS/Mortal
-   - Step-by-step instructions for adding first game
-   - Add game modal: hint linking to mjai.ekyu.moe
-   - Future: investigate JS-based Mortal fetch (Cloudflare may not block browsers)
-
-2. Board state display overhaul
-   a) [x] Other players' discards collapsible (details/summary)
+1. Board state display (remaining items)
    b) Pons/chis inline with the player row, not separate
-   c) [x] Hover a tile -> highlight all copies of that tile on the board
-   d) [x] Dora tiles highlighted in hand and discard pools (orange border)
    e) Current player section needs cleaner layout
    f) Round wind / seat wind should use tile SVGs with explicit labels
 
-3. Practice mode redesign
+2. Practice mode redesign
    - Rename to "Tile Efficiency Practice"
    - Only include unambiguous tile efficiency (categories 1A-1E), no strategy/riichi
    - Reuse the board state rendering from review mode, just hide the evaluation
      until after the player makes their discard choice
 
-4. Category system overhaul
+3. Category system overhaul
    - Current categories feel misleading, many things are miscategorized
    - Goal: create "unambiguous tile efficiency" group where categorization is reliable
-   - Thresholds are now configurable in RULES dict (mj_categorize.py)
+   - Thresholds configurable in RULES dict (mj_categorize.py)
    - Iterate with: categorize --recheck --dry-run (instant, shows diff summary)
    - Brainstorming notes: archive/ylue-categories.txt
 
 
 === TODO: FEATURES ===
 
-1. [x] Fix uncategorized mistakes (wall reconstruction bug)
-   - reconstruct_context broke too early: events between draws at target tiles_left
-     (discards, pons, chis) weren't counted as visible → wall values too high
-   - Also handle "hand already winning" edge case → default to 2A
-   - Fixed 78/123 uncategorized; remaining 43 have no mortal file (game 30)
-
-2. [x] CI/CD pipeline (tests)
-   - GitHub Actions: run pytest on push/PR to main
-   - Auto-deploy to Hetzner: not yet (need server provisioned first)
-
-3. [x] Security hardening round 2
-   - Input validation on all POST endpoints (type checks, length limits, allowlists)
-   - SQL column name whitelisting in annotate_mistake
-   - Feedback type allowlist (bug/feature/general)
-   - Category allowlist validation
-   - Path traversal protection on mortal_file reads
-   - Disabled debug mode in production (env-gated)
-   - Removed hardcoded SECRET_KEY from Dockerfile
-   - Non-root container user (appuser)
-   - Added Permissions-Policy header, HSTS + CSP in HTTPS template
-   - Remaining: CSRF tokens (Flask-WTF) for full protection
+1. CSRF tokens (Flask-WTF) — last remaining security item
+2. Investigate JS-based Mortal fetch (Cloudflare may not block browsers)
+3. Certificate auto-renewal monitoring
