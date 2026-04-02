@@ -80,10 +80,10 @@ Deployment guide: see archive/ylue-manual-labor.txt
    - Future: investigate JS-based Mortal fetch (Cloudflare may not block browsers)
 
 2. Board state display overhaul
-   a) Other players' discards should be collapsible (not just points section)
+   a) [x] Other players' discards collapsible (details/summary)
    b) Pons/chis inline with the player row, not separate
-   c) Hover a tile -> highlight all copies of that tile on the board
-   d) Dora tiles highlighted everywhere (like in hand display)
+   c) [x] Hover a tile -> highlight all copies of that tile on the board
+   d) [x] Dora tiles highlighted in hand and discard pools (orange border)
    e) Current player section needs cleaner layout
    f) Round wind / seat wind should use tile SVGs with explicit labels
 

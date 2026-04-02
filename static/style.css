@@ -585,10 +585,29 @@ body {
   box-shadow: 0 0 4px rgba(255, 169, 77, 0.3);
 }
 
+.tile.dora-highlight {
+  border-color: #ffa94d;
+}
+
+.tile.tile-hover {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  z-index: 1;
+  position: relative;
+}
+
 .all-discards {
   display: flex;
   flex-direction: column;
   gap: 3px;
+}
+
+.all-discards summary {
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 4px;
 }
 
 .discard-row {

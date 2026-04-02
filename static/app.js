@@ -77,19 +77,51 @@ function tileSrc(t) {
   return name ? `/tiles/${name}.svg` : `/tiles/Back.svg`;
 }
 
+// Dora indicator -> actual dora tile mapping
+const NEXT_TILE = {
+  "1m":"2m","2m":"3m","3m":"4m","4m":"5m","5m":"6m","6m":"7m","7m":"8m","8m":"9m","9m":"1m",
+  "1p":"2p","2p":"3p","3p":"4p","4p":"5p","5p":"6p","6p":"7p","7p":"8p","8p":"9p","9p":"1p",
+  "1s":"2s","2s":"3s","3s":"4s","4s":"5s","5s":"6s","6s":"7s","7s":"8s","8s":"9s","9s":"1s",
+  "E":"S","S":"W","W":"N","N":"E", "P":"F","F":"C","C":"P",
+  "5mr":"6m","5pr":"6p","5sr":"6s",
+};
+
+function getDoraTiles(indicators) {
+  if (!indicators) return new Set();
+  const doras = new Set();
+  for (const ind of indicators) {
+    const d = NEXT_TILE[ind];
+    if (d) doras.add(d);
+    // Red fives are always dora
+  }
+  return doras;
+}
+
+// Normalize tile for comparison (red five -> base tile)
+function tileBase(t) {
+  if (t === "5mr") return "5m";
+  if (t === "5pr") return "5p";
+  if (t === "5sr") return "5s";
+  return t;
+}
+
 function renderTile(t, extraClass = "", titleOverride = null) {
   const cls = ["tile", extraClass].filter(Boolean).join(" ");
   const title = titleOverride || t;
-  return `<img class="${cls}" src="${tileSrc(t)}" alt="${t}" title="${title}">`;
+  return `<img class="${cls}" src="${tileSrc(t)}" alt="${t}" title="${title}" data-tile="${tileBase(t)}">`;
 }
 
-function renderHand(tiles, draw, safetyRatings) {
+function renderHand(tiles, draw, safetyRatings, doraTiles) {
   if (!tiles || !tiles.length) return "";
   return tiles.map((t, i) => {
     let extra = "";
     if (draw && i === tiles.length - 1 && t === draw) extra = "draw";
     const sr = getSafetyRating(safetyRatings, t);
     if (sr != null) extra += ` ${safetyClass(sr)}`;
+    // Red fives are always dora; also check if tile matches indicator dora
+    if (t === "5mr" || t === "5pr" || t === "5sr" || (doraTiles && doraTiles.has(tileBase(t)))) {
+      extra += " dora-highlight";
+    }
     const title = sr != null ? `${t} — ${safetyLabel(sr)} (${sr}/15)` : null;
     return renderTile(t, extra, title);
   }).join("");
@@ -123,22 +155,30 @@ function renderBoardContext(m) {
   }
   html += `</div>`;
 
-  // All player discards
+  // All player discards (collapsible)
   if (b.all_discards && b.all_discards.length) {
-    html += `<div class="all-discards">`;
-    for (const d of b.all_discards) {
-      if (!d.discards.length) continue;
-      const seatName = SEAT_NAMES[d.seat] || `P${d.seat}`;
-      html += `<div class="discard-row">`;
-      html += `<span class="discard-label">${seatName}</span>`;
-      html += `<span class="tiles">`;
-      for (let di = 0; di < d.discards.length; di++) {
-        const isRiichi = di === d.riichi_idx;
-        html += renderTile(d.discards[di], `action-tile-sm${isRiichi ? " riichi-tile" : ""}`);
+    const hasDiscards = b.all_discards.some(d => d.discards.length > 0);
+    if (hasDiscards) {
+      const doraTiles = getDoraTiles(b.dora_indicators);
+      html += `<details class="all-discards" open>`;
+      html += `<summary>Discards</summary>`;
+      for (const d of b.all_discards) {
+        if (!d.discards.length) continue;
+        const seatName = SEAT_NAMES[d.seat] || `P${d.seat}`;
+        html += `<div class="discard-row">`;
+        html += `<span class="discard-label">${seatName}</span>`;
+        html += `<span class="tiles">`;
+        for (let di = 0; di < d.discards.length; di++) {
+          const isRiichi = di === d.riichi_idx;
+          const isDora = d.discards[di] === "5mr" || d.discards[di] === "5pr" || d.discards[di] === "5sr"
+            || doraTiles.has(tileBase(d.discards[di]));
+          const cls = `action-tile-sm${isRiichi ? " riichi-tile" : ""}${isDora ? " dora-highlight" : ""}`;
+          html += renderTile(d.discards[di], cls);
+        }
+        html += `</span></div>`;
       }
-      html += `</span></div>`;
+      html += `</details>`;
     }
-    html += `</div>`;
   }
 
   // Collapsible details (scores, opponent melds)
@@ -596,10 +636,11 @@ function renderGame() {
 
       // Hand
       if (m.hand && m.hand.length) {
+        const doraTiles = m.board_state ? getDoraTiles(m.board_state.dora_indicators) : new Set();
         html += `<div class="hand-row">
           <span class="label">Hand</span>
           ${m.safety_ratings ? '<span class="defense-badge">Riichi</span>' : ''}
-          <span class="tiles">${renderHand(m.hand, m.draw, m.safety_ratings)}</span>
+          <span class="tiles">${renderHand(m.hand, m.draw, m.safety_ratings, doraTiles)}</span>
         </div>`;
       }
 
@@ -1567,6 +1608,23 @@ document.addEventListener("keydown", (e) => {
       showPractice();
     }
   }
+});
+
+// --- Tile hover highlighting ---
+// Hovering a tile highlights all copies of that tile type on the board
+
+document.addEventListener("mouseover", (e) => {
+  const tile = e.target.closest("[data-tile]");
+  if (!tile) return;
+  const tileType = tile.dataset.tile;
+  document.querySelectorAll(`[data-tile="${tileType}"]`).forEach(el => el.classList.add("tile-hover"));
+});
+
+document.addEventListener("mouseout", (e) => {
+  const tile = e.target.closest("[data-tile]");
+  if (!tile) return;
+  const tileType = tile.dataset.tile;
+  document.querySelectorAll(`[data-tile="${tileType}"]`).forEach(el => el.classList.remove("tile-hover"));
 });
 
 // --- Init ---
