@@ -4,108 +4,109 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Personal Riichi Mahjong game analysis workspace. Analyzes Tenhou replays via Mortal AI, stores structured mistake data in JSON, and provides CLI + web UI for review and annotation.
+Riichi Mahjong game analysis web app ("Haipai"). Analyzes Tenhou/MJS replays via Mortal AI, auto-categorizes mistakes using mahjong-cpp, and provides a web UI for review, annotation, practice, and trend tracking. Multi-user with invite-code registration.
 
 ## Key Files
 
-- `games.json` - Canonical data store (JSON). All game reviews with structured mistake data.
-- `mj_games.py` - Main CLI tool: `list`, `review`, `annotate`, `summary`, `add`, `categorize` subcommands.
-- `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs local mahjong-cpp server. Includes "reasonable agreement" check, defense-aware 2A/2B split, and safety rating computation.
-- `mj_defense.py` - Suji-based tile safety evaluator (ported from Riichi-Trainer). Rates tiles 0-15 against riichi opponents.
-- `mj_parse.py` - Core parser. `parse_game(data, date)` returns structured game dict from Mortal JSON. Also has `--text` legacy mode.
-- `app.py` - Flask web server (port 5000). Auto-starts nanikiru tile efficiency server. Serves API + static frontend.
+- `app.py` - Flask web server (port 5000). Multi-user auth, API routes, auto-starts nanikiru.
+- `db.py` - SQLite database layer. Games, mistakes, users, practice results, feedback.
+- `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp. Wall reconstruction, defense-aware 2A/2B split, safety rating computation.
+- `mj_defense.py` - Suji-based tile safety evaluator (ported from Riichi-Trainer). Rates tiles 0-15.
+- `mj_parse.py` - Core parser. `parse_game(data, date)` returns structured game dict from Mortal JSON.
+- `mj_games.py` - CLI tool for games.json (legacy format, still functional for local use).
 - `static/` - Web frontend: `index.html`, `style.css`, `app.js` (vanilla JS SPA).
-- `riichi-mahjong-tiles/` - Git submodule with SVG tile graphics. Served at `/tiles/<Name>.svg`.
-- `mahjong-cpp/` - Git submodule ([goreil/mahjong-cpp](https://github.com/goreil/mahjong-cpp)), a C++ mahjong library.
-- `Riichi-Trainer/` - Git submodule. React-based trainer with defense analysis (suji evaluator ported to `mj_defense.py`).
-- `mj_migrate.py` - One-shot migration from Mahjong Mistakes.txt → games.json (already run).
-- `mj_calc.sh` - Legacy summary calculator for .txt format (superseded).
-- `Mahjong Mistakes.txt` - Legacy game review log (read-only archive).
-- `Richii Mahjong Learning.txt` - Strategy notes: defense heuristics, tile efficiency rules.
+- `tests/test_core.py` - pytest suite (26 tests): parsing, tile conversion, board state, DB, API, wall reconstruction.
+- `Dockerfile` - Multi-stage build (nanikiru binary + Python runtime). Non-root user.
+- `docker-compose.yml` - App + nginx + certbot. Bind mounts for hot reload.
+- `nginx.conf.template` - Nginx config template with security headers. Copy to nginx.conf on server.
+- `DEPLOY.md` - Full deployment guide with auto-deploy setup.
+- `riichi-mahjong-tiles/` - Git submodule with SVG tile graphics.
+- `mahjong-cpp/` - Git submodule, C++ mahjong library for tile efficiency.
+- `Riichi-Trainer/` - Git submodule. Source of defense analysis logic.
+- `archive/` - Legacy/one-shot scripts (migration tools, deployment notes, brainstorming).
 - `vision.txt` - Project roadmap with done/todo sections.
 
 ## Commands
 
 ```bash
-# Web UI (auto-starts nanikiru tile efficiency server)
-python3 app.py                                         # Start web server at http://localhost:5000
+# Web UI (dev server, auto-starts nanikiru)
+FLASK_ENV=development python3 app.py       # http://localhost:5000
 
-# CLI workflow
-python3 mj_games.py add '<mjai-viewer-url>'            # Fetch + parse + store game
-python3 mj_games.py add '<url>' --date 2026-03-25      # Override date
-python3 mj_games.py list                                # List all games with stats
-python3 mj_games.py review --game 3                     # Pretty-print mistakes
-python3 mj_games.py review --game 3 --hide-minor        # Hide ? severity
-python3 mj_games.py review --game 3 --hide-medium       # Hide ?? severity
-python3 mj_games.py annotate 3 E1 1 -c 1D -n "note"    # Set category/note on a mistake
-python3 mj_games.py summary                             # Recompute and display all summaries
-python3 mj_games.py categorize                          # Auto-categorize all uncategorized mistakes
-python3 mj_games.py categorize --game 3                 # Categorize specific game
-python3 mj_games.py categorize --recheck                # Re-run logic on stored data (no API, instant)
-python3 mj_games.py categorize --force                  # Re-query API for all (slow)
-python3 mj_games.py categorize --dry-run                # Preview without saving
+# Tests
+python3 -m pytest tests/ -v
+
+# Docker (production)
+docker-compose up -d --build               # Full build + start
+docker-compose restart app                  # Restart after code changes
+docker-compose logs -f app                  # View logs
+
+# CLI (legacy, works with games.json)
+python3 mj_games.py list
+python3 mj_games.py review --game 3
+python3 mj_games.py categorize --recheck --dry-run
 
 # Lower-level
-python3 mj_parse.py analysis.json                       # Parse Mortal JSON → structured JSON to stdout
-python3 mj_parse.py analysis.json --text                # Parse → legacy text format with auto discard notes
+python3 mj_parse.py analysis.json          # Parse Mortal JSON to stdout
 ```
 
 ## Web UI
 
 Flask app (`app.py`) serving a vanilla JS SPA. Features:
-- Game list sidebar sorted by date (newest first), star ratings for top games
-- Review view with SVG tile graphics, severity-colored mistake cards
-- Defense visuals: colored tile borders (safe/caution/danger), Safety column in EV table, "RIICHI" badge
-- Inline annotation (category dropdown with tooltip descriptions + note input, auto-saves)
-- Severity filter checkboxes (hide minor/medium)
-- Practice mode: random discard quizzes from your mistakes, clickable tiles, filters by category/severity/defense, session scoring, keyboard shortcuts (Space/Enter for next)
-- Trend analysis: EV/turn chart, severity breakdown, skill area progression
-- Help page: category reference, defense scale explanation, attribution/licenses
-- Add game modal (paste Mortal viewer URL)
-- Clean round badges, positive game rating banners
+- Game list sidebar with star ratings, EV/Decision stats
+- Review view: SVG tiles, severity colors, dora highlighting, tile hover highlight
+- Board context: dora indicators, collapsible discard pools, opponent melds, scores
+- Defense visuals: safety-colored tile borders, Safety column in EV table, "RIICHI" badge
+- Inline annotation: category dropdown with tooltips, note input, auto-saves
+- Practice mode: discard quizzes from own mistakes, spaced repetition, filters, dora highlighting
+- Trend analysis: EV/decision chart, severity breakdown, skill area progression
+- New user onboarding: step-by-step guide when no games exist
+- Help page, feedback form, add game modal
 
-API routes: `GET /api/games`, `GET /api/games/<id>`, `GET /api/trends`, `GET /api/practice`, `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`, `POST /api/games/add`, `DELETE /api/games/<id>`.
-Tiles served at `/tiles/<Name>.svg` from `riichi-mahjong-tiles/Regular/`.
+API routes:
+- `GET /api/games`, `GET /api/games/<id>`, `GET /api/trends`
+- `GET /api/practice`, `POST /api/practice/result`, `GET /api/practice/stats`
+- `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`
+- `POST /api/games/add`, `DELETE /api/games/<id>`
+- `POST /api/games/import`, `GET /api/categories`, `GET /api/me`
+- `POST /api/feedback`
+- `POST /api/games/backfill-board-state`, `POST /api/games/backfill-decisions`
 
 ## Data Format
 
-Games in `games.json` have rounds, each with mistakes containing:
-- `turn`, `severity` (?/??/???), `ev_loss`, `category`, `note`
-- Rich data (from Mortal JSON): `hand`, `melds`, `shanten`, `draw`, `actual`/`expected` actions, `top_actions`
-- `safety_ratings` (optional): dict of mjai tile → safety rating (0-15), present when opponent in riichi
+SQLite database (`games.db`) with tables: users, games, mistakes, invite_codes, practice_results, feedback.
+
+Mistakes have: `turn`, `severity` (?/??/???), `ev_loss`, `category`, `note`, plus `data_json` with:
+- `hand`, `melds`, `shanten`, `draw`, `actual`/`expected` actions, `top_actions`
+- `safety_ratings`: dict of mjai tile -> safety rating (0-15), when opponent in riichi
 - `cpp_best`, `cpp_stats`: mahjong-cpp tile efficiency analysis
+- `board_state`: dora indicators, winds, scores, all discard pools, opponent melds
+- `opponent_discards`: opponent discard pools for defense context
 
-Categories: 1A-1E (efficiency/dora/honors/pairs), 2A-2C (strategy), 3A-3C (melding), 4A-4B (riichi), 5A-5B (kan).
-
-Efficiency sub-categories: 1B (dora handling), 1C (honor ordering), 1D (honor vs number), 1E (pair management), 1A (general).
-
-Defense analysis uses suji-based safety ratings (0-15 scale, ported from Riichi-Trainer): genbutsu=15, suji terminals=13-14, honors by remaining count, non-suji middle tiles=1-3.
+Categories: 1A-1E (efficiency), 2A-2C (strategy), 3A-3C (melding), 4A-4B (riichi), 5A-5B (kan).
 
 ## Auto-Categorization Logic
 
 When adding a game (CLI or web), mistakes are automatically categorized:
 
-1. **Non-discard actions** are categorized by type: 3A-3C (meld), 4A-4B (riichi), 5A-5B (kan).
-2. **Discard vs discard**: queries mahjong-cpp API for pure tile efficiency analysis, then:
-   - **cpp == mortal** (exact match): efficiency error → sub-categorize as 1A-1E
-   - **cpp ~= mortal** ("reasonable agreement" — same shanten, mortal's tile within 90% of cpp's best expected score): still efficiency → 1A-1E
-   - **cpp != mortal** (genuine disagreement): check defense context:
-     - If opponent is in riichi and mortal chose a significantly safer tile (3+ safety rating difference) → **2B** (Defense)
-     - Otherwise → **2A** (Push/Fold)
+1. **Non-discard actions** categorized by type: 3A-3C (meld), 4A-4B (riichi), 5A-5B (kan).
+2. **Discard vs discard**: queries mahjong-cpp API for tile efficiency, then:
+   - **cpp == mortal** or **cpp ~= mortal** (within 90% score): efficiency -> 1A-1E
+   - **cpp != mortal** + opponent in riichi + mortal chose safer tile (3+ gap): **2B** (Defense)
+   - **cpp != mortal** otherwise: **2A** (Push/Fold)
+   - **Hand already winning**: defaults to **2A**
 
-Efficiency sub-categories: 1B (dora handling), 1C (honor ordering), 1D (honor vs number), 1E (pair management), 1A (general).
-
-Defense analysis uses suji-based safety ratings (0-15 scale, ported from Riichi-Trainer): genbutsu=15, suji terminals=13-14, honors by remaining count, non-suji middle tiles=1-3.
-
-Use `--recheck` to re-run categorization logic on stored data without API calls (instant). Use `--force` to re-query the API (slow).
+Thresholds in `RULES` dict at top of `mj_categorize.py`. Iterate with `--recheck --dry-run`.
 
 ## Tile Notation
 
-Mortal uses mjai notation: `1m`-`9m`, `1p`-`9p`, `1s`-`9s`, `5mr`/`5pr`/`5sr` (red fives), `E`/`S`/`W`/`N` (winds), `P`/`F`/`C` (dragons).
-SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, `Man5-Dora.svg` (red five), `Ton.svg`/`Nan.svg`/`Shaa.svg`/`Pei.svg`, `Haku.svg`/`Hatsu.svg`/`Chun.svg`.
+Mortal/mjai: `1m`-`9m`, `1p`-`9p`, `1s`-`9s`, `5mr`/`5pr`/`5sr` (red fives), `E`/`S`/`W`/`N`, `P`/`F`/`C`.
+mahjong-cpp/MPSZ: `1z`-`7z` for honors, `0m`/`0p`/`0s` for red fives.
+SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, `Man5-Dora.svg`, `Ton.svg`, etc.
 
 ## Important Notes
 
-- Downloads from mjai.ekyu.moe must use the `requests` library (not `urllib.request`) — Cloudflare blocks bare urllib User-Agent.
-- `mahjong-cpp` uses MPSZ notation (`1z`-`7z` for honors, `0m`/`0p`/`0s` for red fives) — conversion needed for integration.
-- Tile efficiency calculator runs locally via `mahjong-cpp/build/install/bin/nanikiru PORT [BIND_ADDR]` (default: 127.0.0.1:50000). Auto-started by `app.py`.
+- Downloads from mjai.ekyu.moe must use the `requests` library — Cloudflare blocks bare urllib.
+- `mahjong-cpp` uses MPSZ notation — conversion needed (see `MJAI_TO_ID` in mj_categorize.py).
+- Nanikiru runs locally at 127.0.0.1:50000, auto-started by `app.py`.
+- `SECRET_KEY` must be set via `.env` file or environment variable (no insecure defaults).
+- Debug mode requires `FLASK_ENV=development` (off by default).
