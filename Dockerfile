@@ -22,6 +22,8 @@ COPY --from=builder /build/mahjong-cpp/build/install/bin/ /opt/nanikiru/
 
 # Python app
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends gosu && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -30,7 +32,7 @@ COPY static/ static/
 COPY riichi-mahjong-tiles/Regular/ riichi-mahjong-tiles/Regular/
 
 # Create non-root user and data directories
-RUN useradd -r -s /bin/false appuser \
+RUN useradd -r -u 1000 -s /bin/false appuser \
     && mkdir -p mortal_analysis data \
     && chown -R appuser:appuser /app
 
@@ -39,7 +41,10 @@ ENV NANIKIRU_BIN=/opt/nanikiru/nanikiru
 ENV DB_PATH=/app/data/games.db
 ENV PYTHONUNBUFFERED=1
 
-USER appuser
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 5000
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app:app"]
