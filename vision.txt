@@ -102,10 +102,11 @@ Deployment guide: see archive/ylue-manual-labor.txt
 
 === TODO: FEATURES ===
 
-1. Fix 73 uncategorized mistakes
-   - All dahai-vs-dahai with wall reconstruction errors ("more tiles than wall")
-   - Bug in reconstruct_context: tile counts go negative in some edge cases
-   - Affects ~6% of mistakes
+1. [x] Fix uncategorized mistakes (wall reconstruction bug)
+   - reconstruct_context broke too early: events between draws at target tiles_left
+     (discards, pons, chis) weren't counted as visible → wall values too high
+   - Also handle "hand already winning" edge case → default to 2A
+   - Fixed 78/123 uncategorized; remaining 43 have no mortal file (game 30)
 
 2. CI/CD pipeline
    - GitHub Actions: run tests, auto-deploy to Hetzner on push to main

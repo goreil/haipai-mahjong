@@ -138,10 +138,14 @@ def reconstruct_context(mortal_data, kyoku_idx, tiles_left_target):
         e = events[pos]
         etype = e.get("type")
 
+        # Stop before the next draw that would take us past the target.
+        # Events between draws (dahai, pon, chi, etc.) at the target
+        # tiles_left are still visible and must be counted.
+        if etype == "tsumo" and tiles_left <= tiles_left_target:
+            break
+
         if etype == "tsumo":
             tiles_left -= 1
-            # The drawn tile is NOT visible to others (it goes into the drawer's hand)
-            # We only care about it if it's our draw (it'll be in our tehai)
 
         elif etype == "dahai":
             # Discarded tile is visible to everyone
@@ -171,9 +175,6 @@ def reconstruct_context(mortal_data, kyoku_idx, tiles_left_target):
             # New dora indicator revealed (after kan)
             visible.append(e["dora_marker"])
             dora_indicators.append(e["dora_marker"])
-
-        if tiles_left <= tiles_left_target:
-            break
 
         pos += 1
 
@@ -677,6 +678,10 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     try:
         response = call_mahjong_cpp(req)
     except Exception as e:
+        err_msg = str(e)
+        # Hand already in winning form — strategy decision, not efficiency
+        if "和了形" in err_msg:
+            return "2A", None, safety_data, opp_discards
         print(f"  API error: {e}", file=sys.stderr)
         return None, None, safety_data, opp_discards
 
