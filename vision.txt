@@ -113,7 +113,14 @@ Deployment guide: see archive/ylue-manual-labor.txt
    - GitHub Actions: run pytest on push/PR to main
    - Auto-deploy to Hetzner: not yet (need server provisioned first)
 
-3. Security remaining
-   - CSRF tokens (Flask-WTF)
-   - HTTPS enforcement
-   - Input schema validation
+3. [x] Security hardening round 2
+   - Input validation on all POST endpoints (type checks, length limits, allowlists)
+   - SQL column name whitelisting in annotate_mistake
+   - Feedback type allowlist (bug/feature/general)
+   - Category allowlist validation
+   - Path traversal protection on mortal_file reads
+   - Disabled debug mode in production (env-gated)
+   - Removed hardcoded SECRET_KEY from Dockerfile
+   - Non-root container user (appuser)
+   - Added Permissions-Policy header, HSTS + CSP in HTTPS template
+   - Remaining: CSRF tokens (Flask-WTF) for full protection

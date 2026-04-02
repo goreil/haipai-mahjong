@@ -307,6 +307,8 @@ def annotate_mistake(conn, game_id, round_name, turn, index, category, note, use
     if note is not None:
         updates["note"] = note if note else None
 
+    ALLOWED_COLS = {"category", "note"}
+    updates = {k: v for k, v in updates.items() if k in ALLOWED_COLS}
     if updates:
         set_clause = ", ".join(f"{k} = ?" for k in updates)
         conn.execute(

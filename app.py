@@ -376,11 +376,26 @@ def api_annotate(game_id):
     uid = current_user.id
 
     body = request.json
+    if not body:
+        return jsonify({"error": "JSON body required"}), 400
     round_name = body.get("round")
     turn = body.get("turn")
     index = body.get("index", 0)
     category = body.get("category")
     note = body.get("note")
+
+    if not isinstance(round_name, str) or not isinstance(turn, int):
+        return jsonify({"error": "round (string) and turn (int) required"}), 400
+    if category is not None and not isinstance(category, str):
+        return jsonify({"error": "category must be a string"}), 400
+    if note is not None and not isinstance(note, str):
+        return jsonify({"error": "note must be a string"}), 400
+    if note and len(note) > 1000:
+        return jsonify({"error": "note too long (max 1000 chars)"}), 400
+
+    VALID_CATEGORIES = {"", "1A", "1B", "1C", "1D", "1E", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "5A", "5B"}
+    if category and category not in VALID_CATEGORIES:
+        return jsonify({"error": f"Invalid category: {category}"}), 400
 
     result = db.annotate_mistake(conn, game_id, round_name, turn, index, category, note, user_id=uid)
     if not result:
@@ -450,7 +465,9 @@ def api_backfill_decisions():
             db.compute_summary_for_game(conn, g["id"])
             continue
 
-        mortal_path = DIR / g["mortal_file"]
+        mortal_path = (DIR / g["mortal_file"]).resolve()
+        if not str(mortal_path).startswith(str(DIR.resolve())):
+            continue
         if not mortal_path.exists():
             continue
 
@@ -577,10 +594,12 @@ def api_practice_result():
     conn = get_conn()
     uid = current_user.id
     body = request.json
+    if not body:
+        return jsonify({"error": "JSON body required"}), 400
     mistake_id = body.get("mistake_id")
     correct = body.get("correct", False)
-    if mistake_id is None:
-        return jsonify({"error": "mistake_id required"}), 400
+    if not isinstance(mistake_id, int):
+        return jsonify({"error": "mistake_id (int) required"}), 400
     db.record_practice_result(conn, uid, mistake_id, correct)
     return jsonify({"ok": True})
 
@@ -600,6 +619,8 @@ def api_feedback():
     uid = current_user.id
     body = request.json or {}
     fb_type = body.get("type", "general")
+    if fb_type not in ("bug", "feature", "general"):
+        return jsonify({"error": "type must be bug, feature, or general"}), 400
     message = (body.get("message") or "").strip()
     if not message:
         return jsonify({"error": "Message is required"}), 400
@@ -633,4 +654,4 @@ if __name__ == "__main__":
         pass  # already initialized above
     elif not app.debug:
         init_app()
-    app.run(debug=True, port=5000)
+    app.run(debug=os.environ.get("FLASK_ENV") == "development", port=5000)

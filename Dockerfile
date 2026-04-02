@@ -29,15 +29,17 @@ COPY app.py db.py mj_categorize.py mj_defense.py mj_games.py mj_parse.py ./
 COPY static/ static/
 COPY riichi-mahjong-tiles/Regular/ riichi-mahjong-tiles/Regular/
 
-# Ensure mortal_analysis dir exists for user uploads
-RUN mkdir -p mortal_analysis
+# Create non-root user and data directories
+RUN useradd -r -s /bin/false appuser \
+    && mkdir -p mortal_analysis data \
+    && chown -R appuser:appuser /app
 
 # Environment
 ENV NANIKIRU_BIN=/opt/nanikiru/nanikiru
 ENV DB_PATH=/app/data/games.db
-ENV SECRET_KEY=change-me-in-production
 ENV PYTHONUNBUFFERED=1
 
+USER appuser
 EXPOSE 5000
 
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app:app"]
