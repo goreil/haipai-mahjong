@@ -1243,11 +1243,14 @@ async function showPractice() {
   renderPractice();
 }
 
-function renderPracticeHand(tiles, draw) {
+function renderPracticeHand(tiles, draw, doraTiles) {
   if (!tiles || !tiles.length) return "";
   return tiles.map((t, i) => {
     const isDraw = draw && i === tiles.length - 1 && t === draw;
-    const extra = isDraw ? "draw" : "";
+    let extra = isDraw ? "draw" : "";
+    if (t === "5mr" || t === "5pr" || t === "5sr" || (doraTiles && doraTiles.has(tileBase(t)))) {
+      extra += " dora-highlight";
+    }
     // Escape single quotes in tile names for onclick
     const safe = t.replace(/'/g, "\\'");
     return `<span class="practice-tile" onclick="submitPracticeAnswer('${safe}')">${renderTile(t, extra)}</span>`;
@@ -1336,6 +1339,8 @@ function renderPractice() {
   }
 
   // Hand
+  const doraTiles = m.board_state ? getDoraTiles(m.board_state.dora_indicators) : new Set();
+
   if (answered) {
     // Show hand with answer indicators
     html += `<div class="practice-hand-area">`;
@@ -1350,6 +1355,8 @@ function renderPractice() {
       // Safety colors
       const sr = getSafetyRating(m.safety_ratings, t);
       if (sr != null) cls += ` ${safetyClass(sr)}`;
+      // Dora highlighting
+      if (t === "5mr" || t === "5pr" || t === "5sr" || doraTiles.has(tileBase(t))) cls += " dora-highlight";
       const title = sr != null ? `${t} — ${safetyLabel(sr)} (${sr}/15)` : t;
 
       // Answer highlight
@@ -1372,7 +1379,7 @@ function renderPractice() {
     html += `<div class="practice-hand-area">`;
     html += `<div class="practice-prompt">Pick a tile to discard</div>`;
     html += `<div class="hand-row"><span class="label">Hand</span>`;
-    html += `<span class="tiles">${renderPracticeHand(m.hand, m.draw)}</span>`;
+    html += `<span class="tiles">${renderPracticeHand(m.hand, m.draw, doraTiles)}</span>`;
     html += `</div>`;
     // Board context (dora, discards, etc.)
     html += renderBoardContext(m);
