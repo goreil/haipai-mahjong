@@ -31,10 +31,11 @@ COPY app.py db.py mj_categorize.py mj_defense.py mj_games.py mj_parse.py ./
 COPY static/ static/
 COPY riichi-mahjong-tiles/Regular/ riichi-mahjong-tiles/Regular/
 
-# Create non-root user and data directories
-RUN useradd -r -u 1000 -s /bin/false appuser \
+# Create non-root user with a home dir (gunicorn needs it) and data directories
+RUN useradd -r -u 1000 -m -s /bin/false appuser \
     && mkdir -p mortal_analysis data \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    && chmod -R o+rx /opt/nanikiru
 
 # Environment
 ENV NANIKIRU_BIN=/opt/nanikiru/nanikiru
