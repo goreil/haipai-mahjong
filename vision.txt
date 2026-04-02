@@ -73,10 +73,11 @@ Deployment guide: see archive/ylue-manual-labor.txt
 
 === TODO: UX IMPROVEMENTS ===
 
-1. New user onboarding
-   - Show explanation: go to https://mjai.ekyu.moe/, run analysis, paste link
-   - Investigate: can we fetch Mortal JSON via JavaScript instead of Python?
-     (Cloudflare may not block in-browser requests — would simplify the workflow)
+1. [x] New user onboarding
+   - Welcome screen when no games: explains workflow, links to Tenhou/MJS/Mortal
+   - Step-by-step instructions for adding first game
+   - Add game modal: hint linking to mjai.ekyu.moe
+   - Future: investigate JS-based Mortal fetch (Cloudflare may not block browsers)
 
 2. Board state display overhaul
    a) Other players' discards should be collapsible (not just points section)
@@ -108,8 +109,9 @@ Deployment guide: see archive/ylue-manual-labor.txt
    - Also handle "hand already winning" edge case → default to 2A
    - Fixed 78/123 uncategorized; remaining 43 have no mortal file (game 30)
 
-2. CI/CD pipeline
-   - GitHub Actions: run tests, auto-deploy to Hetzner on push to main
+2. [x] CI/CD pipeline (tests)
+   - GitHub Actions: run pytest on push/PR to main
+   - Auto-deploy to Hetzner: not yet (need server provisioned first)
 
 3. Security remaining
    - CSRF tokens (Flask-WTF)

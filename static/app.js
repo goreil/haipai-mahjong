@@ -397,6 +397,27 @@ async function fetchGames() {
   const res = await fetch("/api/games");
   state.games = await res.json();
   renderGameList();
+  if (state.games.length === 0 && !state.currentGame) {
+    showOnboarding();
+  }
+}
+
+function showOnboarding() {
+  document.getElementById("content").innerHTML = `
+    <div class="onboarding">
+      <h2>Welcome to Haipai</h2>
+      <p>Haipai analyzes your Riichi Mahjong games using Mortal AI to help you study your mistakes, track improvement over time, and practice your weak spots.</p>
+      <h3>How to add your first game</h3>
+      <ol>
+        <li>Play a game on <a href="https://tenhou.net" target="_blank">Tenhou</a> or <a href="https://mahjongsoul.game.yo-star.com" target="_blank">Mahjong Soul</a></li>
+        <li>Go to <a href="https://mjai.ekyu.moe" target="_blank">mjai.ekyu.moe</a> and paste your replay link</li>
+        <li>Wait for Mortal AI to finish analysis</li>
+        <li>Download the analysis JSON file (the download button on the results page)</li>
+        <li>Click <strong>+ Add Game</strong> in the sidebar and upload the JSON file</li>
+      </ol>
+      <button class="btn btn-primary" onclick="showAddModal()">+ Add Game</button>
+    </div>
+  `;
 }
 
 async function fetchGame(id) {
