@@ -176,6 +176,34 @@ Branding: "Haipai" (配牌, starting hand)
   - Mascot: not yet, but name is set
 
 
+=== TODO: UX IMPROVEMENTS ===
+
+1. New user onboarding
+   - Show explanation: go to https://mjai.ekyu.moe/, run analysis, paste link
+   - Investigate: can we fetch Mortal JSON via JavaScript instead of Python?
+     (Cloudflare may not block in-browser requests — would simplify the workflow)
+
+2. Board state display overhaul
+   a) Other players' discards should be collapsible (not just points section)
+   b) Pons/chis inline with the player row, not separate
+   c) Hover a tile → highlight all copies of that tile on the board
+   d) Dora tiles highlighted everywhere (like in hand display)
+   e) Current player section needs cleaner layout
+   f) Round wind / seat wind should use tile SVGs with explicit labels
+
+3. Practice mode redesign
+   - Rename to "Tile Efficiency Practice"
+   - Only include unambiguous tile efficiency (categories 1A-1E), no strategy/riichi
+   - Reuse the board state rendering from review mode, just hide the evaluation
+     until after the player makes their discard choice
+
+4. Category system overhaul (see ylue-categories.txt)
+   - Current categories feel misleading, many things are miscategorized
+   - Goal: create "unambiguous tile efficiency" group where categorization is reliable
+   - Thresholds are now configurable in RULES dict (mj_categorize.py)
+   - Iterate with: categorize --recheck --dry-run (instant, shows diff summary)
+
+
 === TODO: FEATURES (after publish) ===
 
 1. [x] Show opponent discards in defense situations

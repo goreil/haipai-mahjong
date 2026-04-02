@@ -405,16 +405,26 @@ def cmd_categorize(args):
 
     if args.recheck:
         # Re-run categorization logic on stored data (no API calls)
-        from mj_categorize import recheck_game
+        from mj_categorize import recheck_game, RULES
         total_changed = 0
+        all_transitions = {}
         for idx in indices:
             game = games[idx]
             print(f"Rechecking game {idx+1} ({game['date']})...")
-            n = recheck_game(game, idx, dry_run=args.dry_run)
+            n, transitions = recheck_game(game, idx, dry_run=args.dry_run)
             total_changed += n
+            for k, v in transitions.items():
+                all_transitions[k] = all_transitions.get(k, 0) + v
         if not args.dry_run:
             save_games(data)
         print(f"\nDone: {total_changed} categories changed (0 API calls)")
+        if all_transitions:
+            print("Transitions:")
+            for (old, new), count in sorted(all_transitions.items(), key=lambda x: -x[1]):
+                print(f"  {old or '?'} -> {new}: {count}")
+        print(f"Rules: agree_exp={RULES['agree_exp_score_ratio']}"
+              f" agree_nec={RULES['agree_necessary_ratio']}"
+              f" defense_gap={RULES['defense_safety_gap']}")
         return
 
     from mj_categorize import categorize_game

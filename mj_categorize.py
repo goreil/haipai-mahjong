@@ -12,6 +12,21 @@ DIR = Path(__file__).parent
 # Local mahjong-cpp server (nanikiru binary)
 LOCAL_API_URL = "http://127.0.0.1:50000/"
 
+# --- Tunable categorization rules ---
+# Edit these thresholds, then run: python3 mj_games.py categorize --recheck --dry-run
+# to see the impact on all existing categorizations (instant, no API calls).
+
+RULES = {
+    # "Reasonable agreement" check: mortal's tile is considered efficiency (not strategy)
+    # if it has the same shanten as cpp's best AND scores within these thresholds.
+    "agree_exp_score_ratio": 0.90,      # mortal exp_score >= cpp_best * this
+    "agree_necessary_ratio": 0.80,      # fallback: mortal necessary_count >= cpp_best * this
+
+    # Defense classification: when cpp and mortal disagree and opponent is in riichi,
+    # classify as 2B (defense) if mortal chose a tile this much safer than cpp's pick.
+    "defense_safety_gap": 3,            # safety rating difference on 0-15 scale
+}
+
 # --- Tile notation conversion (mjai <-> tile IDs) ---
 
 MJAI_TO_ID = {
@@ -543,8 +558,8 @@ def _classify_strategic(mistake, defense_ctx, tiles_left, wall):
     cpp_tile = mistake.get("cpp_best")
     if cpp_tile:
         cpp_safety = safety.get(cpp_tile, safety.get(cpp_tile.rstrip("r"), 0))
-        # Mortal chose a significantly safer tile (3+ points difference on 0-15 scale)
-        if mortal_safety - cpp_safety >= 3:
+        # Mortal chose a significantly safer tile
+        if mortal_safety - cpp_safety >= RULES["defense_safety_gap"]:
             return "2B"
 
     return "2A"
@@ -584,13 +599,13 @@ def _cpp_reasonably_agrees(mortal_tile_id, cpp_stats):
     top_score = top.get("exp_score")
     mortal_score = mortal_entry.get("exp_score")
     if top_score and mortal_score:
-        return mortal_score >= top_score * 0.90
+        return mortal_score >= top_score * RULES["agree_exp_score_ratio"]
 
     # Fallback: compare necessary tile counts
     top_nec = top.get("necessary_count", 0)
     mortal_nec = mortal_entry.get("necessary_count", 0)
     if top_nec > 0:
-        return mortal_nec >= top_nec * 0.80
+        return mortal_nec >= top_nec * RULES["agree_necessary_ratio"]
 
     return False
 
@@ -856,6 +871,7 @@ def recheck_game(game, game_idx, dry_run=False):
     kyokus = mortal_data["review"]["kyokus"]
 
     changed = 0
+    transitions = {}  # (old_cat, new_cat) -> count
     from mj_parse import round_header
 
     for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
@@ -909,6 +925,7 @@ def recheck_game(game, game_idx, dry_run=False):
                     if not dry_run:
                         m["category"] = cat
                     print(f"  {rnd_header} T{m['turn']}: {old_cat} -> {cat}")
+                    transitions[(old_cat, cat)] = transitions.get((old_cat, cat), 0) + 1
                     changed += 1
                 continue
 
@@ -955,9 +972,10 @@ def recheck_game(game, game_idx, dry_run=False):
                 if not dry_run:
                     m["category"] = cat
                 print(f"  {rnd_header} T{m['turn']}: {old_cat} -> {cat}")
+                transitions[(old_cat, cat)] = transitions.get((old_cat, cat), 0) + 1
                 changed += 1
 
-    return changed
+    return changed, transitions
 
 
 def categorize_game_db(conn, game_id, force=False):
