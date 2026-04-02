@@ -429,6 +429,49 @@ def api_backfill_board_state():
     return jsonify({"ok": True, "games_processed": len(game_ids)})
 
 
+@app.route("/api/games/backfill-decisions", methods=["POST"])
+@login_required
+def api_backfill_decisions():
+    """Backfill decision_count from mortal files and recompute stats."""
+    conn = get_conn()
+    uid = current_user.id
+
+    games = conn.execute(
+        "SELECT id, mortal_file, rounds_json FROM games WHERE user_id = ?", (uid,)
+    ).fetchall()
+
+    updated = 0
+    for g in games:
+        rounds = json.loads(g["rounds_json"]) if g["rounds_json"] else []
+        if not rounds or not g["mortal_file"]:
+            continue
+        # Skip if all rounds already have decision_count
+        if all(r.get("decision_count") for r in rounds):
+            db.compute_summary_for_game(conn, g["id"])
+            continue
+
+        mortal_path = DIR / g["mortal_file"]
+        if not mortal_path.exists():
+            continue
+
+        with open(mortal_path) as f:
+            mortal_data = json.load(f)
+
+        kyokus = mortal_data.get("review", {}).get("kyokus", [])
+        for i, rnd in enumerate(rounds):
+            if not rnd.get("decision_count") and i < len(kyokus):
+                rnd["decision_count"] = len(kyokus[i].get("entries", []))
+
+        conn.execute(
+            "UPDATE games SET rounds_json = ? WHERE id = ?",
+            (json.dumps(rounds), g["id"]),
+        )
+        db.compute_summary_for_game(conn, g["id"])
+        updated += 1
+
+    return jsonify({"ok": True, "updated": updated, "total": len(games)})
+
+
 @app.route("/api/games/add", methods=["POST"])
 @login_required
 def api_add():
