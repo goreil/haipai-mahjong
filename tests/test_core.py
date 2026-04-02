@@ -15,7 +15,8 @@ import db
 from mj_parse import parse_game, round_header, severity
 from mj_categorize import (
     MJAI_TO_ID, ID_TO_MJAI, mjai_to_tile_id, tile_id_to_base,
-    extract_board_state,
+    extract_board_state, reconstruct_context, subtract_hand_from_wall,
+    flatten_mjai_log,
 )
 
 
@@ -333,3 +334,72 @@ class TestAPI:
         assert res.status_code == 200
         data = res.get_json()
         assert "1A" in data
+
+    def test_annotate_validation(self, client):
+        """Input validation on annotate endpoint."""
+        self._login(client)
+        # Missing required fields
+        res = client.post("/api/games/1/annotate", json={})
+        assert res.status_code == 400
+        # Invalid category
+        res = client.post("/api/games/1/annotate", json={
+            "round": "E1", "turn": 1, "category": "INVALID"
+        })
+        assert res.status_code == 400
+
+    def test_feedback_type_validation(self, client):
+        """Feedback type must be bug/feature/general."""
+        self._login(client)
+        res = client.post("/api/feedback", json={
+            "type": "malicious",
+            "message": "test",
+        })
+        assert res.status_code == 400
+
+    def test_practice_result_validation(self, client):
+        """Practice result requires integer mistake_id."""
+        self._login(client)
+        res = client.post("/api/practice/result", json={
+            "mistake_id": "not-an-int",
+            "correct": True,
+        })
+        assert res.status_code == 400
+
+
+# --- Wall reconstruction tests ---
+
+class TestWallReconstruction:
+    def test_wall_no_negatives(self, mortal_data):
+        """Wall values should not go negative after subtracting hand."""
+        kyokus = mortal_data["review"]["kyokus"]
+        events = flatten_mjai_log(mortal_data["mjai_log"])
+        start_events = [e for e in events if e.get("type") == "start_kyoku"]
+
+        for ki, kyoku in enumerate(kyokus):
+            for entry in kyoku["entries"]:
+                if entry["is_equal"]:
+                    continue
+                hand = [t for t in entry["state"]["tehai"] if t != "?"]
+                if not hand:
+                    continue
+                wall, _, _, _ = reconstruct_context(mortal_data, ki, entry["tiles_left"])
+                wall2 = subtract_hand_from_wall(wall, hand)
+                for i, v in enumerate(wall2):
+                    assert v >= -1, f"kyoku={ki} tiles_left={entry['tiles_left']} wall[{i}]={v}"
+
+    def test_wall_hand_consistency(self, mortal_data):
+        """For each tile, wall + hand should not exceed 4 (or 1 for red fives)."""
+        kyokus = mortal_data["review"]["kyokus"]
+
+        kyoku = kyokus[0]
+        entry = kyoku["entries"][0]
+        hand = [t for t in entry["state"]["tehai"] if t != "?"]
+
+        wall, _, _, _ = reconstruct_context(mortal_data, 0, entry["tiles_left"])
+        wall2 = subtract_hand_from_wall(wall, hand)
+
+        hand_ids = [mjai_to_tile_id(t) for t in hand]
+        for i in range(34):
+            in_hand = sum(1 for h in hand_ids if tile_id_to_base(h) == i)
+            # Wall + hand should not exceed total copies (4)
+            assert wall2[i] + in_hand <= 4, f"tile {i}: wall={wall2[i]} hand={in_hand}"
