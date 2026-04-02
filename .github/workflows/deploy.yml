@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pytest
+      - run: pytest tests/ -v
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/haipai
+            git pull origin main
+
+            # Rebuild only if Docker-related files changed
+            CHANGED=$(git diff HEAD~1 --name-only)
+            if echo "$CHANGED" | grep -qE '^(Dockerfile|requirements\.txt|docker-compose\.yml)'; then
+              echo "Docker files changed — rebuilding..."
+              docker-compose up -d --build
+            else
+              echo "Code-only change — gunicorn auto-reloads via bind mounts"
+              # Restart app to pick up any edge cases
+              docker-compose restart app
+            fi
