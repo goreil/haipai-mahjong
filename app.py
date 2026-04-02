@@ -90,7 +90,7 @@ def start_nanikiru():
     print(f"Starting nanikiru on 127.0.0.1:{NANIKIRU_PORT}...", file=sys.stderr)
     _nanikiru_proc = subprocess.Popen(
         [str(NANIKIRU_BIN), str(NANIKIRU_PORT)],
-        cwd=str(NANIKIRU_BIN.parent),
+        cwd=str(DIR),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
