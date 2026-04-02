@@ -970,6 +970,19 @@ function renderTrends(games) {
     </div>
   `;
 
+  // Personal best / recent performance
+  if (gamesWithDecisions.length >= 3) {
+    const sorted = [...gamesWithDecisions].sort((a, b) => a.ev_per_decision - b.ev_per_decision);
+    const best = sorted[0];
+    const recent = gamesWithDecisions.slice(-3);
+    const recentAvg = recent.reduce((s, g) => s + g.ev_per_decision, 0) / recent.length;
+    html += `<div class="summary-bar" style="margin-top:0">
+      <div class="stat"><span class="value">${best.ev_per_decision.toFixed(4)}</span><span class="label">Best EV/D (${best.date.slice(5)})</span></div>
+      <div class="stat"><span class="value">${recentAvg.toFixed(4)}</span><span class="label">Last 3 Avg</span></div>
+      <div class="stat"><span class="value">${games.reduce((s, g) => s + ((g.by_severity || {})["???"] || 0), 0)}</span><span class="label">Total ??? Mistakes</span></div>
+    </div>`;
+  }
+
   // Chart 1: EV per decision over time
   if (gamesWithDecisions.length >= 2) {
     html += `<div class="trend-chart-card">
