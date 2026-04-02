@@ -1,0 +1,43 @@
+I don't like the current categories. It feels like 
+a lot of stuff is miscategorized and therefore misleading
+leading to confusion and ignoring the categories altogether.
+
+Also I think we have too many categories already maybe? Let's think
+about that later.
+
+About the current categories:
+
+I think a design choice I'd like to create an 
+"unambigous tile efficiency" group.
+
+Hm, this is harder than expected.
+Okay, maybe this is a bigger task. Maybe I should actually 
+look into examples.
+
+So there are a data points to think about:
+AI - mortal q
+AI prob
+tile calc
+wins %
+Defense value
+
+We can do a few heuristics:
+1. Mortal - calc 
+a) Top 1
+b) Top 3
+2. How to deal with close values
+prob value, calc value
+3. How to spin one narrative.
+
+I think we should think about defense as well.
+Obviously if someone is in richii that's defense consideration
+but we could also go to the other heuristic of richii book 1
+for open points
+
+
+Another design choice:
+Change the "Practise" section to "Tile efficiency practise" 
+meaning we only practise tile efficiency, where it is unambigious
+that we care about tile efficiency and nothing else.
+
+

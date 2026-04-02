@@ -30,150 +30,45 @@ What English riichi players have today:
 What nobody has:
 - Mistake categorization across a taxonomy (our 15-category system)
 - Practice quizzes from your own past errors
-- Trend analytics over time (EV/turn progression)
+- Trend analytics over time (EV/decision progression)
 - Mortal-vs-mahjong-cpp comparison to classify WHY a mistake happened
-- The closest analogue is chess's "personal mistake database" concept,
-  but even there nothing automates categorization like our pipeline does.
 
 Differentiation story: Mortal tells you WHAT you did wrong. This app tells you WHY,
 tracks it over time, and lets you drill your actual weak spots.
 
 
-=== DONE ===
+=== DONE (summary) ===
 
-1. QoL -> Less typing
-a) One script fits all: mj_games.py handles the full pipeline (add/review/annotate/summary/list)
-   - add: fetches Mortal JSON + parses + stores in games.json
-   - review: pretty-prints mistakes with hand state, shanten, top actions, discard comparison
-   - annotate: set category/note on specific mistakes
-   - summary: recomputes and displays summaries (replaces mj_calc.sh)
-   - list: shows all games with stats and annotation progress
+Core pipeline: CLI (add/review/annotate/summary/list/categorize), JSON->SQLite data store,
+Mortal JSON parser, auto-categorization (mortal vs mahjong-cpp), 15-category taxonomy.
 
-2. Data format reformed from .txt to JSON (games.json)
-   - Machine-readable, programmatically accessible
-   - Rich mistake data: hand, melds, shanten, draw, actual/expected actions, top 3 candidates with q_values
-   - Migrated all 3 existing games (mj_migrate.py)
-   - Mahjong Mistakes.txt kept as read-only archive
+Web UI: Flask app with game list, review view (SVG tiles, severity colors), inline annotation,
+severity filters, add-game modal, positive game ratings (star system).
 
-3. Checkpoints achieved:
-   - Checkpoint 1: mj_parse.py outputs current hand and which tiles it wanted to discard
-   - Checkpoint 3: Better data format (JSON) and immediate summary via mj_games.py
+Analysis: EV comparison tables (Mortal Q vs mahjong-cpp), defense analysis (suji safety 0-15),
+2A/2B defense-aware split, trend charts (EV/decision, severity, skill area), board state view.
 
-4. Web interface (vision item 1b)
-   - Flask web UI with game list, review view, inline annotation, severity filters
-   - SVG tile rendering via riichi-mahjong-tiles submodule
-   - Add-game modal (paste Mortal viewer URL)
+Practice mode: discard quizzes from own mistakes, clickable tiles, filters (category/severity/
+riichi/calc-agrees), spaced repetition, session scoring, keyboard shortcuts.
 
-5. Automatic error categorization (vision item 2a)
-   - mj_categorize.py: compares Mortal AI vs mahjong-cpp tile efficiency
-   - Local mahjong-cpp server only (no remote API dependency)
-   - Built: mjai->tile ID conversion, wall state reconstruction from mjai_log, API integration
-   - Categorization logic: cpp agrees with mortal -> efficiency (1A-1E), disagrees -> defense (2A)
-   - Non-discard actions categorized by type (3A-3C meld, 4A-4B riichi, 5A-5B kan)
-   - CLI: python3 mj_games.py categorize [--game N] [--force] [--dry-run]
-   - Web API: POST /api/games/<id>/categorize
+Multi-user: Docker + nginx + certbot, SQLite with user isolation, Flask-Login,
+invite-code registration, branding ("Haipai"), security hardening, feedback form.
 
-6. Category UX redesign
-   - CATEGORY_INFO dict with group/label/description for each code
-   - CLI shows "Efficiency/Pairs" instead of "1E", summaries grouped by skill area
-   - Web UI: color-coded category badges, grouped breakdown sorted by EV loss
-   - GET /api/categories endpoint for frontend
+Testing: pytest suite (21 tests), local-only nanikiru server.
 
-7. Visual EV comparison (vision item 2b, checkpoint 2)
-   - cpp_stats saved on each mistake (tile, shanten, exp_score, win_prob_max, necessary_count)
-   - Web UI: side-by-side table showing Mortal Q-value vs mahjong-cpp expected score per tile
-   - Rows tagged with "You" (actual), "AI" (mortal best), "Cpp" (cpp best) markers
-   - Best values highlighted, color-coded columns (green=Mortal, blue=Cpp)
-
-8. Trend analysis across games
-   - /api/trends endpoint with per-game stats sorted by date
-   - SVG line chart: EV/turn over time with 3-game moving average
-   - Stacked bar chart: severity breakdown per game
-   - Horizontal bars: EV loss by skill area across all games
-   - Stacked bars: skill area breakdown per game
-   - Summary stats with trend direction indicator
-
-9. Defense analysis & 2A category refinement
-   - mj_defense.py: suji-based safety evaluator ported from Riichi-Trainer
-   - Evaluates tile safety (0-15) against riichi opponents using genbutsu, suji, honor counts
-   - "Reasonable agreement" check: if mortal's tile is same shanten and within 90% score of
-     cpp's best, classify as efficiency instead of 2A (reclassifies ~74% of old 2A cases)
-   - Defense-aware 2A/2B split: if opponent is in riichi and mortal chose a significantly safer
-     tile (3+ safety rating difference), classify as 2B Defense instead of 2A Push/Fold
-
-10. Defense visuals
-   - Safety ratings (0-15) computed and stored on mistakes with riichi opponents
-   - Color-coded tile borders on hand tiles: green (safe), orange (caution), red (danger)
-   - Safety column in EV comparison table
-   - "RIICHI" badge on affected hands, hover tooltips with exact ratings
-
-11. Local-only tile efficiency server
-   - app.py auto-starts nanikiru on 127.0.0.1:50000, shuts down on exit
-   - Removed remote pystyle.info API dependency entirely
-   - nanikiru default bind changed from 0.0.0.0 to 127.0.0.1
-
-12. Mistake trainer (practice mode)
-   - "Practice" button in web UI toolbar
-   - Random ??/??? discard mistakes (506 eligible from 28 games)
-   - Clickable hand tiles: pick a discard, get instant feedback
-   - Shows Mortal's recommendation, EV table, safety data, original play
-   - Session score tracking (correct/total)
-   - Filters: category group, severity, riichi-only
-   - Keyboard shortcuts: Space/Enter for next problem
-
-13. Positive feedback & game ratings
-   - Games rated by EV/turn percentile: top 25% = filled star, top 50% = outline star
-   - Stars shown in sidebar and summary banner with clean round count
-   - "Clean" badge on rounds with 0 mistakes
-
-14. Help page & category tooltips
-   - Full category reference with codes, labels, descriptions, study references
-   - Defense safety scale explanation (0-15)
-   - EV comparison table guide (Mortal Q vs Tile Calc)
-   - Game rating explanation
-   - Attribution section: Mortal AI, mahjong-cpp (GPLv3), Riichi-Trainer (GPLv3), tiles (CC0)
-   - Category badges have tooltip descriptions on hover
+See git log for detailed history. Archived details in archive/.
 
 
-=== TODO: PUBLISH (target: 2 weeks) ===
+=== TODO: DEPLOY (Phase 2) ===
 
-Decisions made:
-- Hosting: Hetzner Cloud VPS (CX22, 2 vCPU/4GB, ~4 EUR/mo). EU location = low latency.
-  PaaS (Railway/Fly) is awkward because of the mahjong-cpp binary sidecar.
-- mahjong-cpp: keep server-side for now. WASM is a future optimization, not needed for 20 users.
-- Database: migrate from games.json to SQLite with user_id column.
-  SQLite handles 20 users fine and avoids a painful migration later.
-- Auth: Flask-Login + SQLite user table. Invite-code registration (no open signup yet).
-- Licensing: GPLv3 deps (mahjong-cpp, Riichi-Trainer) are fine for SaaS.
-  No source disclosure needed unless distributing the binary.
-- Monetization (later): freemium SaaS. Free tier = limited games, paid = unlimited + practice + trends.
-  ~$5/mo. Small niche but passionate — even 100 users covers costs.
+Deployment guide: see archive/ylue-manual-labor.txt
 
-Phase 1: Containerize + multi-user (Week 1) — COMPLETE
-  1. [x] Dockerfile: multi-stage (build nanikiru from source, Python 3.12 + gunicorn runtime)
-  2. [x] docker-compose.yml: app + nginx reverse proxy + certbot for HTTPS
-  3. [x] SQLite migration: games.json -> games.db via db.py + mj_migrate_sqlite.py
-  4. [x] Flask-Login: login/register/logout, session auth, per-user data isolation
-  5. [x] Invite-code registration (CLI: mj_games.py invite --create/--list)
-  6. [x] app.py fully refactored to use SQLite (no more games.json)
-  7. [x] categorize_game_db() for DB-backed auto-categorization
-  8. [x] Branding: "Haipai" name, Outfit/DM Sans fonts, tile brand mark, polished login page
-  9. [x] Repo cleanup: personal data gitignored, requirements.txt, security hardening
-  10. [x] Env-configurable: SECRET_KEY, NANIKIRU_BIN, DB_PATH
-
-Phase 2: Deploy + polish (Week 2)
-  6. Provision Hetzner CX22, install Docker
-  7. Nginx config with Certbot (Let's Encrypt HTTPS)
-  8. Domain setup (need to pick a name — see branding below)
-  9. Deploy, test with own account
-  10. Create club member accounts, share URL
-  11. Fix rough edges from real multi-user usage
-
-Branding: "Haipai" (配牌, starting hand)
-  - Tile brand mark: M/P/S in suit colors (red/green/blue)
-  - Typography: Outfit (headings), DM Sans (body)
-  - Dark theme with subtle ambient gradients on login
-  - Mascot: not yet, but name is set
+  1. Provision Hetzner CX22, install Docker
+  2. Nginx config with Certbot (Let's Encrypt HTTPS)
+  3. Domain setup (haipai.???)
+  4. Deploy, test with own account
+  5. Create club member accounts, share URL
+  6. Fix rough edges from real multi-user usage
 
 
 === TODO: UX IMPROVEMENTS ===
@@ -186,7 +81,7 @@ Branding: "Haipai" (配牌, starting hand)
 2. Board state display overhaul
    a) Other players' discards should be collapsible (not just points section)
    b) Pons/chis inline with the player row, not separate
-   c) Hover a tile → highlight all copies of that tile on the board
+   c) Hover a tile -> highlight all copies of that tile on the board
    d) Dora tiles highlighted everywhere (like in hand display)
    e) Current player section needs cleaner layout
    f) Round wind / seat wind should use tile SVGs with explicit labels
@@ -197,69 +92,25 @@ Branding: "Haipai" (配牌, starting hand)
    - Reuse the board state rendering from review mode, just hide the evaluation
      until after the player makes their discard choice
 
-4. Category system overhaul (see ylue-categories.txt)
+4. Category system overhaul
    - Current categories feel misleading, many things are miscategorized
    - Goal: create "unambiguous tile efficiency" group where categorization is reliable
    - Thresholds are now configurable in RULES dict (mj_categorize.py)
    - Iterate with: categorize --recheck --dry-run (instant, shows diff summary)
+   - Brainstorming notes: archive/ylue-categories.txt
 
 
-=== TODO: FEATURES (after publish) ===
+=== TODO: FEATURES ===
 
-1. [x] Show opponent discards in defense situations
-   - Opponent discard pools extracted and stored during categorization
-   - Displayed under hand row when riichi is active
-   - Riichi tile shown sideways with red glow
-   - 177 mistakes include opponent_discards data
-
-2. [x] Practice mode: spaced repetition
-   - practice_results table tracks correct/wrong per mistake per user
-   - Weighted random: unseen/wrong x3, mastered x0.5
-   - POST /api/practice/result, GET /api/practice/stats
-
-3. Fix 73 uncategorized mistakes
+1. Fix 73 uncategorized mistakes
    - All dahai-vs-dahai with wall reconstruction errors ("more tiles than wall")
    - Bug in reconstruct_context: tile counts go negative in some edge cases
    - Affects ~6% of mistakes
 
-4. [x] Full board view for each mistake
-   - extract_board_state() in mj_categorize.py: dora, winds, scores, all discards, opponent melds
-   - board_state stored on each mistake during categorize_game_db()
-   - renderBoardContext() in app.js: wind badges, dora indicator tiles, all 4 player discard pools
-   - Collapsible "Details" section: player points, opponent melds
-   - Works in both review and practice mode
-   - POST /api/games/backfill-board-state to populate existing games
-
-5. [x] Practice mode: only mortal+calc agreement
-   - "Calc agrees" checkbox in practice filters
-   - Filters to category 1A-1E (efficiency) where mortal+cpp agree
-   - API: calc_agree=1 query param on GET /api/practice
-
-6. [x] Testing
-   - pytest suite in tests/test_core.py (21 tests)
-   - Covers: severity, parsing, tile conversion, board state, DB CRUD, API routes
-   - Temp DB fixture for isolated testing
-
-7. CI/CD pipeline
+2. CI/CD pipeline
    - GitHub Actions: run tests, auto-deploy to Hetzner on push to main
 
-8. [x] Security hardening
-   - Flask-Limiter: 10/min login, 5/min register, 200/min API default
-   - SESSION_COOKIE_SECURE in production
-   - Path traversal fix in /tiles/ endpoint
-   - Password minimum increased to 8 chars
-   - Security headers: X-Frame-Options, X-Content-Type-Options, Referrer-Policy
-   - Remaining: CSRF tokens (Flask-WTF), HTTPS enforcement, input schema validation
-
-9. [x] Feedback form
-   - Modal in toolbar with type (bug/feature/general) and message
-   - POST /api/feedback, stored in feedback table
-   - 2000 char limit
-
-10. [x] EV/Decision metric (replaces EV/Turn)
-   - EV/Turn was unfair: declaring riichi removes future decision opportunities, skewing
-     results toward riichi-heavy games
-   - decision_count = len(Mortal entries) per round (each entry is one player decision point,
-     includes discard/pon/chi/riichi/kan, excludes post-riichi auto-discards)
-   - ev_per_decision = total EV loss / total decisions across all rounds
-   - Updated: parser, DB summary, CLI, web UI (sidebar, detail, trends, help, ratings)
+3. Security remaining
+   - CSRF tokens (Flask-WTF)
+   - HTTPS enforcement
+   - Input schema validation
