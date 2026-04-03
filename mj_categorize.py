@@ -341,18 +341,30 @@ def build_api_request(hand_mjai, melds_mjai, round_wind_id, seat_wind_id, dora_i
     }
 
 
-def call_mahjong_cpp(request_data):
-    """Call the local mahjong-cpp tile efficiency calculator (nanikiru server)."""
-    resp = requests.post(
-        LOCAL_API_URL,
-        json=request_data,
-        timeout=10,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    if not data.get("success"):
-        raise RuntimeError(f"API error: {data.get('err_msg', 'unknown')}")
-    return data["response"]
+def call_mahjong_cpp(request_data, _retries=2):
+    """Call the local mahjong-cpp tile efficiency calculator (nanikiru server).
+
+    Retries with a delay if the connection is refused (server crashed).
+    """
+    import time
+    for attempt in range(_retries + 1):
+        try:
+            resp = requests.post(
+                LOCAL_API_URL,
+                json=request_data,
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if not data.get("success"):
+                raise RuntimeError(f"API error: {data.get('err_msg', 'unknown')}")
+            return data["response"]
+        except requests.ConnectionError:
+            if attempt < _retries:
+                # Server may have crashed — wait and retry
+                time.sleep(2)
+                continue
+            raise
 
 
 def get_cpp_best_discard(response):
@@ -746,10 +758,15 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     if cpp_agrees_mortal or _cpp_reasonably_agrees(mortal_best_id, cpp_stats):
         cat = classify_efficiency(mistake, cpp_stats)
     else:
-        # Genuine disagreement: mortal sees something cpp doesn't
-        cat = "3A"
-        if defense_ctx:
-            cat = _classify_strategic(mistake, defense_ctx, tiles_left, wall)
+        # cpp and mortal disagree — but check if it's a value tile ordering
+        # situation (close cpp scores + value tile) before calling it strategic
+        value_cat = classify_efficiency(mistake, cpp_stats)
+        if value_cat == "2A":
+            cat = "2A"
+        else:
+            cat = "3A"
+            if defense_ctx:
+                cat = _classify_strategic(mistake, defense_ctx, tiles_left, wall)
 
     # Compute labels
     round_wind_mjai = ID_TO_MJAI.get(round_wind)

@@ -29,9 +29,9 @@ if tid != base:
     wall[tid] -= 1  # ALSO decrements red 5m count
 ```
 
-Playing 5mr should only decrement the red five slot (`wall[34]`), not also `wall[4]`. This causes mahjong-cpp to receive incorrect wall counts, producing wrong tile efficiency recommendations.
+**Note (2026-04-04):** This is actually INTENTIONAL. `wall[4]` tracks ALL copies of 5m (regular + red = 4 total), while `wall[34]` tracks just the red five subset (1 copy). When a red five is seen, both counters must decrement. The real wall reconstruction bug was in the loop break condition (fixed in commit 3d3bc5c). However, ~64 mistakes still show wall values of -1 for red five indices — investigate if this causes mahjong-cpp to return wrong results.
 
-**Fix**: Only decrement `wall[tid]`, not both `wall[base]` and `wall[tid]`.
+**Status**: Keep current behavior. Investigate the -1 edge cases separately.
 
 ---
 
