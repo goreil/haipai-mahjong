@@ -159,15 +159,24 @@ function renderBoardContext(m) {
   }
   html += `</div>`;
 
-  // All player discards (collapsible)
+  // Build seat -> melds lookup for inline rendering
+  const meldsBySeat = {};
+  if (b.opponent_melds) {
+    for (const om of b.opponent_melds) {
+      meldsBySeat[om.seat] = om.melds;
+    }
+  }
+
+  // All player discards + inline melds (collapsible)
   if (b.all_discards && b.all_discards.length) {
-    const hasDiscards = b.all_discards.some(d => d.discards.length > 0);
+    const hasDiscards = b.all_discards.some(d => d.discards.length > 0 || meldsBySeat[d.seat]);
     if (hasDiscards) {
       const doraTiles = getDoraTiles(b.dora_indicators);
       html += `<details class="all-discards" open>`;
       html += `<summary>Discards</summary>`;
       for (const d of b.all_discards) {
-        if (!d.discards.length) continue;
+        const seatMelds = meldsBySeat[d.seat];
+        if (!d.discards.length && !seatMelds) continue;
         const seatName = SEAT_NAMES[d.seat] || `P${d.seat}`;
         html += `<div class="discard-row">`;
         html += `<span class="discard-label">${seatName}</span>`;
@@ -179,39 +188,31 @@ function renderBoardContext(m) {
           const cls = `action-tile-sm${isRiichi ? " riichi-tile" : ""}${isDora ? " dora-highlight" : ""}`;
           html += renderTile(d.discards[di], cls);
         }
-        html += `</span></div>`;
+        html += `</span>`;
+        if (seatMelds) {
+          html += `<span class="inline-melds">`;
+          for (const meld of seatMelds) {
+            const tiles = [...(meld.consumed || [])];
+            if (meld.pai) tiles.push(meld.pai);
+            html += `<span class="meld-group">${meld.type} ${tiles.map(t => renderTile(t, "action-tile-sm")).join("")}</span> `;
+          }
+          html += `</span>`;
+        }
+        html += `</div>`;
       }
       html += `</details>`;
     }
   }
 
-  // Collapsible details (scores, opponent melds)
-  const hasDetails = (b.scores && b.scores.length) || (b.opponent_melds && b.opponent_melds.length);
-  if (hasDetails) {
-    html += `<details class="board-details"><summary>Details</summary>`;
-    if (b.scores && b.scores.length) {
-      html += `<div class="scores-row">`;
-      for (let i = 0; i < b.scores.length; i++) {
-        const name = SEAT_NAMES[i] || `P${i}`;
-        html += `<span class="score-item"><span class="score-seat">${name}</span> ${b.scores[i].toLocaleString()}</span>`;
-      }
-      html += `</div>`;
+  // Collapsible details (scores only — melds are now inline with discards)
+  if (b.scores && b.scores.length) {
+    html += `<details class="board-details"><summary>Scores</summary>`;
+    html += `<div class="scores-row">`;
+    for (let i = 0; i < b.scores.length; i++) {
+      const name = SEAT_NAMES[i] || `P${i}`;
+      html += `<span class="score-item"><span class="score-seat">${name}</span> ${b.scores[i].toLocaleString()}</span>`;
     }
-    if (b.opponent_melds && b.opponent_melds.length) {
-      html += `<div class="opponent-melds">`;
-      for (const om of b.opponent_melds) {
-        const seatName = SEAT_NAMES[om.seat] || `P${om.seat}`;
-        html += `<div class="opp-meld-row">`;
-        html += `<span class="discard-label">${seatName}</span>`;
-        for (const meld of om.melds) {
-          const tiles = [...(meld.consumed || [])];
-          if (meld.pai) tiles.push(meld.pai);
-          html += `<span class="meld-group">${meld.type} ${tiles.map(t => renderTile(t, "action-tile-sm")).join("")}</span> `;
-        }
-        html += `</div>`;
-      }
-      html += `</div>`;
-    }
+    html += `</div>`;
     html += `</details>`;
   }
 

@@ -689,15 +689,13 @@ body {
   margin-right: 2px;
 }
 
-.opponent-melds {
-  margin-top: 4px;
-}
-
-.opp-meld-row {
-  display: flex;
+.inline-melds {
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 2px;
+  gap: 4px;
 }
 
 /* Safety indicators on hand tiles */
