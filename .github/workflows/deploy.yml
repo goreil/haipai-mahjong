@@ -28,17 +28,50 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          timeout: 300s
           script: |
             cd /opt/haipai
             git pull origin main
 
             # Rebuild only if Docker-related files changed
             CHANGED=$(git diff HEAD~1 --name-only)
-            if echo "$CHANGED" | grep -qE '^(Dockerfile|requirements\.txt|docker-compose\.yml)'; then
+            if echo "$CHANGED" | grep -qE '^(Dockerfile|requirements\.txt|docker-compose\.yml|entrypoint\.sh)'; then
               echo "Docker files changed — rebuilding..."
-              docker-compose up -d --build
+              docker compose up -d --build
             else
-              echo "Code-only change — gunicorn auto-reloads via bind mounts"
-              # Restart app to pick up any edge cases
-              docker-compose restart app
+              echo "Code-only change — restarting app..."
+              docker compose restart app
             fi
+
+            # Wait for app to be ready
+            sleep 3
+
+            # Re-run categorization if categorization code changed
+            if echo "$CHANGED" | grep -qE '^(mj_categorize\.py|mj_defense\.py|mj_games\.py)'; then
+              echo "Categorization code changed — re-running..."
+              docker compose exec -T app python3 -c "
+            import db
+            from mj_categorize import categorize_game_db
+            conn = db.get_db()
+            games = conn.execute('SELECT id FROM games WHERE mortal_file IS NOT NULL').fetchall()
+            total = 0
+            for g in games:
+                n, _ = categorize_game_db(conn, g['id'], force=True)
+                total += n
+            conn.commit()
+            for g in games:
+                db.compute_summary_for_game(conn, g['id'])
+            conn.close()
+            print(f'Re-categorized {total} mistakes across {len(games)} games')
+            "
+            fi
+
+            # Always recompute stats (cheap operation)
+            docker compose exec -T app python3 -c "
+            import db
+            conn = db.get_db()
+            for g in conn.execute('SELECT id FROM games').fetchall():
+                db.compute_summary_for_game(conn, g['id'])
+            conn.close()
+            print('Stats recomputed')
+            "
