@@ -266,6 +266,13 @@ function sevClass(sev) {
   return "";
 }
 
+function sevTooltip(sev) {
+  if (sev === "???") return "Major mistake (>0.10 EV loss)";
+  if (sev === "??") return "Medium mistake (0.05–0.10 EV)";
+  if (sev === "?") return "Minor mistake (<0.05 EV)";
+  return "";
+}
+
 // --- Game rating ---
 
 function computeRatingThresholds() {
@@ -340,7 +347,7 @@ function renderEvComparison(m) {
     <th>Tile</th>
     <th class="mortal-col">Mortal Q</th>
     <th class="mortal-col">Prob</th>
-    <th class="cpp-col">Tile Calc</th>
+    <th class="cpp-col">Exp Score</th>
     <th class="cpp-col">Win%</th>
     <th class="cpp-col">Shanten</th>
     ${hasSafety ? '<th class="safety-col">Safety</th>' : ''}
@@ -627,7 +634,7 @@ function renderGame() {
       html += `<div class="mistake ${sc}" ${dataAttrs}>`;
       html += `<div class="mistake-top">`;
       html += `<span class="turn-num">T${m.turn}</span>`;
-      html += `<span class="severity ${sc}">${m.severity}</span>`;
+      html += `<span class="severity ${sc}" title="${sevTooltip(m.severity)}">${m.severity}</span>`;
       html += `<span class="ev-loss">${m.ev_loss.toFixed(2)} EV</span>`;
       if (m.category) {
         const grp = catGroup(m.category);
@@ -936,6 +943,13 @@ function importGamesJson() {
 async function fetchTrends() {
   const res = await fetch("/api/trends");
   return await res.json();
+}
+
+function navigateHome() {
+  state.currentGame = null;
+  state.currentGameData = null;
+  renderGameList();
+  document.getElementById("content").innerHTML = '<div class="empty-state">Select a game to review</div>';
 }
 
 async function showTrends() {
@@ -1351,7 +1365,7 @@ function renderPractice() {
     <div class="practice-context">
       <span>Game ${p.game_id + 1} (${p.game_date})</span>
       <span>${p.round}</span>
-      <span class="severity ${sc}">${m.severity}</span>
+      <span class="severity ${sc}" title="${sevTooltip(m.severity)}">${m.severity}</span>
       ${shantenStr ? `<span class="shanten">${shantenStr}</span>` : ""}
       <span class="ev-loss">${m.ev_loss.toFixed(2)} EV</span>
     </div>
@@ -1496,7 +1510,7 @@ function showHelp() {
     groups[grp].push({ code, ...info });
   }
 
-  let html = `<div class="game-header"><h2>Category Reference</h2></div>`;
+  let html = `<div class="game-header"><h2>Help</h2></div>`;
 
   for (const [grp, cats] of Object.entries(groups)) {
     const color = GROUP_COLORS[grp] || "#888";
@@ -1559,9 +1573,9 @@ function showHelp() {
     <div class="help-section">
       <h3>EV Comparison Table</h3>
       <p><span style="color:#81c784">Mortal Q</span> &mdash; Mortal AI's evaluation. Higher = better strategic play considering defense, hand value, game state. The <b>AI</b> marker shows Mortal's top pick.</p>
-      <p><span style="color:#64b5f6">Tile Calc</span> &mdash; Pure expected score from tile efficiency. Higher = better hand-building potential. The <b>Calc</b> marker shows the calculator's top pick.</p>
+      <p><span style="color:#64b5f6">Exp Score</span> &mdash; Pure expected score from tile efficiency. Higher = better hand-building potential. The <b>Calc</b> marker shows the calculator's top pick.</p>
       <p><span style="color:var(--sev-major)">You</span> &mdash; The tile you actually played. Compare your choice against both analyses.</p>
-      <p>When Mortal Q and Tile Calc agree, the correct play is clear. When they disagree, Mortal is weighing factors like defense or hand value that pure efficiency misses.</p>
+      <p>When Mortal Q and Exp Score agree, the correct play is clear. When they disagree, Mortal is weighing factors like defense or hand value that pure efficiency misses.</p>
     </div>
 
     <div class="help-section">
