@@ -18,9 +18,13 @@ LOCAL_API_URL = "http://127.0.0.1:50000/"
 
 RULES = {
     # "Reasonable agreement" check: mortal's tile is considered efficiency (not strategy)
-    # if it has the same shanten as cpp's best AND scores within these thresholds.
-    "agree_exp_score_ratio": 0.90,      # mortal exp_score >= cpp_best * this
+    # if it has the same shanten as cpp's best AND scores within this absolute threshold.
+    "agree_exp_score_diff": 60,         # absolute expected score difference
     "agree_necessary_ratio": 0.80,      # fallback: mortal necessary_count >= cpp_best * this
+
+    # 1V "Value Tile Ordering" threshold: honor/terminal vs number tile where
+    # cpp scores are close (efficiency is similar but mortal has a preference).
+    "value_tile_diff": 60,              # max absolute exp_score diff for 1V classification
 
     # Defense classification: when cpp and mortal disagree and opponent is in riichi,
     # classify as 2B (defense) if mortal chose a tile this much safer than cpp's pick.
@@ -390,85 +394,124 @@ def categorize_by_action_type(actual, expected):
     at = actual.get("type")
     et = expected.get("type")
 
-    # Meld decisions (3A-3C)
+    # Meld decisions (4A-4C)
     if at in ("chi", "pon") and et == "none":
-        return "3A"  # Bad meld call
+        return "4A"  # Bad meld call
     if at == "none" and et in ("chi", "pon"):
-        return "3B"  # Missed meld opportunity
+        return "4B"  # Missed meld opportunity
     if at in ("chi", "pon") and et in ("chi", "pon"):
-        return "3C"  # Wrong meld choice
+        return "4C"  # Wrong meld choice
 
-    # Riichi decisions (4A-4B)
+    # Riichi decisions (5A-5B)
     if at == "reach" and et == "dahai":
-        return "4A"  # Bad riichi
+        return "5A"  # Bad riichi
     if at == "dahai" and et == "reach":
-        return "4B"  # Missed riichi
+        return "5B"  # Missed riichi
 
-    # Kan decisions (5A-5B)
+    # Kan decisions (6A-6B)
     if at in ("ankan", "kakan", "daiminkan") and et in ("dahai", "none"):
-        return "5A"  # Bad kan
+        return "6A"  # Bad kan
     if at in ("dahai", "none") and et in ("ankan", "kakan", "daiminkan"):
-        return "5B"  # Missed kan
+        return "6B"  # Missed kan
 
     # Missed win
     if et == "hora":
-        return "2A"  # Defensive error (passed on win)
+        return "3A"  # Defensive error (passed on win)
 
     # dahai vs dahai -> needs mahjong-cpp comparison
     if at == "dahai" and et == "dahai":
         return None
 
     # Other combinations (reach vs none, etc.) - categorize as strategic
-    return "2A"
+    return "3A"
 
 
-def sub_categorize_efficiency(mistake, dora_indicators):
-    """Sub-categorize a tile efficiency error (mahjong-cpp agrees with Mortal).
+def _is_terminal_mjai(tile):
+    """Check if tile is a terminal (1 or 9 of any suit)."""
+    return len(tile) == 2 and tile[0] in "19" and tile[1] in "mps"
 
-    Returns one of 1A-1E.
+
+def _is_number_tile_mjai(tile):
+    """Check if tile is a non-terminal number tile (2-8)."""
+    return len(tile) == 2 and tile[0] in "2345678" and tile[1] in "mps"
+
+
+def _is_value_tile_mjai(tile):
+    """Check if tile is a value tile (honor or terminal)."""
+    return is_honor_mjai(tile) or _is_terminal_mjai(tile)
+
+
+def _get_exp_score_for_tile(tile_mjai, cpp_stats):
+    """Get the expected score for a specific tile from cpp_stats."""
+    if not cpp_stats:
+        return None
+    tile_base = tile_mjai.rstrip("r")
+    for s in cpp_stats:
+        s_base = s["tile"].rstrip("r")
+        if s["tile"] == tile_mjai or s_base == tile_base:
+            return s.get("exp_score")
+    return None
+
+
+def classify_efficiency(mistake, cpp_stats):
+    """Classify an efficiency mistake as 1A or 1V.
+
+    1V: one tile is a value tile (honor/terminal), the other is a number tile (2-8),
+        and cpp scores are close (diff <= threshold). Mortal sees a difference that
+        pure tile efficiency doesn't capture.
+    1A: all other efficiency mistakes.
     """
     actual_tile = mistake["actual"]["pai"]
     expected_tile = mistake["expected"]["pai"]
-    hand = mistake["hand"]
+
+    # Check 1V: value tile vs number tile with close cpp scores
+    one_value = _is_value_tile_mjai(actual_tile) or _is_value_tile_mjai(expected_tile)
+    one_number = _is_number_tile_mjai(actual_tile) or _is_number_tile_mjai(expected_tile)
+
+    if one_value and one_number and cpp_stats:
+        actual_score = _get_exp_score_for_tile(actual_tile, cpp_stats)
+        expected_score = _get_exp_score_for_tile(expected_tile, cpp_stats)
+        if actual_score is not None and expected_score is not None:
+            if abs(actual_score - expected_score) <= RULES["value_tile_diff"]:
+                return "2A"
+
+    return "1A"
+
+
+def compute_labels(mistake, dora_indicators, round_wind=None, seat_wind=None):
+    """Compute labels for a mistake based on the tiles involved.
+
+    Returns a list of label strings.
+    """
+    actual_tile = mistake["actual"]["pai"]
+    expected_tile = mistake["expected"]["pai"]
+    tiles = [actual_tile, expected_tile]
+
+    labels = []
 
     # Compute dora tiles from indicators
     dora_tiles = set()
-    for d in dora_indicators:
+    for d in (dora_indicators or []):
         dora_tiles.add(_next_tile_mjai(d))
 
-    # 1B: Dora handling - player discarded a dora or red five when shouldn't have
-    actual_is_dora = actual_tile in dora_tiles or is_red_five_mjai(actual_tile)
-    expected_is_dora = expected_tile in dora_tiles or is_red_five_mjai(expected_tile)
-    if actual_is_dora != expected_is_dora:
-        return "1B"
+    for t in tiles:
+        if is_honor_mjai(t) and "honor" not in labels:
+            labels.append("honor")
+        if _is_terminal_mjai(t) and "terminal" not in labels:
+            labels.append("terminal")
+        if (t in dora_tiles or is_red_five_mjai(t)) and "dora" not in labels:
+            labels.append("dora")
 
-    # 1C: Honor tile ordering (both are honors but different ones)
-    if is_honor_mjai(actual_tile) and is_honor_mjai(expected_tile):
-        return "1C"
+    # Yakuhai: honor that is seat wind, round wind, or dragon
+    for t in tiles:
+        if t in ("P", "F", "C"):
+            if "yakuhai" not in labels:
+                labels.append("yakuhai")
+        elif t == round_wind or t == seat_wind:
+            if "yakuhai" not in labels:
+                labels.append("yakuhai")
 
-    # 1D: Honor vs number tile
-    if is_honor_mjai(actual_tile) != is_honor_mjai(expected_tile):
-        return "1D"
-
-    # 1E: Pair management - involves a paired tile
-    tile_counts = {}
-    for t in hand:
-        base = t.rstrip("r")  # normalize red fives: 5mr -> 5m
-        if len(base) == 2 and base[1] in "mps":
-            key = base
-        else:
-            key = t
-        tile_counts[key] = tile_counts.get(key, 0) + 1
-
-    def normalize(t):
-        base = t.rstrip("r")
-        return base if len(base) == 2 and base[1] in "mps" else t
-
-    if tile_counts.get(normalize(actual_tile), 0) >= 2 or tile_counts.get(normalize(expected_tile), 0) >= 2:
-        return "1E"
-
-    # 1A: General tile efficiency
-    return "1A"
+    return labels
 
 
 def _next_tile_mjai(indicator):
@@ -542,7 +585,7 @@ def _classify_strategic(mistake, defense_ctx, tiles_left, wall):
 
     if safety is None:
         # No opponent in riichi — strategic disagreement without defense pressure
-        return "2A"
+        return "3A"
 
     mortal_tile = mistake["expected"]["pai"]
     mortal_safety = safety.get(mortal_tile, safety.get(mortal_tile.rstrip("r"), 0))
@@ -553,9 +596,9 @@ def _classify_strategic(mistake, defense_ctx, tiles_left, wall):
         cpp_safety = safety.get(cpp_tile, safety.get(cpp_tile.rstrip("r"), 0))
         # Mortal chose a significantly safer tile
         if mortal_safety - cpp_safety >= RULES["defense_safety_gap"]:
-            return "2B"
+            return "3B"
 
-    return "2A"
+    return "3A"
 
 
 def _cpp_reasonably_agrees(mortal_tile_id, cpp_stats):
@@ -588,11 +631,11 @@ def _cpp_reasonably_agrees(mortal_tile_id, cpp_stats):
     if mortal_entry["shanten"] != top["shanten"]:
         return False
 
-    # Compare expected scores (if available)
+    # Compare expected scores (if available) — absolute difference threshold
     top_score = top.get("exp_score")
     mortal_score = mortal_entry.get("exp_score")
-    if top_score and mortal_score:
-        return mortal_score >= top_score * RULES["agree_exp_score_ratio"]
+    if top_score is not None and mortal_score is not None:
+        return abs(top_score - mortal_score) <= RULES["agree_exp_score_diff"]
 
     # Fallback: compare necessary tile counts
     top_nec = top.get("necessary_count", 0)
@@ -673,7 +716,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
         err_msg = str(e)
         # Hand already in winning form — strategy decision, not efficiency
         if "和了形" in err_msg:
-            return "2A", None, safety_data, opp_discards
+            return "3A", None, safety_data, opp_discards
         print(f"  API error: {e}", file=sys.stderr)
         return None, None, safety_data, opp_discards
 
@@ -700,19 +743,20 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
 
     cpp_agrees_mortal = (cpp_base == mortal_base)
 
-    if cpp_agrees_mortal:
-        # cpp and mortal agree: tile efficiency error
-        cat = sub_categorize_efficiency(mistake, dora_indicators)
-    elif _cpp_reasonably_agrees(mortal_best_id, cpp_stats):
-        # cpp and mortal pick different tiles but mortal's pick is still
-        # competitive by cpp's own metrics — this is efficiency, not strategy
-        cat = sub_categorize_efficiency(mistake, dora_indicators)
+    if cpp_agrees_mortal or _cpp_reasonably_agrees(mortal_best_id, cpp_stats):
+        cat = classify_efficiency(mistake, cpp_stats)
     else:
         # Genuine disagreement: mortal sees something cpp doesn't
-        # Check if mortal is choosing a safer tile (defense-motivated)
-        cat = "2A"
+        cat = "3A"
         if defense_ctx:
             cat = _classify_strategic(mistake, defense_ctx, tiles_left, wall)
+
+    # Compute labels
+    round_wind_mjai = ID_TO_MJAI.get(round_wind)
+    seat_wind_mjai = ID_TO_MJAI.get(seat_wind)
+    labels = compute_labels(mistake, dora_indicators, round_wind_mjai, seat_wind_mjai)
+    if labels:
+        cpp_data["labels"] = labels
 
     return cat, cpp_data, safety_data, opp_discards
 
@@ -958,10 +1002,8 @@ def recheck_game(game, game_idx, dry_run=False):
             cpp_base = tile_id_to_base(cpp_best_id)
             mortal_base = tile_id_to_base(mortal_best_id)
 
-            if cpp_base == mortal_base:
-                cat = sub_categorize_efficiency(m, dora_indicators)
-            elif _cpp_reasonably_agrees(mortal_best_id, m["cpp_stats"]):
-                cat = sub_categorize_efficiency(m, dora_indicators)
+            if cpp_base == mortal_base or _cpp_reasonably_agrees(mortal_best_id, m["cpp_stats"]):
+                cat = classify_efficiency(m, m["cpp_stats"])
             else:
                 cat = _classify_strategic(m, defense_ctx, tiles_left, wall)
 
@@ -1083,6 +1125,8 @@ def categorize_game_db(conn, game_id, force=False):
                 if cpp_data:
                     updates["cpp_best"] = cpp_data["best"]
                     updates["cpp_stats"] = cpp_data["stats"]
+                    if cpp_data.get("labels"):
+                        updates["labels"] = cpp_data["labels"]
                 if safety_data:
                     updates["safety_ratings"] = safety_data
                 if opp_discards:

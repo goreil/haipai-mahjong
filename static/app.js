@@ -1,9 +1,10 @@
 const CATEGORIES = [
-  "", "1A", "1B", "1C", "1D", "1E",
-  "2A", "2B", "2C",
+  "", "1A",
+  "2A",
   "3A", "3B", "3C",
-  "4A", "4B",
+  "4A", "4B", "4C",
   "5A", "5B",
+  "6A", "6B",
 ];
 
 // Loaded from /api/categories on init
@@ -29,6 +30,7 @@ function catDesc(code) {
 
 const GROUP_COLORS = {
   "Efficiency": "#4a9eff",
+  "Value Tiles": "#38bdf8",
   "Strategy": "#ff6b6b",
   "Meld": "#ffa94d",
   "Riichi": "#a855f7",

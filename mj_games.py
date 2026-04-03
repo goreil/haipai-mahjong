@@ -20,21 +20,18 @@ CATEGORIES = [
 ]
 
 CATEGORY_INFO = {
-    "1A": {"group": "Efficiency", "label": "Acceptance",     "desc": "Chose a discard with lower tile acceptance (ukeire)",                  "study": "Riichi Book Ch 3-4"},
-    "1B": {"group": "Efficiency", "label": "Dora",           "desc": "Mishandled dora or red five tile",                                     "study": "Riichi Book Ch 4.3"},
-    "1C": {"group": "Efficiency", "label": "Honor Tiles",    "desc": "Wrong discard priority among honor tiles (value vs valueless winds)",  "study": "Riichi Book Ch 3.2"},
-    "1D": {"group": "Efficiency", "label": "Connectivity",   "desc": "Discarded a more connected tile over a less connected one",            "study": "Riichi Book Ch 3.2-3.3"},
-    "1E": {"group": "Efficiency", "label": "Pairs",          "desc": "Wrong pair count or pair choice (ideally keep two pairs)",              "study": "Riichi Book Ch 3.2, 4.1"},
-    "2A": {"group": "Strategy",   "label": "Push/Fold",      "desc": "Strategic disagreement — neither pure defense nor efficiency",          "study": "Riichi Book Ch 8.1"},
-    "2B": {"group": "Strategy",   "label": "Defense",        "desc": "Mortal chose a safer tile against an opponent in riichi",               "study": "Riichi Book Ch 8.2-8.4"},
-    "2C": {"group": "Strategy",   "label": "Hand Value",     "desc": "Sacrificed speed for hand value or vice versa",                        "study": "Riichi Book Ch 5-6"},
-    "3A": {"group": "Meld",       "label": "Bad Call",       "desc": "Called chi/pon when shouldn't have",                                   "study": "Riichi Book Ch 9"},
-    "3B": {"group": "Meld",       "label": "Missed Call",    "desc": "Didn't call chi/pon when should have",                                 "study": "Riichi Book Ch 9"},
-    "3C": {"group": "Meld",       "label": "Wrong Choice",   "desc": "Called wrong combination",                                            "study": "Riichi Book Ch 9"},
-    "4A": {"group": "Riichi",     "label": "Bad Riichi",     "desc": "Declared riichi when shouldn't have",                                  "study": "Riichi Book Ch 7"},
-    "4B": {"group": "Riichi",     "label": "Missed Riichi",  "desc": "Didn't declare riichi when should have",                               "study": "Riichi Book Ch 7"},
-    "5A": {"group": "Kan",        "label": "Bad Kan",        "desc": "Declared kan when shouldn't have",                                     "study": "Riichi Book Ch 9.3"},
-    "5B": {"group": "Kan",        "label": "Missed Kan",     "desc": "Didn't declare kan when should have",                                  "study": "Riichi Book Ch 9.3"},
+    "1A": {"group": "Efficiency",      "label": "Tile Efficiency",       "desc": "Chose a discard with lower tile acceptance or expected score",                                     "study": "Riichi Book Ch 3-4"},
+    "2A": {"group": "Value Tiles",     "label": "Value Tile Ordering",   "desc": "Chose wrong between a value tile (honor/terminal) and a number tile when tile efficiency was similar", "study": "Riichi Book Ch 3.2"},
+    "3A": {"group": "Strategy",        "label": "Push/Fold",             "desc": "Strategic disagreement — neither pure defense nor efficiency",                                     "study": "Riichi Book Ch 8.1"},
+    "3B": {"group": "Strategy",        "label": "Defense",               "desc": "Mortal chose a safer tile against an opponent in riichi",                                          "study": "Riichi Book Ch 8.2-8.4"},
+    "3C": {"group": "Strategy",        "label": "Hand Value",            "desc": "Sacrificed speed for hand value or vice versa",                                                    "study": "Riichi Book Ch 5-6"},
+    "4A": {"group": "Meld",            "label": "Bad Call",              "desc": "Called chi/pon when shouldn't have",                                                               "study": "Riichi Book Ch 9"},
+    "4B": {"group": "Meld",            "label": "Missed Call",           "desc": "Didn't call chi/pon when should have",                                                             "study": "Riichi Book Ch 9"},
+    "4C": {"group": "Meld",            "label": "Wrong Choice",          "desc": "Called wrong combination",                                                                         "study": "Riichi Book Ch 9"},
+    "5A": {"group": "Riichi",          "label": "Bad Riichi",            "desc": "Declared riichi when shouldn't have",                                                              "study": "Riichi Book Ch 7"},
+    "5B": {"group": "Riichi",          "label": "Missed Riichi",         "desc": "Didn't declare riichi when should have",                                                           "study": "Riichi Book Ch 7"},
+    "6A": {"group": "Kan",             "label": "Bad Kan",               "desc": "Declared kan when shouldn't have",                                                                 "study": "Riichi Book Ch 9.3"},
+    "6B": {"group": "Kan",             "label": "Missed Kan",            "desc": "Didn't declare kan when should have",                                                              "study": "Riichi Book Ch 9.3"},
 }
 
 

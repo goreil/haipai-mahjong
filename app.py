@@ -425,7 +425,7 @@ def api_annotate(game_id):
     if note and len(note) > 1000:
         return jsonify({"error": "note too long (max 1000 chars)"}), 400
 
-    VALID_CATEGORIES = {"", "1A", "1B", "1C", "1D", "1E", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "5A", "5B"}
+    VALID_CATEGORIES = {"", "1A", "2A", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B"}
     if category and category not in VALID_CATEGORIES:
         return jsonify({"error": f"Invalid category: {category}"}), 400
 
