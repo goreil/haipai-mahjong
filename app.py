@@ -5,6 +5,7 @@ from flask import Flask, g, jsonify, redirect, render_template_string, request, 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
 from pathlib import Path
 import atexit
@@ -35,6 +36,8 @@ app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_ENV") != "development"
+
+csrf = CSRFProtect(app)
 
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per minute"],
                   storage_uri="memory://")
@@ -261,6 +264,7 @@ button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shad
 <h2>{{ title }}</h2>
 {% if error %}<div class="error">{{ error }}</div>{% endif %}
 <form method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <label>Username</label><input name="username" required autofocus autocomplete="username">
 <label>Password</label><input name="password" type="password" required autocomplete="{{ 'new-password' if register else 'current-password' }}">
 {% if register %}<label>Invite Code</label><input name="invite_code" required placeholder="From a club member">{% endif %}
@@ -346,8 +350,10 @@ def tiles(filename):
 
 @app.route("/api/me")
 @login_required
+@csrf.exempt
 def api_me():
-    return jsonify({"username": current_user.username, "id": current_user.id})
+    from flask_wtf.csrf import generate_csrf
+    return jsonify({"username": current_user.username, "id": current_user.id, "csrf_token": generate_csrf()})
 
 
 @app.route("/api/categories")

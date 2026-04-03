@@ -292,6 +292,7 @@ class TestAPI:
         import app as app_module
         importlib.reload(app_module)
         app_module.app.config["TESTING"] = True
+        app_module.app.config["WTF_CSRF_ENABLED"] = False
 
         with app_module.app.test_client() as client:
             yield client

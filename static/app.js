@@ -37,6 +37,8 @@ const GROUP_COLORS = {
 
 const OUTCOME_EMOJI = { ":D": "\u{1F60E}", ":)": "\u{1F642}", ":|": "\u{1F610}", ":(": "\u{1F61E}" };
 
+let csrfToken = "";
+
 let state = {
   games: [],
   currentGame: null,
@@ -433,6 +435,18 @@ function safetyLabel(rating) {
 
 // --- API ---
 
+function apiPost(url, body) {
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+    body: JSON.stringify(body),
+  });
+}
+
+function apiDelete(url) {
+  return fetch(url, { method: "DELETE", headers: { "X-CSRFToken": csrfToken } });
+}
+
 async function fetchGames() {
   const res = await fetch("/api/games");
   state.games = await res.json();
@@ -472,11 +486,7 @@ async function fetchGame(id) {
 }
 
 async function saveAnnotation(gameId, round, turn, index, category, note) {
-  const res = await fetch(`/api/games/${gameId}/annotate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ round, turn, index, category, note }),
-  });
+  const res = await apiPost(`/api/games/${gameId}/annotate`, { round, turn, index, category, note });
   const data = await res.json();
   if (data.ok) {
     state.currentGameData.summary = data.summary;
@@ -499,11 +509,7 @@ async function saveAnnotation(gameId, round, turn, index, category, note) {
 }
 
 async function addGame(mortalData, date) {
-  const res = await fetch("/api/games/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mortal_data: mortalData, date: date || undefined }),
-  });
+  const res = await apiPost("/api/games/add", { mortal_data: mortalData, date: date || undefined });
   return await res.json();
 }
 
@@ -871,7 +877,7 @@ async function submitAddGame() {
 
 async function deleteGame(id) {
   if (!confirm(`Delete game ${id + 1}? This cannot be undone.`)) return;
-  const res = await fetch(`/api/games/${id}`, { method: "DELETE" });
+  const res = await apiDelete(`/api/games/${id}`);
   const data = await res.json();
   if (data.ok) {
     state.currentGame = null;
@@ -899,11 +905,7 @@ function importGamesJson() {
       const text = await file.text();
       const json = JSON.parse(text);
 
-      const res = await fetch("/api/games/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ games: json.games || [] }),
-      });
+      const res = await apiPost("/api/games/import", { games: json.games || [] });
       const data = await res.json();
 
       if (data.error) {
@@ -1296,11 +1298,7 @@ function submitPracticeAnswer(tile) {
 
   // Record result for spaced repetition
   if (practice.problem.mistake_id) {
-    fetch("/api/practice/result", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mistake_id: practice.problem.mistake_id, correct: isCorrect }),
-    });
+    apiPost("/api/practice/result", { mistake_id: practice.problem.mistake_id, correct: isCorrect });
   }
 
   renderPractice();
@@ -1613,11 +1611,7 @@ async function submitFeedback() {
   btn.textContent = "Sending...";
   errEl.textContent = "";
 
-  const res = await fetch("/api/feedback", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type, message }),
-  });
+  const res = await apiPost("/api/feedback", { type, message });
   const data = await res.json();
 
   btn.disabled = false;
@@ -1669,6 +1663,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
   const me = await meRes.json();
+  csrfToken = me.csrf_token || "";
   document.getElementById("user-info").innerHTML =
     `${me.username} <a href="/logout">logout</a>`;
 
