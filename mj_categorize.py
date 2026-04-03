@@ -454,21 +454,21 @@ def _get_exp_score_for_tile(tile_mjai, cpp_stats):
 
 
 def classify_efficiency(mistake, cpp_stats):
-    """Classify an efficiency mistake as 1A or 1V.
+    """Classify an efficiency mistake as 1A or 2A.
 
-    1V: one tile is a value tile (honor/terminal), the other is a number tile (2-8),
-        and cpp scores are close (diff <= threshold). Mortal sees a difference that
-        pure tile efficiency doesn't capture.
-    1A: all other efficiency mistakes.
+    2A (Value Tile Ordering): at least one tile is a value tile (honor or terminal),
+        and cpp scores are close (diff <= threshold). Mortal sees a strategic difference
+        that pure tile efficiency doesn't capture. Covers honor vs number, terminal vs
+        number, and honor vs terminal.
+    1A: all other efficiency mistakes (pure tile efficiency).
     """
     actual_tile = mistake["actual"]["pai"]
     expected_tile = mistake["expected"]["pai"]
 
-    # Check 1V: value tile vs number tile with close cpp scores
-    one_value = _is_value_tile_mjai(actual_tile) or _is_value_tile_mjai(expected_tile)
-    one_number = _is_number_tile_mjai(actual_tile) or _is_number_tile_mjai(expected_tile)
+    # 2A: at least one value tile involved, cpp scores close
+    has_value = _is_value_tile_mjai(actual_tile) or _is_value_tile_mjai(expected_tile)
 
-    if one_value and one_number and cpp_stats:
+    if has_value and cpp_stats:
         actual_score = _get_exp_score_for_tile(actual_tile, cpp_stats)
         expected_score = _get_exp_score_for_tile(expected_tile, cpp_stats)
         if actual_score is not None and expected_score is not None:
