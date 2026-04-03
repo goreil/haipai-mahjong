@@ -544,23 +544,33 @@ body {
 }
 
 .wind-badge {
-  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.wind-badge .wind-tile {
+  height: 20px;
+}
+
+.wind-badge .wind-label {
+  font-size: 9px;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 3px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .wind-badge.round-wind {
-  background: rgba(74, 158, 255, 0.15);
-  color: var(--accent);
+  background: rgba(74, 158, 255, 0.1);
 }
+.wind-badge.round-wind .wind-label { color: var(--accent); }
 
 .wind-badge.seat-wind {
-  background: rgba(168, 85, 247, 0.15);
-  color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
 }
+.wind-badge.seat-wind .wind-label { color: #a855f7; }
 
 .dora-section {
   display: flex;

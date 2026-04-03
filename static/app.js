@@ -141,10 +141,10 @@ function renderBoardContext(m) {
   // Wind + Dora bar
   html += `<div class="board-info-bar">`;
   if (b.round_wind) {
-    html += `<span class="wind-badge round-wind" title="Round wind">${WIND_DISPLAY[b.round_wind] || b.round_wind}</span>`;
+    html += `<span class="wind-badge round-wind" title="Round wind">${renderTile(b.round_wind, "tile-sm wind-tile")}<span class="wind-label">Round</span></span>`;
   }
   if (b.seat_wind) {
-    html += `<span class="wind-badge seat-wind" title="Seat wind">${WIND_DISPLAY[b.seat_wind] || b.seat_wind}</span>`;
+    html += `<span class="wind-badge seat-wind" title="Seat wind">${renderTile(b.seat_wind, "tile-sm wind-tile")}<span class="wind-label">Seat</span></span>`;
   }
   if (b.dora_indicators && b.dora_indicators.length) {
     html += `<span class="dora-section"><span class="dora-label">Dora</span>`;
