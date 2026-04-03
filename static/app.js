@@ -168,11 +168,15 @@ function renderBoardContext(m) {
   }
 
   // All player discards + inline melds (collapsible)
+  // Auto-expand for strategy/defense/meld/riichi/kan, when opponent in riichi, or uncategorized
   if (b.all_discards && b.all_discards.length) {
     const hasDiscards = b.all_discards.some(d => d.discards.length > 0 || meldsBySeat[d.seat]);
     if (hasDiscards) {
       const doraTiles = getDoraTiles(b.dora_indicators);
-      html += `<details class="all-discards" open>`;
+      const cat = m.category || "";
+      const expandDiscards = !cat || m.safety_ratings || /^[3-6]/.test(cat);
+      html += `<details class="all-discards"${expandDiscards ? " open" : ""}>`;
+
       html += `<summary>Discards</summary>`;
       for (const d of b.all_discards) {
         const seatMelds = meldsBySeat[d.seat];
