@@ -352,12 +352,19 @@ def update_mistake_data(conn, mistake_id, updates):
 
 
 def record_practice_result(conn, user_id, mistake_id, correct):
-    """Record a practice attempt."""
+    """Record a practice attempt. Validates mistake belongs to user."""
+    owner = conn.execute(
+        "SELECT g.user_id FROM mistakes m JOIN games g ON m.game_id = g.id WHERE m.id = ?",
+        (mistake_id,),
+    ).fetchone()
+    if not owner or owner["user_id"] != user_id:
+        return False
     conn.execute(
         "INSERT INTO practice_results (user_id, mistake_id, correct) VALUES (?, ?, ?)",
         (user_id, mistake_id, 1 if correct else 0),
     )
     conn.commit()
+    return True
 
 
 def get_practice_stats(conn, user_id):

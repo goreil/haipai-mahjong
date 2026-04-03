@@ -25,7 +25,13 @@ NANIKIRU_BIN = Path(os.environ.get("NANIKIRU_BIN", DIR / "mahjong-cpp" / "build"
 NANIKIRU_PORT = 50000
 
 app = Flask(__name__, static_folder="static")
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
+_secret = os.environ.get("SECRET_KEY")
+if not _secret:
+    print("WARNING: SECRET_KEY not set, using random key (sessions won't persist across restarts)", file=sys.stderr)
+    import secrets
+    _secret = secrets.token_hex(32)
+app.secret_key = _secret
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_ENV") != "development"
@@ -125,6 +131,17 @@ def stop_nanikiru():
         _nanikiru_proc.terminate()
         _nanikiru_proc.wait(timeout=5)
         print("nanikiru stopped", file=sys.stderr)
+
+
+# --- Error handling ---
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Return JSON error for API routes, generic 500 otherwise."""
+    if request.path.startswith("/api/"):
+        print(f"Unhandled error on {request.path}: {e}", file=sys.stderr)
+        return jsonify({"error": "Internal server error"}), 500
+    return "Internal server error", 500
 
 
 # --- Database connection per request ---
@@ -495,37 +512,6 @@ def api_backfill_decisions():
     return jsonify({"ok": True, "updated": updated, "total": len(games)})
 
 
-@app.route("/api/mortal-fetch", methods=["POST"])
-@login_required
-@limiter.limit("10 per minute")
-def api_mortal_fetch():
-    """Proxy fetch Mortal analysis JSON from mjai.ekyu.moe."""
-    body = request.json
-    if not body:
-        return jsonify({"error": "JSON body required"}), 400
-    url = body.get("url", "")
-    if not isinstance(url, str) or not url.startswith("https://mjai.ekyu.moe/"):
-        return jsonify({"error": "URL must be from mjai.ekyu.moe"}), 400
-    if not url.endswith(".json"):
-        return jsonify({"error": "URL must point to a .json file"}), 400
-
-    try:
-        resp = http_requests.get(url, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-    except http_requests.Timeout:
-        return jsonify({"error": "Timeout fetching from mjai.ekyu.moe"}), 504
-    except http_requests.HTTPError as e:
-        return jsonify({"error": f"mjai.ekyu.moe returned {e.response.status_code}"}), 502
-    except Exception as e:
-        return jsonify({"error": f"Failed to fetch: {e}"}), 502
-
-    if not isinstance(data, dict) or "review" not in data:
-        return jsonify({"error": "Not a valid Mortal analysis JSON"}), 400
-
-    return jsonify({"data": data})
-
-
 @app.route("/api/games/add", methods=["POST"])
 @login_required
 def api_add():
@@ -637,7 +623,8 @@ def api_practice_result():
     correct = body.get("correct", False)
     if not isinstance(mistake_id, int):
         return jsonify({"error": "mistake_id (int) required"}), 400
-    db.record_practice_result(conn, uid, mistake_id, correct)
+    if not db.record_practice_result(conn, uid, mistake_id, correct):
+        return jsonify({"error": "Mistake not found"}), 404
     return jsonify({"ok": True})
 
 
