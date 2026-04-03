@@ -288,7 +288,10 @@ def login():
         password = request.form.get("password", "")
         conn = get_conn()
         user_row = db.get_user_by_username(conn, username)
-        if user_row and check_password_hash(user_row["password_hash"], password):
+        # Always hash to prevent timing-based username enumeration
+        pw_hash = user_row["password_hash"] if user_row else "pbkdf2:sha256:dummy"
+        valid = check_password_hash(pw_hash, password)
+        if user_row and valid:
             login_user(User(user_row["id"], user_row["username"]))
             return redirect("/")
         error = "Invalid username or password"
@@ -430,6 +433,7 @@ def api_annotate(game_id):
 
 @app.route("/api/games/<int:game_id>/categorize", methods=["POST"])
 @login_required
+@limiter.limit("5 per minute")
 def api_categorize(game_id):
     conn = get_conn()
     uid = current_user.id
@@ -514,6 +518,7 @@ def api_backfill_decisions():
 
 @app.route("/api/games/add", methods=["POST"])
 @login_required
+@limiter.limit("10 per minute")
 def api_add():
     from datetime import date
 
@@ -554,6 +559,7 @@ def api_add():
 
 @app.route("/api/games/import", methods=["POST"])
 @login_required
+@limiter.limit("3 per minute")
 def api_import():
     """Import games from uploaded JSON into the database for the current user."""
     conn = get_conn()
