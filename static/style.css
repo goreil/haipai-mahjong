@@ -254,10 +254,17 @@ body {
   line-height: 1.6;
   margin-bottom: 8px;
 }
+.onboarding code {
+  background: var(--bg-input);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  word-break: break-all;
+}
 .onboarding ol {
   padding-left: 24px;
   color: var(--text-dim);
-  line-height: 2;
+  line-height: 1.8;
 }
 .onboarding ol li {
   padding-left: 4px;

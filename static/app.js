@@ -452,7 +452,12 @@ function showOnboarding() {
         <li>Play a game on <a href="https://tenhou.net" target="_blank">Tenhou</a> or <a href="https://mahjongsoul.game.yo-star.com" target="_blank">Mahjong Soul</a></li>
         <li>Go to <a href="https://mjai.ekyu.moe" target="_blank">mjai.ekyu.moe</a> and paste your replay link</li>
         <li>Wait for Mortal AI to finish analysis</li>
-        <li>Download the analysis JSON and upload it via <strong>+ Add Game</strong></li>
+        <li>Once the results page loads, look at the URL in your browser's address bar. It will look like:<br>
+            <code>https://mjai.ekyu.moe/killerducky/?data=<b>/report/abc123.json</b></code><br>
+            Copy the <b>/report/...json</b> part and open it directly:<br>
+            <code>https://mjai.ekyu.moe<b>/report/abc123.json</b></code></li>
+        <li>You should see a page full of raw data. Press <b>Ctrl+S</b> (or Cmd+S on Mac) to save it as a file</li>
+        <li>Click <strong>+ Add Game</strong> in the sidebar and upload that file</li>
       </ol>
       <button class="btn btn-primary" onclick="showAddModal()">+ Add Game</button>
     </div>
