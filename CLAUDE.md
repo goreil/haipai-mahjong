@@ -82,18 +82,18 @@ Mistakes have: `turn`, `severity` (?/??/???), `ev_loss`, `category`, `note`, plu
 - `board_state`: dora indicators, winds, scores, all discard pools, opponent melds
 - `opponent_discards`: opponent discard pools for defense context
 
-Categories: 1A-1E (efficiency), 2A-2C (strategy), 3A-3C (melding), 4A-4B (riichi), 5A-5B (kan).
+Categories: 1A (efficiency), 2A (value tiles), 3A-3C (strategy), 4A-4C (meld), 5A-5B (riichi), 6A-6B (kan).
 
 ## Auto-Categorization Logic
 
 When adding a game (CLI or web), mistakes are automatically categorized:
 
-1. **Non-discard actions** categorized by type: 3A-3C (meld), 4A-4B (riichi), 5A-5B (kan).
+1. **Non-discard actions** categorized by type: 4A-4C (meld), 5A-5B (riichi), 6A-6B (kan).
 2. **Discard vs discard**: queries mahjong-cpp API for tile efficiency, then:
-   - **cpp == mortal** or **cpp ~= mortal** (within 90% score): efficiency -> 1A-1E
-   - **cpp != mortal** + opponent in riichi + mortal chose safer tile (3+ gap): **2B** (Defense)
-   - **cpp != mortal** otherwise: **2A** (Push/Fold)
-   - **Hand already winning**: defaults to **2A**
+   - **cpp == mortal** or **cpp ~= mortal** (within 90% score): efficiency -> **1A** or **2A** (value tile)
+   - **cpp != mortal** + opponent in riichi + mortal chose safer tile (3+ gap): **3B** (Defense)
+   - **cpp != mortal** otherwise: **3A** (Push/Fold)
+   - **Hand already winning**: defaults to **3A**
 
 Thresholds in `RULES` dict at top of `mj_categorize.py`. Iterate with `--recheck --dry-run`.
 
@@ -110,3 +110,17 @@ SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, 
 - Nanikiru runs locally at 127.0.0.1:50000, auto-started by `app.py`.
 - `SECRET_KEY` must be set via `.env` file or environment variable (no insecure defaults).
 - Debug mode requires `FLASK_ENV=development` (off by default).
+
+## Backlog Documents
+
+Issues and improvements are tracked in dedicated backlog docs. When working on a task, check the relevant doc for known issues and mark items as done when fixed.
+
+| Document | Scope | Primary files |
+|----------|-------|---------------|
+| `UX-AUDIT.md` | UI/UX issues, outdated help text, layout | `static/app.js`, `style.css`, `index.html` |
+| `BUGS.md` | Known bugs, edge cases, incorrect behavior | `mj_parse.py`, `mj_categorize.py`, `db.py` |
+| `TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
+| `INFRA.md` | Docker, deploy, CI/CD, monitoring, backups | `Dockerfile`, `docker-compose.yml`, `.github/` |
+| `PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
+
+When running multiple Claude instances in parallel, avoid editing the same files concurrently. The table above shows which files each backlog primarily touches.

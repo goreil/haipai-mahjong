@@ -25,7 +25,7 @@ What English riichi players have today:
 - Riichi Scoring Trainer, Waits Trainer: specific skill drills, no game review.
 
 What nobody has:
-- Mistake categorization across a taxonomy (our 15-category system)
+- Mistake categorization across a taxonomy
 - Practice quizzes from your own past errors
 - Trend analytics over time (EV/decision progression)
 - Mortal-vs-mahjong-cpp comparison to classify WHY a mistake happened
@@ -37,14 +37,14 @@ tracks it over time, and lets you drill your actual weak spots.
 === DONE (summary) ===
 
 Core: CLI + web pipeline, SQLite data store, Mortal JSON parser, auto-categorization
-(mortal vs mahjong-cpp), 15-category taxonomy, EV/Decision metric.
+(mortal vs mahjong-cpp), category taxonomy, EV/Decision metric.
 
 Web UI: game list (star ratings), review (SVG tiles, dora highlighting, tile hover,
 board context, defense visuals), annotation, severity filters, add-game modal,
 new user onboarding, help page, feedback form.
 
-Analysis: EV comparison tables, defense analysis (suji safety 0-15), 2A/2B defense-aware
-split, trend charts (EV/decision, severity, skill area), personal best/recent stats.
+Analysis: EV comparison tables, defense analysis (suji safety 0-15), defense-aware
+category split, trend charts (EV/decision, severity, skill area), personal best/recent stats.
 
 Practice: discard quizzes, dora highlighting, spaced repetition, filters, board context.
 
@@ -56,38 +56,18 @@ Deployment: auto-deploy workflow, DEPLOY.md documentation.
 See git log for detailed history.
 
 
-=== TODO: DEPLOY ===
-
-haipai.ylue.de is live. Remaining:
-  1. Set up auto-deploy (see DEPLOY.md — add SSH key + GitHub secrets)
-  2. Run backfill: POST /api/games/backfill-decisions
-  3. Create club member accounts, share URL
-  4. Fix rough edges from real multi-user usage
-
-
-=== TODO: UX IMPROVEMENTS ===
-
-1. Board state display (remaining items)
-   b) Pons/chis inline with the player row, not separate
-   e) Current player section needs cleaner layout
-   f) Round wind / seat wind should use tile SVGs with explicit labels
-
-2. Practice mode redesign
-   - Rename to "Tile Efficiency Practice"
-   - Only include unambiguous tile efficiency (categories 1A-1E), no strategy/riichi
-   - Reuse the board state rendering from review mode, just hide the evaluation
-     until after the player makes their discard choice
-
-3. Category system overhaul
-   - Current categories feel misleading, many things are miscategorized
-   - Goal: create "unambiguous tile efficiency" group where categorization is reliable
-   - Thresholds configurable in RULES dict (mj_categorize.py)
-   - Iterate with: categorize --recheck --dry-run (instant, shows diff summary)
-   - Brainstorming notes: archive/ylue-categories.txt
-
-
 === TODO: FEATURES ===
 
-1. CSRF tokens (Flask-WTF) — last remaining security item
-2. Investigate JS-based Mortal fetch (Cloudflare may not block browsers)
-3. Certificate auto-renewal monitoring
+1. Investigate JS-based Mortal fetch (Cloudflare may not block browsers)
+2. Certificate auto-renewal monitoring
+
+
+=== BACKLOGS ===
+
+Specific issues and improvements are tracked in dedicated documents:
+
+- UX-AUDIT.md    — UI/UX issues, outdated help text, layout improvements
+- BUGS.md        — Known bugs, edge cases, incorrect behavior
+- TESTING.md     — Test coverage gaps, missing test cases
+- INFRA.md       — Docker, deploy, CI/CD, monitoring, backups
+- PENTEST.md     — Security findings and remediation status
