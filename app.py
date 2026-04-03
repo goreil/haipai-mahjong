@@ -495,6 +495,37 @@ def api_backfill_decisions():
     return jsonify({"ok": True, "updated": updated, "total": len(games)})
 
 
+@app.route("/api/mortal-fetch", methods=["POST"])
+@login_required
+@limiter.limit("10 per minute")
+def api_mortal_fetch():
+    """Proxy fetch Mortal analysis JSON from mjai.ekyu.moe."""
+    body = request.json
+    if not body:
+        return jsonify({"error": "JSON body required"}), 400
+    url = body.get("url", "")
+    if not isinstance(url, str) or not url.startswith("https://mjai.ekyu.moe/"):
+        return jsonify({"error": "URL must be from mjai.ekyu.moe"}), 400
+    if not url.endswith(".json"):
+        return jsonify({"error": "URL must point to a .json file"}), 400
+
+    try:
+        resp = http_requests.get(url, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+    except http_requests.Timeout:
+        return jsonify({"error": "Timeout fetching from mjai.ekyu.moe"}), 504
+    except http_requests.HTTPError as e:
+        return jsonify({"error": f"mjai.ekyu.moe returned {e.response.status_code}"}), 502
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch: {e}"}), 502
+
+    if not isinstance(data, dict) or "review" not in data:
+        return jsonify({"error": "Not a valid Mortal analysis JSON"}), 400
+
+    return jsonify({"data": data})
+
+
 @app.route("/api/games/add", methods=["POST"])
 @login_required
 def api_add():

@@ -876,6 +876,25 @@ body {
   color: var(--accent);
 }
 
+.modal .form-divider {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin: 12px 0;
+  position: relative;
+}
+.modal .form-divider::before,
+.modal .form-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 30%;
+  height: 1px;
+  background: var(--border);
+}
+.modal .form-divider::before { left: 0; }
+.modal .form-divider::after { right: 0; }
+
 .modal .form-group {
   margin-bottom: 12px;
 }
