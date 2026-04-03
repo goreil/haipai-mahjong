@@ -6,7 +6,7 @@ Systematic review of the web UI for outdated documentation, confusing elements, 
 
 ## 1. Outdated / Incorrect Documentation
 
-### 1a. Help page references deleted categories (HIGH)
+### 1a. ~~Help page references deleted categories~~ (HIGH) ✅ DONE
 
 `static/app.js:1519` says:
 
@@ -30,7 +30,7 @@ Similarly, `app.js:1521` references "2B Defense" -- the category is now `3B` (St
 
 ## 2. Category System UX Issues
 
-### 2a. Category codes are meaningless to users (HIGH)
+### 2a. ~~Category codes are meaningless to users~~ (HIGH) ✅ DONE
 
 The UI shows badges like "Strategy / Push/Fold" alongside codes like "3A". The codes (1A, 2A, 3A, etc.) are an internal artifact of the auto-categorization engine. They don't help the user understand their mistakes and add visual noise. A user seeing "3A" gets no signal -- they still need the label.
 
@@ -54,7 +54,7 @@ This has its own group ("Value Tiles") with its own color, but it's really a sub
 
 ## 3. Board Context Layout Issues
 
-### 3a. Opponent melds hidden inside "Details" collapse (HIGH)
+### 3a. ~~Opponent melds hidden inside "Details" collapse~~ (HIGH) ✅ DONE
 
 `app.js:189-215` -- opponent pons/chis are inside a `<details>` element labeled "Details" that is collapsed by default. This means the user has to click to see what opponents have called, which is critical context for understanding:
 - Why Mortal recommends a defensive play
@@ -63,7 +63,7 @@ This has its own group ("Value Tiles") with its own color, but it's really a sub
 
 **Recommendation:** Move opponent melds inline with the discard rows. Each player row should show: `[East] [discards...] | [pon 456m] [chi 123p]`. The melds are as important as discards for reading the board state.
 
-### 3b. Discards always open, even when irrelevant (MEDIUM)
+### 3b. ~~Discards always open, even when irrelevant~~ (MEDIUM) ✅ DONE
 
 `app.js:167` -- the discards `<details>` element has `open` by default. For pure tile efficiency mistakes (categories 1A, 2A), the discards add visual clutter without helping the user understand the mistake. Tile efficiency is about your hand shape, not about what others discarded.
 
@@ -84,7 +84,7 @@ Scores are in the same "Details" collapse as opponent melds. If melds move inlin
 
 ## 4. EV Comparison Table Issues
 
-### 4a. "Tile Calc" column header is ambiguous (MEDIUM)
+### 4a. ~~"Tile Calc" column header is ambiguous~~ (MEDIUM) ✅ DONE
 
 The EV table header says "Tile Calc" which could mean many things. The help page explains it's mahjong-cpp expected score, but in-context the user sees a number like "8,432" with no unit.
 
@@ -132,7 +132,7 @@ Games are labeled "Game 1", "Game 2" etc. based on their database ID. These numb
 
 ## 7. Severity System Issues
 
-### 7a. ?, ??, ??? symbols are non-standard (MEDIUM)
+### 7a. ~~?, ??, ??? symbols are non-standard~~ (MEDIUM) ✅ DONE
 
 The severity markers `?`, `??`, `???` are compact but non-obvious. New users won't know what they mean without checking the help page. The summary bar shows counts of `???`, `??`, `?` with colored numbers but no legend.
 
@@ -161,19 +161,19 @@ The severity markers `?`, `??`, `???` are compact but non-obvious. New users won
 
 ## 9. Minor Polish Items
 
-### 9a. Help page title says "Category Reference" but covers much more
+### 9a. ~~Help page title says "Category Reference" but covers much more~~ ✅ DONE
 
 The help page (`app.js:1494`) is titled "Category Reference" but also explains defense, EV comparison, ratings, practice, and attribution. It's really a full user guide.
 
 **Recommendation:** Rename to "Help" or "User Guide".
 
-### 9b. No way to navigate back from Help/Trends/Practice
+### 9b. ~~No way to navigate back from Help/Trends/Practice~~ ✅ DONE
 
 After clicking Help, Trends, or Practice, the user can only return by clicking a game in the sidebar. There's no back button or breadcrumb.
 
 **Recommendation:** Add a simple "Back to games" link or make the Haipai header clickable to return to the game list.
 
-### 9c. Annotation dropdown shows codes alongside labels
+### 9c. ~~Annotation dropdown shows codes alongside labels~~ ✅ DONE
 
 `app.js:705-709` -- the category dropdown shows entries like "Efficiency / Tile Efficiency". Since the code is part of the option label via `catLabel()`, the user sees the full `group / label` format. This is fine, but the empty option shows "---" which doesn't communicate "uncategorized."
 
@@ -191,25 +191,25 @@ After clicking Help, Trends, or Practice, the user can only return by clicking a
 
 | Priority | Issue | Section |
 |----------|-------|---------|
-| HIGH | Help page references deleted categories (1B-1E, 2B) | 1a |
-| HIGH | Opponent melds hidden in "Details" collapse | 3a |
+| ~~HIGH~~ | ~~Help page references deleted categories (1B-1E, 2B)~~ ✅ | 1a |
+| ~~HIGH~~ | ~~Opponent melds hidden in "Details" collapse~~ ✅ | 3a |
 | HIGH | Practice includes non-efficiency categories | 5a |
-| HIGH | Category codes add noise without helping users | 2a |
-| MEDIUM | Discards always open even when irrelevant | 3b |
+| ~~HIGH~~ | ~~Category codes add noise without helping users~~ ✅ | 2a |
+| ~~MEDIUM~~ | ~~Discards always open even when irrelevant~~ ✅ | 3b |
 | MEDIUM | "Push/Fold" is a misleading catch-all | 2b |
 | MEDIUM | mj_games.py CATEGORIES list is stale | 1b |
-| MEDIUM | Severity symbols unexplained | 7a |
+| ~~MEDIUM~~ | ~~Severity symbols unexplained~~ ✅ | 7a |
 | MEDIUM | Hidden mistakes with subtle indicator | 7b |
 | MEDIUM | Onboarding JSON extraction is fragile | 8a |
-| MEDIUM | "Tile Calc" header ambiguous | 4a |
+| ~~MEDIUM~~ | ~~"Tile Calc" header ambiguous~~ ✅ | 4a |
 | LOW | vision.txt says "15-category" | 1c |
 | LOW | 2A elevated to top-level group | 2c |
 | LOW | Scores buried in details | 3c |
 | LOW | "Calc agrees" filter label unclear | 5b |
 | LOW | Import button always visible | 6a |
 | LOW | Game numbering meaningless | 6b |
-| LOW | Help page titled "Category Reference" | 9a |
-| LOW | No back navigation from Help/Trends/Practice | 9b |
-| LOW | "---" for uncategorized | 9c |
+| ~~LOW~~ | ~~Help page titled "Category Reference"~~ ✅ | 9a |
+| ~~LOW~~ | ~~No back navigation from Help/Trends/Practice~~ ✅ | 9b |
+| ~~LOW~~ | ~~"---" for uncategorized~~ ✅ | 9c |
 | LOW | Riichi badge too subtle | 9d |
 | LOW | Mortal Q values opaque | 4b |
