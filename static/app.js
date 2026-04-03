@@ -704,7 +704,7 @@ function renderGame() {
       // Annotation
       const catOptions = CATEGORIES.map(c => {
         const sel = (m.category || "") === c ? "selected" : "";
-        const label = c ? catLabel(c) : "---";
+        const label = c ? catLabel(c) : "Uncategorized";
         return `<option value="${c}" ${sel}>${label}</option>`;
       }).join("");
 
@@ -1499,7 +1499,6 @@ function showHelp() {
     html += `<div class="help-group-header" style="color:${color}">${grp}</div>`;
     for (const cat of cats) {
       html += `<div class="help-cat">
-        <span class="help-cat-code" style="color:${color}">${cat.code}</span>
         <span class="help-cat-label">${cat.label}</span>
         <span class="help-cat-desc">${cat.desc || ""}</span>
         ${cat.study ? `<span class="help-cat-study">${cat.study}</span>` : ""}
@@ -1516,11 +1515,11 @@ function showHelp() {
       <p><span style="color:#81c784"><b>Mortal AI</b></span> &mdash; A neural-network mahjong AI that considers the full game state: tile efficiency, defense, hand value, riichi timing, opponent behavior, and more. Its "Q-value" is a strategic evaluation of each discard.</p>
       <p><span style="color:#64b5f6"><b>Tile Calculator</b></span> (mahjong-cpp) &mdash; A pure tile efficiency engine. It calculates expected score, win probability, and shanten for each discard, considering only your hand and visible tiles. It ignores defense and strategy entirely.</p>
       <p style="margin-top:8px"><b>The comparison tells us WHY you made a mistake:</b></p>
-      <p>&bull; <b>Both agree on the best tile</b> (or nearly agree) &rarr; This is a <span style="color:#4a9eff">tile efficiency</span> error. You picked a worse tile by pure hand-building logic. Sub-categorized into dora handling (1B), honor priority (1C/1D), pair management (1E), or general acceptance (1A).</p>
+      <p>&bull; <b>Both agree on the best tile</b> (or nearly agree) &rarr; This is a <span style="color:#4a9eff">Tile Efficiency</span> error. If the choice involves an honor or terminal vs. a number tile, it's categorized as <span style="color:#38bdf8">Value Tile Ordering</span>; otherwise it's a general efficiency mistake.</p>
       <p>&bull; <b>They disagree</b> &rarr; Mortal sees something the calculator doesn't. This is a <span style="color:#ff6b6b">strategic</span> decision. We then check defense context:</p>
-      <p style="padding-left:16px">&bull; If an opponent is in riichi and Mortal chose a significantly safer tile &rarr; <b>2B Defense</b> (you should have played safe)</p>
-      <p style="padding-left:16px">&bull; Otherwise &rarr; <b>2A Push/Fold</b> (general strategic disagreement)</p>
-      <p>&bull; <b>Non-discard actions</b> (chi, pon, riichi, kan) are categorized by type: 3A-3C (meld), 4A-4B (riichi), 5A-5B (kan).</p>
+      <p style="padding-left:16px">&bull; If an opponent is in riichi and Mortal chose a significantly safer tile &rarr; <b>Defense</b> (you should have played safe)</p>
+      <p style="padding-left:16px">&bull; Otherwise &rarr; <b>Push/Fold</b> (general strategic disagreement)</p>
+      <p>&bull; <b>Non-discard actions</b> (chi, pon, riichi, kan) are categorized by type: Meld, Riichi, or Kan.</p>
       <p style="margin-top:8px"><i>"Reasonable agreement"</i>: If Mortal's pick has the same shanten and at least 90% of the calculator's best expected score, we still call it efficiency &mdash; the two engines agree in substance even if they pick different tiles.</p>
     </div>
 
