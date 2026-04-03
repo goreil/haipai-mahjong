@@ -452,7 +452,7 @@ function showOnboarding() {
         <li>Play a game on <a href="https://tenhou.net" target="_blank">Tenhou</a> or <a href="https://mahjongsoul.game.yo-star.com" target="_blank">Mahjong Soul</a></li>
         <li>Go to <a href="https://mjai.ekyu.moe" target="_blank">mjai.ekyu.moe</a> and paste your replay link</li>
         <li>Wait for Mortal AI to finish analysis</li>
-        <li>Copy the viewer URL and paste it into <strong>+ Add Game</strong></li>
+        <li>Download the analysis JSON and upload it via <strong>+ Add Game</strong></li>
       </ol>
       <button class="btn btn-primary" onclick="showAddModal()">+ Add Game</button>
     </div>
@@ -803,11 +803,16 @@ function onToggleMedium(cb) {
   if (state.currentGameData) renderGame();
 }
 
+// --- Sidebar toggle ---
+
+function toggleSidebar() {
+  document.querySelector(".sidebar").classList.toggle("collapsed");
+}
+
 // --- Add game modal ---
 
 function showAddModal() {
   document.getElementById("add-modal").classList.add("show");
-  document.getElementById("add-url").value = "";
   document.getElementById("add-file").value = "";
   document.getElementById("add-date").value = "";
   document.getElementById("add-error").textContent = "";
@@ -817,54 +822,14 @@ function hideAddModal() {
   document.getElementById("add-modal").classList.remove("show");
 }
 
-function parseMortalUrl(url) {
-  try {
-    const u = new URL(url);
-    if (!u.hostname.includes("mjai.ekyu.moe")) return null;
-    const data = u.searchParams.get("data");
-    if (!data) return null;
-    return `https://mjai.ekyu.moe${data}`;
-  } catch { return null; }
-}
-
-async function fetchMortalJson(viewerUrl) {
-  const jsonUrl = parseMortalUrl(viewerUrl);
-  if (!jsonUrl) throw new Error("Invalid Mortal URL. Expected: https://mjai.ekyu.moe/...?data=/report/...");
-
-  // Try browser-side fetch first (may be blocked by CORS)
-  try {
-    const resp = await fetch(jsonUrl);
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data && data.review) return data;  // Valid Mortal JSON
-    }
-  } catch {
-    // CORS blocked — expected, fall through to server proxy
-  }
-
-  // Fall back to server-side proxy
-  const resp = await fetch("/api/mortal-fetch", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: jsonUrl }),
-  });
-  const result = await resp.json();
-  if (result.error) throw new Error(result.error);
-  return result.data;
-}
-
 async function submitAddGame() {
-  const urlInput = document.getElementById("add-url");
   const fileInput = document.getElementById("add-file");
   const date = document.getElementById("add-date").value.trim();
   const errEl = document.getElementById("add-error");
   const btn = document.getElementById("add-submit-btn");
 
-  const url = urlInput.value.trim();
-  const hasFile = fileInput.files.length > 0;
-
-  if (!url && !hasFile) {
-    errEl.textContent = "Paste a Mortal viewer URL or select a JSON file";
+  if (!fileInput.files.length) {
+    errEl.textContent = "Select a Mortal analysis JSON file";
     return;
   }
 
@@ -874,12 +839,8 @@ async function submitAddGame() {
 
   try {
     let mortalData;
-    if (url) {
-      mortalData = await fetchMortalJson(url);
-    } else {
-      const text = await fileInput.files[0].text();
-      mortalData = JSON.parse(text);
-    }
+    const text = await fileInput.files[0].text();
+    mortalData = JSON.parse(text);
 
     const result = await addGame(mortalData, date);
 
