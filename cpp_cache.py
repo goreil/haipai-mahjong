@@ -20,24 +20,35 @@ import hashlib
 import json
 import os
 import sqlite3
+import sys
 from pathlib import Path
 
 DIR = Path(__file__).parent
-_CACHE_DB = Path(os.environ.get("CPP_CACHE_PATH", DIR / "cpp_cache.db"))
+# Default to same directory as games.db (DB_PATH) so permissions match
+_default_cache = Path(os.environ.get("DB_PATH", DIR / "games.db")).parent / "cpp_cache.db"
+_CACHE_DB = Path(os.environ.get("CPP_CACHE_PATH", _default_cache))
 _cache_conn = None
+_cache_broken = False
 
 
 def _get_conn():
     """Get or create the module-level cache DB connection."""
-    global _cache_conn
+    global _cache_conn, _cache_broken
+    if _cache_broken:
+        return None
     if _cache_conn is None:
-        _cache_conn = sqlite3.connect(str(_CACHE_DB))
-        _cache_conn.execute("PRAGMA journal_mode=WAL")
-        _cache_conn.execute(
-            "CREATE TABLE IF NOT EXISTS cache "
-            "(key TEXT PRIMARY KEY, response TEXT)"
-        )
-        _cache_conn.commit()
+        try:
+            _cache_conn = sqlite3.connect(str(_CACHE_DB))
+            _cache_conn.execute("PRAGMA journal_mode=WAL")
+            _cache_conn.execute(
+                "CREATE TABLE IF NOT EXISTS cache "
+                "(key TEXT PRIMARY KEY, response TEXT)"
+            )
+            _cache_conn.commit()
+        except (sqlite3.OperationalError, OSError) as e:
+            print(f"  cpp_cache: disabled ({e})", file=sys.stderr)
+            _cache_broken = True
+            return None
     return _cache_conn
 
 
@@ -49,8 +60,11 @@ def _make_key(request_data):
 
 def get(request_data):
     """Look up a cached response.  Returns parsed dict or None."""
+    conn = _get_conn()
+    if conn is None:
+        return None
     key = _make_key(request_data)
-    row = _get_conn().execute(
+    row = conn.execute(
         "SELECT response FROM cache WHERE key = ?", (key,)
     ).fetchone()
     if row:
@@ -59,13 +73,19 @@ def get(request_data):
 
 
 def put(request_data, response):
-    """Store a response in the cache."""
+    """Store a response in the cache.  Silently skips on error."""
+    conn = _get_conn()
+    if conn is None:
+        return
     key = _make_key(request_data)
-    _get_conn().execute(
-        "INSERT OR REPLACE INTO cache (key, response) VALUES (?, ?)",
-        (key, json.dumps(response, separators=(",", ":"))),
-    )
-    _get_conn().commit()
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO cache (key, response) VALUES (?, ?)",
+            (key, json.dumps(response, separators=(",", ":"))),
+        )
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
 
 
 def cached_call(request_data):
@@ -84,13 +104,19 @@ def cached_call(request_data):
 
 def stats():
     """Return cache stats: total entries and approximate DB size."""
-    count = _get_conn().execute("SELECT COUNT(*) FROM cache").fetchone()[0]
+    conn = _get_conn()
+    if conn is None:
+        return {"entries": 0, "size_mb": 0.0, "disabled": True}
+    count = conn.execute("SELECT COUNT(*) FROM cache").fetchone()[0]
     size_bytes = os.path.getsize(_CACHE_DB) if _CACHE_DB.exists() else 0
     return {"entries": count, "size_mb": round(size_bytes / 1_048_576, 1)}
 
 
 def clear():
     """Delete all cached entries."""
-    _get_conn().execute("DELETE FROM cache")
-    _get_conn().commit()
-    _get_conn().execute("VACUUM")
+    conn = _get_conn()
+    if conn is None:
+        return
+    conn.execute("DELETE FROM cache")
+    conn.commit()
+    conn.execute("VACUUM")
