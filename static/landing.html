@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haipai — Study Your Mahjong Mistakes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="landing-body">
+
+<div class="landing">
+  <!-- Hero -->
+  <header class="landing-hero">
+    <div class="landing-brand">
+      <div class="landing-tiles-row">
+        <img src="/tiles/Man1.svg" class="landing-tile" alt="">
+        <img src="/tiles/Pin5-Dora.svg" class="landing-tile landing-tile-glow" alt="">
+        <img src="/tiles/Sou9.svg" class="landing-tile" alt="">
+        <img src="/tiles/Hatsu.svg" class="landing-tile" alt="">
+        <img src="/tiles/Chun.svg" class="landing-tile" alt="">
+      </div>
+      <h1>Haipai</h1>
+      <p class="landing-tagline">Study Your Mahjong Mistakes</p>
+    </div>
+    <p class="landing-subtitle">Upload your Mortal AI analysis, see every mistake categorized, and practice until the leaks are gone.</p>
+    <div class="landing-cta">
+      <a href="/register" class="btn btn-primary">Register with invite code</a>
+      <a href="/login" class="btn btn-secondary">Login</a>
+    </div>
+  </header>
+
+  <!-- Value props -->
+  <section class="landing-features">
+    <div class="landing-feature">
+      <div class="landing-feature-icon">
+        <img src="/tiles/Man3.svg" class="landing-tile-sm" alt="">
+        <img src="/tiles/Man4.svg" class="landing-tile-sm" alt="">
+        <img src="/tiles/Man5-Dora.svg" class="landing-tile-sm landing-tile-glow" alt="">
+      </div>
+      <h2>Auto-Categorized Mistakes</h2>
+      <p>Upload your Mortal analysis and every mistake gets classified — tile efficiency, defense, push/fold, riichi timing, and more. No manual sorting.</p>
+    </div>
+    <div class="landing-feature">
+      <div class="landing-feature-icon">
+        <img src="/tiles/Sou2.svg" class="landing-tile-sm" alt="">
+        <span class="landing-arrow">→</span>
+        <img src="/tiles/Sou7.svg" class="landing-tile-sm" alt="">
+      </div>
+      <h2>Practice Your Weak Spots</h2>
+      <p>Quiz yourself on your own past mistakes with spaced repetition. Filter by category or severity to drill the patterns that cost you the most.</p>
+    </div>
+    <div class="landing-feature">
+      <div class="landing-feature-icon">
+        <svg class="landing-chart-icon" viewBox="0 0 48 32" fill="none">
+          <polyline points="4,28 16,18 28,22 44,6" stroke="#4fc3f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="44" cy="6" r="3" fill="#4fc3f7"/>
+        </svg>
+      </div>
+      <h2>Track Your Improvement</h2>
+      <p>See trends over time — EV loss per game, severity breakdown, and skill area progression. Know exactly where you're getting better.</p>
+    </div>
+  </section>
+
+  <!-- Screenshot -->
+  <section class="landing-screenshot">
+    <div class="landing-screenshot-frame">
+      <div class="landing-screenshot-mock">
+        <div class="landing-mock-sidebar">
+          <div class="landing-mock-item active"></div>
+          <div class="landing-mock-item"></div>
+          <div class="landing-mock-item"></div>
+          <div class="landing-mock-item"></div>
+        </div>
+        <div class="landing-mock-main">
+          <div class="landing-mock-hand">
+            <img src="/tiles/Man2.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Man3.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Pin4.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Pin5.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Pin6.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Sou1.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Sou1.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Sou3.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Sou7.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Hatsu.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Hatsu.svg" class="landing-tile-xs" alt="">
+            <img src="/tiles/Hatsu.svg" class="landing-tile-xs" alt="">
+            <span class="landing-mock-draw">
+              <img src="/tiles/Pin7.svg" class="landing-tile-xs" alt="">
+            </span>
+          </div>
+          <div class="landing-mock-ev">
+            <div class="landing-mock-ev-row best"><span class="landing-mock-label">AI</span> <span>Pin7</span> <span class="landing-mock-val">+0.000</span></div>
+            <div class="landing-mock-ev-row bad"><span class="landing-mock-label">You</span> <span>Sou7</span> <span class="landing-mock-val">-0.042</span></div>
+          </div>
+          <div class="landing-mock-badge">1A Efficiency</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="landing-bottom">
+    <p>Haipai is in closed beta. Get an invite code from a club member to start.</p>
+    <div class="landing-cta">
+      <a href="/register" class="btn btn-primary">Register</a>
+      <a href="/login" class="btn btn-secondary">Already have an account?</a>
+    </div>
+  </section>
+
+  <footer class="landing-footer">
+    <p>Powered by <a href="https://mjai.ekyu.moe" target="_blank" rel="noopener">Mortal AI</a> and <a href="https://github.com/TadaoYamaoka/cmajiang" target="_blank" rel="noopener">mahjong-cpp</a></p>
+  </footer>
+</div>
+
+</body>
+</html>

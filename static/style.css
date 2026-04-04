@@ -1810,6 +1810,108 @@ body {
   color: #8892a4;
 }
 
+/* Admin dashboard */
+.admin-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.admin-filters select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.admin-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.admin-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.admin-gh-link {
+  font-size: 12px;
+  color: var(--accent-dim);
+  text-decoration: none;
+  margin-left: auto;
+}
+
+.admin-gh-link:hover { text-decoration: underline; }
+
+.admin-card-body {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-note-display {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(79, 195, 247, 0.06);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.admin-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.admin-note-form {
+  margin-top: 8px;
+}
+
+.admin-note-form textarea {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 6px;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .landing { padding: 40px 16px 32px; }
