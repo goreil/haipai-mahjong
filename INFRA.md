@@ -127,7 +127,7 @@ No CPU or memory limits on any container. A runaway process (e.g. mahjong-cpp on
 
 ---
 
-### I-12: entrypoint.sh runs chown on every startup
+### ~~I-12: entrypoint.sh runs chown on every startup~~ ✅
 
 **Location**: `entrypoint.sh:3`
 
@@ -135,7 +135,7 @@ No CPU or memory limits on any container. A runaway process (e.g. mahjong-cpp on
 
 ---
 
-### I-13: Dependencies use ~= instead of ==
+### ~~I-13: Dependencies use ~= instead of ==~~ ✅
 
 **Location**: `requirements.txt`
 

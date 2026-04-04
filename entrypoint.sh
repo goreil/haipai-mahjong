@@ -1,6 +1,10 @@
 #!/bin/sh
-# Fix ownership of mounted volumes (created as root by Docker)
-chown -R appuser:appuser /app/data /app/mortal_analysis 2>/dev/null || true
+# Fix ownership of mounted volumes only if not already owned by appuser
+for dir in /app/data /app/mortal_analysis; do
+    if [ -d "$dir" ] && [ "$(stat -c '%u' "$dir" 2>/dev/null)" != "1000" ]; then
+        chown -R appuser:appuser "$dir"
+    fi
+done
 
 # Drop to non-root user
 exec gosu appuser "$@"
