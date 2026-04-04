@@ -671,6 +671,17 @@ def is_admin(conn, user_id):
     return bool(row and row["is_admin"])
 
 
+def admin_user_stats(conn):
+    """Get per-user game counts for the admin dashboard."""
+    rows = conn.execute(
+        """SELECT u.id, u.username, u.created_at,
+                  COUNT(g.id) as game_count
+           FROM users u LEFT JOIN games g ON u.id = g.user_id
+           GROUP BY u.id ORDER BY u.created_at""",
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def list_feedback(conn, status=None, fb_type=None):
     """List all feedback with optional filters. Returns list of dicts."""
     where = []

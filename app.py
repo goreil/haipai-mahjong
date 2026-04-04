@@ -716,6 +716,14 @@ def require_admin(f):
     return decorated
 
 
+@app.route("/api/admin/stats")
+@require_admin
+def api_admin_stats():
+    conn = get_conn()
+    users = db.admin_user_stats(conn)
+    return jsonify({"users": users, "total_users": len(users)})
+
+
 @app.route("/api/admin/feedback")
 @require_admin
 def api_admin_feedback():

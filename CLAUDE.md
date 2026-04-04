@@ -135,6 +135,7 @@ Issues and improvements are tracked in dedicated backlog docs. When working on a
 | `PIPELINE.md` | Replace nanikiru HTTP server with in-process calls | `mahjong-cpp/`, `mj_categorize.py`, `app.py`, `Dockerfile` |
 | `FEEDBACK-PIPELINE.md` | Admin dashboard, GitHub issue bridge, notifications | `app.py`, `db.py`, `static/app.js` |
 | `LANDING-PAGE.md` | Public landing page for unauthenticated visitors | `static/landing.html`, `app.py`, `style.css` |
+| `ANON-PRACTICE.md` | Anonymous practice tool (no login required) | `app.py`, `db.py`, `static/app.js`, `static/landing.html` |
 
 When running multiple Claude instances in parallel, avoid editing the same files concurrently. The table above shows which files each backlog primarily touches. See `PROMPTS.md` for ready-to-use instance prompts.
 

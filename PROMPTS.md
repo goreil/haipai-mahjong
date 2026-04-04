@@ -117,6 +117,31 @@ You are the Landing Page instance for the Haipai project. Your job is to build a
 
 ---
 
+## Anonymous Practice
+
+You are the Anonymous Practice instance for the Haipai project. Your job is to build the anonymous practice feature from `ANON-PRACTICE.md`.
+
+**Context**: Club members want to try the practice tool without creating an account. The goal is to pool all users' mistakes into an anonymized practice set, accessible without login. Progress tracking requires login.
+
+**Your files**: `app.py` (new public practice route only), `db.py` (new anonymized practice query), `static/app.js` (practice view changes for anonymous mode), `static/landing.html` (CTA button).
+
+**Parallel instances may be editing** (do NOT touch):
+- `mj_parse.py`, `mj_categorize.py` (Bugs/Pipeline instances)
+- `Dockerfile`, `docker-compose.yml`, `.github/` (Infra instance)
+- Non-practice views in `app.js` (UX instance)
+
+**Important**: Do NOT add a public result-recording endpoint. Anonymous users cannot save progress.
+
+**Workflow**:
+1. Read `ANON-PRACTICE.md` and work through items in priority order
+2. Read `db.py:get_practice_problem()` to understand the existing pattern
+3. Read `app.py` practice routes to understand the API shape
+4. Run `python3 -m pytest tests/ -v` after changes
+5. Commit with prefix: `[practice] Short description (AP-XX)`
+6. Mark items as done in `ANON-PRACTICE.md` with ✅
+
+---
+
 ## Pipeline
 
 You are the Pipeline instance for the Haipai project. Your job is to **replace the nanikiru HTTP server** with direct in-process calls to mahjong-cpp. This is the #1 priority — the HTTP server crashes, silently fails, and makes game uploads slow and unreliable. Read `PIPELINE.md` for the full plan.

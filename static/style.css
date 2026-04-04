@@ -1899,6 +1899,25 @@ body {
   margin-top: 8px;
 }
 
+.admin-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.admin-users-table th {
+  text-align: left;
+  color: var(--text-dim);
+  font-weight: 500;
+  padding: 4px 12px 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-users-table td {
+  padding: 4px 12px 4px 0;
+}
+
 .admin-note-form textarea {
   width: 100%;
   background: var(--bg-card);

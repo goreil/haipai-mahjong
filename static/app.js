@@ -1616,25 +1616,30 @@ function showHelp() {
 
 // --- Admin Dashboard ---
 
-let adminState = { items: [], filterStatus: "", filterType: "" };
+let adminState = { items: [], users: [], filterStatus: "", filterType: "" };
 
 async function showAdmin() {
   state.currentGame = null;
   state.currentGameData = null;
   renderGameList();
   const content = document.getElementById("content");
-  content.innerHTML = '<div class="empty-state">Loading feedback...</div>';
+  content.innerHTML = '<div class="empty-state">Loading...</div>';
 
   const params = new URLSearchParams();
   if (adminState.filterStatus) params.set("status", adminState.filterStatus);
   if (adminState.filterType) params.set("type", adminState.filterType);
 
-  const res = await fetch(`/api/admin/feedback?${params}`);
-  if (res.status === 403) {
+  const [fbRes, statsRes] = await Promise.all([
+    fetch(`/api/admin/feedback?${params}`),
+    fetch("/api/admin/stats"),
+  ]);
+  if (fbRes.status === 403) {
     content.innerHTML = '<div class="empty-state">Admin access required</div>';
     return;
   }
-  adminState.items = await res.json();
+  adminState.items = await fbRes.json();
+  const stats = await statsRes.json();
+  adminState.users = stats.users || [];
   renderAdmin();
 }
 
@@ -1645,7 +1650,24 @@ function renderAdmin() {
   const statusColors = { "new": "#4fc3f7", "in-progress": "#ffa94d", "resolved": "#66bb6a" };
   const typeColors = { "bug": "#ef5350", "feature": "#a855f7", "general": "#888" };
 
-  let html = `<div class="game-header"><h2>Admin: Feedback (${items.length})</h2></div>`;
+  const users = adminState.users;
+  const totalGames = users.reduce((s, u) => s + u.game_count, 0);
+
+  let html = `<div class="game-header"><h2>Admin Dashboard</h2></div>`;
+
+  // User stats
+  html += `<div class="admin-card" style="margin-bottom:16px">
+    <div class="admin-card-header"><b>${users.length} users</b> <span class="admin-meta">&middot; ${totalGames} games total</span></div>
+    <table class="admin-users-table">
+      <tr><th>User</th><th>Games</th><th>Joined</th></tr>
+      ${users.map(u => {
+        const joined = new Date(u.created_at + "Z").toLocaleDateString();
+        return `<tr><td>${escapeHtml(u.username)}</td><td>${u.game_count}</td><td>${joined}</td></tr>`;
+      }).join("")}
+    </table>
+  </div>`;
+
+  html += `<div class="game-header" style="margin-top:8px"><h2>Feedback (${items.length})</h2></div>`;
 
   html += `<div class="admin-filters">
     <select onchange="adminState.filterStatus=this.value;showAdmin()">
