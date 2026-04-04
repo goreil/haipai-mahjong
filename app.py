@@ -457,10 +457,13 @@ def api_categorize(game_id):
     force = body.get("force", False)
 
     from mj_categorize import categorize_game_db
-    n, api_calls = categorize_game_db(conn, game_id, force=force)
+    n, api_calls, failures = categorize_game_db(conn, game_id, force=force)
 
     stats = db.compute_summary_for_game(conn, game_id) if n > 0 else game.get("summary", {})
-    return jsonify({"ok": True, "categorized": n, "api_calls": api_calls, "summary": stats})
+    result = {"ok": True, "categorized": n, "api_calls": api_calls, "summary": stats}
+    if failures:
+        result["failures"] = failures
+    return jsonify(result)
 
 
 @app.route("/api/games/backfill-board-state", methods=["POST"])
@@ -474,12 +477,11 @@ def api_backfill_board_state():
         "SELECT id FROM games WHERE user_id = ?", (uid,)
     ).fetchall()]
 
-    from mj_categorize import categorize_game_db
-    total = 0
+    from mj_categorize import backfill_board_state_db
+    total_updated = 0
     for gid in game_ids:
-        n, _ = categorize_game_db(conn, gid)
-        total += n
-    return jsonify({"ok": True, "games_processed": len(game_ids)})
+        total_updated += backfill_board_state_db(conn, gid)
+    return jsonify({"ok": True, "games_processed": len(game_ids), "updated": total_updated})
 
 
 @app.route("/api/games/backfill-decisions", methods=["POST"])
@@ -564,11 +566,14 @@ def api_add():
 
     # Auto-categorize
     from mj_categorize import categorize_game_db
-    cat_n, api_calls = categorize_game_db(conn, game_id)
+    cat_n, api_calls, failures = categorize_game_db(conn, game_id)
 
     stats = db.compute_summary_for_game(conn, game_id) if cat_n > 0 else game_dict.get("summary", {})
-    return jsonify({"ok": True, "game_id": game_id, "summary": stats,
-                    "categorized": cat_n, "api_calls": api_calls})
+    result = {"ok": True, "game_id": game_id, "summary": stats,
+              "categorized": cat_n, "api_calls": api_calls}
+    if failures:
+        result["failures"] = failures
+    return jsonify(result)
 
 
 @app.route("/api/games/import", methods=["POST"])

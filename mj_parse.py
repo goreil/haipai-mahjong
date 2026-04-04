@@ -49,6 +49,16 @@ def parse_game(data, game_date=None):
     Returns a dict matching the games.json schema (without summary/annotations).
     """
     game_date = game_date or date.today().isoformat()
+
+    if not isinstance(data, dict):
+        raise ValueError("Expected a JSON object, got " + type(data).__name__)
+    if "review" not in data or not isinstance(data.get("review"), dict):
+        raise ValueError("Missing or invalid 'review' field")
+    if "kyokus" not in data["review"] or not isinstance(data["review"]["kyokus"], list):
+        raise ValueError("Missing or invalid 'review.kyokus' field")
+    if "mjai_log" not in data or not isinstance(data.get("mjai_log"), list):
+        raise ValueError("Missing or invalid 'mjai_log' field")
+
     kyokus = data["review"]["kyokus"]
     start_events = [
         e for e in data["mjai_log"]
@@ -56,11 +66,9 @@ def parse_game(data, game_date=None):
     ]
 
     if len(kyokus) != len(start_events):
-        print(
-            f"Error: {len(kyokus)} review kyokus but {len(start_events)} start_kyoku events",
-            file=sys.stderr,
+        raise ValueError(
+            f"{len(kyokus)} review kyokus but {len(start_events)} start_kyoku events"
         )
-        sys.exit(1)
 
     rounds = []
     for kyoku, start in zip(kyokus, start_events):
@@ -71,8 +79,11 @@ def parse_game(data, game_date=None):
         mistakes = []
         for entry in entries:
             if not entry["is_equal"]:
-                expected_q = entry["details"][0]["q_value"]
-                actual_q = entry["details"][entry["actual_index"]]["q_value"]
+                try:
+                    expected_q = entry["details"][0]["q_value"]
+                    actual_q = entry["details"][entry["actual_index"]]["q_value"]
+                except (KeyError, IndexError, TypeError) as e:
+                    raise ValueError(f"Malformed entry in kyoku: {e}") from e
                 ev_loss = round(expected_q - actual_q, 2)
 
                 top_actions = [
