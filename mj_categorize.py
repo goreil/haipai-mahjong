@@ -1079,6 +1079,7 @@ def categorize_game_db(conn, game_id, force=False):
 
     categorized = 0
     api_calls = 0
+    failures = 0
 
     from mj_parse import round_header
 
@@ -1150,5 +1151,80 @@ def categorize_game_db(conn, game_id, force=False):
                     updates["opponent_discards"] = opp_discards
                 dbmod.update_mistake_data(conn, mr["id"], updates)
                 categorized += 1
+            elif needs_api:
+                failures += 1
 
-    return categorized, api_calls
+    return categorized, api_calls, failures
+
+
+def backfill_board_state_db(conn, game_id):
+    """Populate board_state on all mistakes missing it (no API calls).
+
+    Returns the number of mistakes updated.
+    """
+    import db as dbmod
+
+    game_row = conn.execute(
+        "SELECT mortal_file FROM games WHERE id = ?", (game_id,)
+    ).fetchone()
+    if not game_row or not game_row["mortal_file"]:
+        return 0
+
+    mortal_path = DIR / game_row["mortal_file"]
+    if not mortal_path.exists():
+        return 0
+
+    with open(mortal_path) as f:
+        mortal_data = json.load(f)
+
+    kyokus = mortal_data["review"]["kyokus"]
+    events = flatten_mjai_log(mortal_data["mjai_log"])
+    start_events = [e for e in events if e.get("type") == "start_kyoku"]
+
+    mistake_rows = conn.execute(
+        "SELECT * FROM mistakes WHERE game_id = ? ORDER BY round_idx, mistake_idx",
+        (game_id,),
+    ).fetchall()
+
+    rounds = {}
+    for mr in mistake_rows:
+        rn = mr["round_name"]
+        if rn not in rounds:
+            rounds[rn] = []
+        rounds[rn].append(mr)
+
+    updated = 0
+    from mj_parse import round_header
+
+    for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
+        rnd_header = round_header(start)
+        db_mistakes = rounds.get(rnd_header, [])
+        if not db_mistakes:
+            continue
+
+        mistake_idx = 0
+        for entry in kyoku["entries"]:
+            if entry["is_equal"]:
+                continue
+
+            while mistake_idx < len(db_mistakes):
+                if db_mistakes[mistake_idx]["turn"] == entry["junme"]:
+                    break
+                mistake_idx += 1
+            else:
+                continue
+            if mistake_idx >= len(db_mistakes):
+                continue
+
+            mr = db_mistakes[mistake_idx]
+            mistake_idx += 1
+
+            m = dbmod.row_to_mistake(mr)
+            if m.get("board_state"):
+                continue
+
+            board = extract_board_state(mortal_data, kyoku_idx, entry["tiles_left"])
+            dbmod.update_mistake_data(conn, mr["id"], {"board_state": board})
+            updated += 1
+
+    return updated
