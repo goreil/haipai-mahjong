@@ -1120,10 +1120,11 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
     if total_work == 0:
         return 0, 0, 0
 
-    # Phase 2: Categorize in parallel (C++ calls release the GIL)
+    # Phase 2: Categorize in parallel (C++ calls release the GIL).
+    # Each worker loads ~20MB of C++ lookup tables, so limit concurrency
+    # to avoid OOM on memory-constrained servers.
     from concurrent.futures import ThreadPoolExecutor, as_completed
-    import os as _os
-    max_workers = min(total_work, _os.cpu_count() or 4)
+    max_workers = min(total_work, 2)
 
     def _do_categorize(item):
         mr, m, md, ki, entry, dora, dctx = item
