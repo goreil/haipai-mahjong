@@ -56,7 +56,7 @@ jobs:
             games = conn.execute('SELECT id FROM games WHERE mortal_file IS NOT NULL').fetchall()
             total = 0
             for g in games:
-                n, _ = categorize_game_db(conn, g['id'], force=True)
+                n, _, _ = categorize_game_db(conn, g['id'], force=True)
                 total += n
             conn.commit()
             for g in games:

@@ -1049,11 +1049,11 @@ def categorize_game_db(conn, game_id, force=False):
         "SELECT mortal_file FROM games WHERE id = ?", (game_id,)
     ).fetchone()
     if not game_row or not game_row["mortal_file"]:
-        return 0, 0
+        return 0, 0, 0
 
     mortal_path = DIR / game_row["mortal_file"]
     if not mortal_path.exists():
-        return 0, 0
+        return 0, 0, 0
 
     with open(mortal_path) as f:
         mortal_data = json.load(f)
