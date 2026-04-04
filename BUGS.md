@@ -112,28 +112,24 @@ The endpoint name says "backfill board state" but it calls `categorize_game_db()
 
 ---
 
-### B-10: Negative wall counts silently clamped
+### ~~B-10: Negative wall counts silently clamped~~ ✅ FIXED
 
-**Location**: `mj_categorize.py:688-690`
+**Location**: `mj_categorize.py:700-703`
 
-Negative tile counts in the wall are clamped to 0 instead of raising an error. This hides upstream bugs (like B-02) rather than surfacing them.
-
-**Fix**: Log a warning or raise an error on negative wall counts during development. Clamp only in production.
+Negative tile counts in the wall were clamped to 0 with only a bare `print` to stderr. Now uses `logging.warning()` with the tile name (via `ID_TO_MJAI`) for proper diagnostics. Still clamps to 0 for production safety.
 
 ---
 
 ## Low
 
-### B-11: Dora indicator may be double-counted in wall
+### ~~B-11: Dora indicator may be double-counted in wall~~ ✅ NOT A BUG
 
 **Location**: `mj_categorize.py:124, 179-180`
 
-The dora indicator is added to the visible tiles list and then decremented from the wall. But dora indicators are not tiles in any player's hand -- they're revealed from the dead wall. Depending on how mahjong-cpp expects the wall, this may or may not be correct. Needs verification.
+Verified: subtracting the dora indicator from the wall is correct. The wall array represents "remaining unseen tiles" — tiles whose identity is unknown. The dora indicator is a revealed tile from the dead wall, so it's a known tile that can't be drawn. Subtracting it correctly reduces the available count of that tile type. The face-down dead wall tiles remain in the count since they're unknown (standard practice in tile efficiency calculators).
 
 ---
 
-### B-12: vision.txt says "15-category system"
+### ~~B-12: vision.txt says "15-category system"~~ ✅ FIXED
 
-**Location**: `vision.txt:28,40`
-
-References "15-category system" but the system now has 12 categories. Internal doc, low impact.
+Already fixed — vision.txt no longer references a specific category count.

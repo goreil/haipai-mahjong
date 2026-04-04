@@ -2,10 +2,13 @@
 """Automatic error categorization by comparing Mortal AI vs mahjong-cpp tile efficiency."""
 
 import json
+import logging
 import sys
 from pathlib import Path
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 DIR = Path(__file__).parent
 
@@ -698,7 +701,8 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     # Validate wall (no negative values)
     for i, count in enumerate(wall):
         if count < 0:
-            print(f"  Warning: wall[{i}] = {count} (negative), clamping to 0", file=sys.stderr)
+            tile_name = ID_TO_MJAI.get(i, f"id={i}")
+            logger.warning("Negative wall count: wall[%d] (%s) = %d, clamping to 0", i, tile_name, count)
             wall[i] = 0
 
     # Compute safety ratings and opponent discards for defense visuals
