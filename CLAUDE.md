@@ -19,12 +19,15 @@ Riichi Mahjong game analysis web app ("Haipai"). Analyzes Tenhou/MJS replays via
 - `Dockerfile` - Multi-stage build (nanikiru binary + Python runtime). Non-root user.
 - `docker-compose.yml` - App + nginx + certbot. Bind mounts for hot reload.
 - `nginx.conf.template` - Nginx config template with security headers. Copy to nginx.conf on server.
-- `DEPLOY.md` - Full deployment guide with auto-deploy setup.
+- `docs/DEPLOY.md` - Full deployment guide with auto-deploy setup.
+- `docs/PROMPTS.md` - Instance prompts for parallel Claude sessions.
+- `docs/ROADMAP.md` - Product roadmap: beta, post-beta, monetization, growth.
+- `docs/backlogs/` - Backlog docs for each parallel instance (BUGS.md, UX-AUDIT.md, etc.).
 - `riichi-mahjong-tiles/` - Git submodule with SVG tile graphics.
 - `mahjong-cpp/` - Git submodule, C++ mahjong library for tile efficiency.
 - `Riichi-Trainer/` - Git submodule. Source of defense analysis logic.
 - `archive/` - Legacy/one-shot scripts (migration tools, deployment notes, brainstorming).
-- `vision.txt` - Project roadmap with done/todo sections.
+- `notes/` - Personal scratch files (gitignored).
 
 ## Commands
 
@@ -127,18 +130,18 @@ Issues and improvements are tracked in dedicated backlog docs. When working on a
 
 | Document | Scope | Primary files |
 |----------|-------|---------------|
-| `UX-AUDIT.md` | UI/UX issues, outdated help text, layout | `static/app.js`, `style.css`, `index.html` |
-| `BUGS.md` | Known bugs, edge cases, incorrect behavior | `mj_parse.py`, `mj_categorize.py`, `db.py` |
-| `TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
-| `INFRA.md` | Docker, deploy, CI/CD, monitoring, backups | `Dockerfile`, `docker-compose.yml`, `.github/` |
-| `PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
-| `PIPELINE.md` | Replace nanikiru HTTP server with in-process calls | `mahjong-cpp/`, `mj_categorize.py`, `app.py`, `Dockerfile` |
-| `FEEDBACK-PIPELINE.md` | Admin dashboard, GitHub issue bridge, notifications | `app.py`, `db.py`, `static/app.js` |
-| `LANDING-PAGE.md` | Public landing page for unauthenticated visitors | `static/landing.html`, `app.py`, `style.css` |
-| `ANON-PRACTICE.md` | Anonymous practice tool (no login required) | `app.py`, `db.py`, `static/app.js`, `static/landing.html` |
+| `docs/backlogs/UX-AUDIT.md` | UI/UX issues, outdated help text, layout | `static/app.js`, `style.css`, `index.html` |
+| `docs/backlogs/BUGS.md` | Known bugs, edge cases, incorrect behavior | `mj_parse.py`, `mj_categorize.py`, `db.py` |
+| `docs/backlogs/TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
+| `docs/backlogs/INFRA.md` | Docker, deploy, CI/CD, monitoring, backups | `Dockerfile`, `docker-compose.yml`, `.github/` |
+| `docs/backlogs/PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
+| `docs/backlogs/PIPELINE.md` | Replace nanikiru HTTP server with in-process calls | `mahjong-cpp/`, `mj_categorize.py`, `app.py`, `Dockerfile` |
+| `docs/backlogs/FEEDBACK-PIPELINE.md` | Admin dashboard, GitHub issue bridge, notifications | `app.py`, `db.py`, `static/app.js` |
+| `docs/backlogs/LANDING-PAGE.md` | Public landing page for unauthenticated visitors | `static/landing.html`, `app.py`, `style.css` |
+| `docs/backlogs/ANON-PRACTICE.md` | Anonymous practice tool (no login required) | `app.py`, `db.py`, `static/app.js`, `static/landing.html` |
 
-When running multiple Claude instances in parallel, avoid editing the same files concurrently. The table above shows which files each backlog primarily touches. See `PROMPTS.md` for ready-to-use instance prompts.
+When running multiple Claude instances in parallel, avoid editing the same files concurrently. The table above shows which files each backlog primarily touches. See `docs/PROMPTS.md` for ready-to-use instance prompts.
 
 ## Roadmap
 
-See `ROADMAP.md` for the full product roadmap: beta launch, post-beta features, monetization plan, and growth strategy.
+See `docs/ROADMAP.md` for the full product roadmap: beta launch, post-beta features, monetization plan, and growth strategy.

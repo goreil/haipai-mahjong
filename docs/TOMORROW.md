@@ -24,19 +24,19 @@
 
 ### Remaining backlog (not urgent)
 
-**UX-AUDIT.md** (5 open):
+**docs/backlogs/UX-AUDIT.md** (5 open):
 - 2c (LOW) — 2A group visual weight (design decision)
 - 3c (LOW) — Scores buried in details
 - 4b (LOW) — Mortal Q values opaque
 - 6b (LOW) — Game numbering meaningless
 - 8a (MEDIUM) — Onboarding JSON extraction fragile
 
-**BUGS.md** (3 open):
+**docs/backlogs/BUGS.md** (3 open):
 - B-02 — Intentional behavior, investigate -1 edge cases separately
 - B-10 (MEDIUM) — Negative wall counts silently clamped
 - B-11 (LOW) — Dora indicator possibly double-counted in wall
 
-**INFRA.md** (4 open):
+**docs/backlogs/INFRA.md** (4 open):
 - I-03 (HIGH) — No backup automation
 - I-07 (MEDIUM) — Certbot renewal alerting
 - I-11 (LOW) — No resource limits in docker-compose

@@ -66,8 +66,8 @@ See git log for detailed history.
 
 Specific issues and improvements are tracked in dedicated documents:
 
-- UX-AUDIT.md    — UI/UX issues, outdated help text, layout improvements
-- BUGS.md        — Known bugs, edge cases, incorrect behavior
-- TESTING.md     — Test coverage gaps, missing test cases
-- INFRA.md       — Docker, deploy, CI/CD, monitoring, backups
-- PENTEST.md     — Security findings and remediation status
+- docs/backlogs/UX-AUDIT.md    — UI/UX issues, outdated help text, layout improvements
+- docs/backlogs/BUGS.md        — Known bugs, edge cases, incorrect behavior
+- docs/backlogs/TESTING.md     — Test coverage gaps, missing test cases
+- docs/backlogs/INFRA.md       — Docker, deploy, CI/CD, monitoring, backups
+- docs/backlogs/PENTEST.md     — Security findings and remediation status

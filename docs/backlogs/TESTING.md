@@ -53,7 +53,7 @@ Key edge cases:
 
 ### T-03: Wall reconstruction
 
-`decrement_wall()` (line 82) has the red five double-decrement bug (see BUGS.md B-02). Tests would catch this immediately but none exist for this function directly.
+`decrement_wall()` (line 82) has the red five double-decrement bug (see docs/backlogs/BUGS.md B-02). Tests would catch this immediately but none exist for this function directly.
 
 ---
 
@@ -104,7 +104,7 @@ Untested in db.py:
 ### T-07: Parse error handling
 
 - Malformed Mortal JSON (missing fields, wrong types)
-- Mismatched kyoku/start_event counts (triggers sys.exit -- see BUGS.md B-01)
+- Mismatched kyoku/start_event counts (triggers sys.exit -- see docs/backlogs/BUGS.md B-01)
 - actual_index out of bounds
 - Empty rounds or empty mistakes
 

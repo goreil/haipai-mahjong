@@ -22,7 +22,7 @@ Similarly, `app.js:1521` references "2B Defense" -- the category is now `3B` (St
 
 `mj_games.py:14-20` still lists the old categories: `1A, 1B, 1C, 1D, 1E, 2A, 2B, 2C, 3A, 3B, 3C, 4A, 4B, 5A, 5B`. This list no longer matches `CATEGORY_INFO` (which is correct). The CLI `--category` flag accepts these old codes. Another instance is working on categories, but this is worth flagging.
 
-**Fixed:** CATEGORIES now derived from CATEGORY_INFO.keys() (see B-04 in BUGS.md).
+**Fixed:** CATEGORIES now derived from CATEGORY_INFO.keys() (see B-04 in docs/backlogs/BUGS.md).
 
 ### 1c. ~~vision.txt says "15-category system"~~ (LOW) ✅ DONE
 

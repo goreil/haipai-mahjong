@@ -21,7 +21,7 @@ The nanikiru HTTP server is the single biggest reliability and UX problem. It cr
 
 **Why this is Phase 1**: A beta tester uploads their first game. It takes 30+ seconds and half the mistakes come back uncategorized. They don't come back. Everything else (feedback pipeline, landing page, social features) is irrelevant if the core experience is broken.
 
-See `PIPELINE.md` for implementation details.
+See `docs/backlogs/PIPELINE.md` for implementation details.
 
 ### Feedback Pipeline
 The feedback form writes to SQLite but nobody can read it without SSH. Fix this before launch — if a beta tester submits a bug report and nothing happens, they stop reporting.
@@ -30,7 +30,7 @@ The feedback form writes to SQLite but nobody can read it without SSH. Fix this 
 - **GitHub issue bridge**: Button on admin dashboard to push feedback to a GitHub issue (pre-filled with user message, type, timestamp). Uses `gh` CLI or GitHub API.
 - **Auto-triage** (stretch): Scheduled Claude agent reads new feedback nightly, creates GitHub issues with labels (bug/feature/ux), and drafts a thank-you response.
 
-See `FEEDBACK-PIPELINE.md` for implementation details.
+See `docs/backlogs/FEEDBACK-PIPELINE.md` for implementation details.
 
 ### Landing Page
 Right now unauthenticated visitors hit a login wall. They can't see what the app does. Before posting the Discord invite, there should be a public page that shows:
@@ -40,7 +40,7 @@ Right now unauthenticated visitors hit a login wall. They can't see what the app
 
 This is a single static HTML page or a public route in Flask. Not a marketing site — just enough to not confuse someone clicking the link.
 
-See `LANDING-PAGE.md` for implementation details.
+See `docs/backlogs/LANDING-PAGE.md` for implementation details.
 
 ### Onboarding Polish
 UX-AUDIT 8a flagged that the JSON extraction from mjai.ekyu.moe is fragile and confusing. For beta this is the #1 friction point — if a tester can't upload their first game, they bounce.
