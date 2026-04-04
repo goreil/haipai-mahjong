@@ -63,7 +63,7 @@ No template showing required environment variables. New developers or deployment
 
 ---
 
-### I-06: No nginx caching or compression
+### ~~I-06: No nginx caching or compression~~ ✅
 
 **Location**: `nginx.conf.template`
 
@@ -107,7 +107,7 @@ The deploy workflow pushes code and restarts, but doesn't verify the app came ba
 
 ---
 
-### I-10: HTTPS redirect commented out
+### ~~I-10: HTTPS redirect commented out~~ ✅
 
 **Location**: `nginx.conf.template:6`
 
