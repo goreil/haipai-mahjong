@@ -8,15 +8,16 @@ Riichi Mahjong game analysis web app ("Haipai"). Analyzes Tenhou/MJS replays via
 
 ## Key Files
 
-- `app.py` - Flask web server (port 5000). Multi-user auth, API routes, auto-starts nanikiru.
+- `app.py` - Flask web server (port 5000). Multi-user auth, API routes.
 - `db.py` - SQLite database layer. Games, mistakes, users, practice results, feedback.
+- `mahjong_cpp.py` - ctypes wrapper for libmahjongcpp.so. In-process tile efficiency calculator.
 - `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp. Wall reconstruction, defense-aware 2A/2B split, safety rating computation.
 - `mj_defense.py` - Suji-based tile safety evaluator (ported from Riichi-Trainer). Rates tiles 0-15.
 - `mj_parse.py` - Core parser. `parse_game(data, date)` returns structured game dict from Mortal JSON.
 - `mj_games.py` - CLI tool for games.json (legacy format, still functional for local use).
 - `static/` - Web frontend: `index.html`, `style.css`, `app.js` (vanilla JS SPA).
 - `tests/test_core.py` - pytest suite (26 tests): parsing, tile conversion, board state, DB, API, wall reconstruction.
-- `Dockerfile` - Multi-stage build (nanikiru binary + Python runtime). Non-root user.
+- `Dockerfile` - Multi-stage build (libmahjongcpp.so + Python runtime). Non-root user.
 - `docker-compose.yml` - App + nginx + certbot. Bind mounts for hot reload.
 - `nginx.conf.template` - Nginx config template with security headers. Copy to nginx.conf on server.
 - `docs/DEPLOY.md` - Full deployment guide with auto-deploy setup.
@@ -32,7 +33,7 @@ Riichi Mahjong game analysis web app ("Haipai"). Analyzes Tenhou/MJS replays via
 ## Commands
 
 ```bash
-# Web UI (dev server, auto-starts nanikiru)
+# Web UI (dev server)
 FLASK_ENV=development python3 app.py       # http://localhost:5000
 
 # Tests
@@ -70,7 +71,7 @@ API routes:
 - `GET /api/practice`, `GET /api/practice/public`, `POST /api/practice/result`, `GET /api/practice/stats`
 - `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`
 - `POST /api/games/add`, `DELETE /api/games/<id>`
-- `POST /api/games/import`, `GET /api/categories`, `GET /api/me`
+- `POST /api/me/practice-opt-in`, `GET /api/categories`, `GET /api/me`
 - `POST /api/feedback`, `GET /api/feedback/mine`
 - `GET /api/admin/feedback`, `POST /api/admin/feedback/<id>`, `POST /api/admin/feedback/<id>/create-issue`
 - `POST /api/games/backfill-board-state`, `POST /api/games/backfill-decisions`
@@ -111,7 +112,7 @@ SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, 
 
 - Downloads from mjai.ekyu.moe must use the `requests` library — Cloudflare blocks bare urllib.
 - `mahjong-cpp` uses MPSZ notation — conversion needed (see `MJAI_TO_ID` in mj_categorize.py).
-- Nanikiru runs locally at 127.0.0.1:50000, auto-started by `app.py`.
+- `mahjong-cpp` is loaded in-process via `mahjong_cpp.py` (ctypes wrapper for `libmahjongcpp.so`). No HTTP server needed.
 - `SECRET_KEY` must be set via `.env` file or environment variable (no insecure defaults).
 - Debug mode requires `FLASK_ENV=development` (off by default).
 
@@ -119,10 +120,10 @@ SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, 
 
 Local dev (WSL) and production (Docker on Hetzner) differ in important ways:
 
-- **Nanikiru**: Auto-started by `app.py` but often not running locally (no build, crashes in WSL). All categorization silently fails — API errors are caught and return `None` category. Code that touches categorization **must be tested on the server** or with a running nanikiru.
+- **mahjong-cpp**: Loaded as a shared library (`libmahjongcpp.so`) in-process via ctypes. Requires the .so to be built locally (`cd mahjong-cpp && mkdir build && cd build && cmake .. -DBUILD_PYTHON=ON -DBUILD_SERVER=OFF -DBUILD_SAMPLES=OFF && make mahjong-python`). Data files (`.bin`, `.json`) must be in the same directory as the `.so`.
 - **File permissions**: Docker runs gunicorn as `appuser` (uid 1000). Files created by `docker compose exec` run as root. Any new file the app writes at runtime (caches, DBs) must go in a directory writable by `appuser` — use the `data/` volume, not `/app/`.
 - **File paths**: Production copies specific `.py` files into `/app/` (see `COPY` line in Dockerfile). New Python modules must be added to the Dockerfile `COPY` list or they won't exist in the container.
-- **gunicorn workers**: Production runs 2 workers. Each starts its own nanikiru instance (only one wins the port). Module-level state is per-worker.
+- **gunicorn workers**: Production runs 2 workers. Module-level state is per-worker. The mahjong-cpp library is loaded once per worker (in-process, no port conflicts).
 
 ## Backlog Documents
 

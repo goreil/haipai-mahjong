@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     is_admin INTEGER NOT NULL DEFAULT 0,
+    practice_opt_in INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -110,6 +111,9 @@ def _migrate(conn):
     altered = False
     if not _has_column("users", "is_admin"):
         conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
+        altered = True
+    if not _has_column("users", "practice_opt_in"):
+        conn.execute("ALTER TABLE users ADD COLUMN practice_opt_in INTEGER NOT NULL DEFAULT 0")
         altered = True
     for col, typedef in [("status", "TEXT NOT NULL DEFAULT 'new'"),
                          ("admin_note", "TEXT"),
@@ -527,15 +531,16 @@ def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=
 
 def get_public_practice_problem(conn, severity=None, group=None, defense_only=False,
                                 calc_agree=False):
-    """Get a random practice problem from all users' games, anonymized.
+    """Get a random practice problem from opted-in users' games, anonymized.
 
     No spaced repetition — uniform random selection.
+    Only includes games from users with practice_opt_in=1.
     Strips user-identifying info (notes, game dates).
     """
     from mj_games import CATEGORY_INFO
     import random
 
-    where = ["m.severity IN ('??', '???' )"]
+    where = ["m.severity IN ('??', '???' )", "u.practice_opt_in = 1"]
     params = []
 
     if severity:
@@ -547,7 +552,9 @@ def get_public_practice_problem(conn, severity=None, group=None, defense_only=Fa
 
     rows = conn.execute(
         f"""SELECT m.*, g.id as gid
-            FROM mistakes m JOIN games g ON m.game_id = g.id
+            FROM mistakes m
+            JOIN games g ON m.game_id = g.id
+            JOIN users u ON g.user_id = u.id
             WHERE {' AND '.join(where)}""",
         params,
     ).fetchall()
@@ -692,6 +699,13 @@ def get_user_by_username(conn, username):
 def get_user_by_id(conn, user_id):
     """Get user row by id."""
     return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+
+def set_practice_opt_in(conn, user_id, opt_in):
+    """Set whether a user's games are available in the public practice pool."""
+    conn.execute("UPDATE users SET practice_opt_in = ? WHERE id = ?",
+                 (1 if opt_in else 0, user_id))
+    conn.commit()
 
 
 # --- Invite codes ---

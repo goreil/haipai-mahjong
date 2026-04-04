@@ -41,6 +41,8 @@ const OUTCOME_EMOJI = { ":D": "\u{1F60E}", ":)": "\u{1F642}", ":|": "\u{1F610}",
 
 let csrfToken = "";
 let isAnonymous = false;
+let practiceOptIn = false;
+let practiceSource = "mine"; // "mine" or "all"
 
 let state = {
   games: [],
@@ -464,9 +466,6 @@ async function fetchGames() {
   const res = await fetch("/api/games");
   state.games = await res.json();
   renderGameList();
-  // 6a: Hide import button when games exist
-  const importBtn = document.getElementById("import-btn");
-  if (importBtn) importBtn.style.display = state.games.length > 0 ? "none" : "";
   if (state.games.length === 0 && !state.currentGame) {
     showOnboarding();
   }
@@ -923,41 +922,6 @@ async function deleteGame(id) {
 
 // --- Import from games.json ---
 
-function importGamesJson() {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".json";
-  input.onchange = async () => {
-    const file = input.files[0];
-    if (!file) return;
-
-    const btn = document.getElementById("import-btn");
-    btn.disabled = true;
-    btn.textContent = "Importing...";
-
-    try {
-      const text = await file.text();
-      const json = JSON.parse(text);
-
-      const res = await apiPost("/api/games/import", { games: json.games || [] });
-      const data = await res.json();
-
-      if (data.error) {
-        alert("Import failed: " + data.error);
-      } else {
-        alert(`Imported ${data.imported} games (${data.skipped} skipped as duplicates)`);
-        if (data.imported > 0) await fetchGames();
-      }
-    } catch (e) {
-      alert("Failed to read file: " + e.message);
-    }
-
-    btn.disabled = false;
-    btn.textContent = "Import games.json";
-  };
-  input.click();
-}
-
 // --- Trends ---
 
 async function fetchTrends() {
@@ -1286,7 +1250,8 @@ async function fetchPractice() {
   // Always restrict to efficiency categories (1A) for practice
   params.set("calc_agree", "1");
   const qs = params.toString();
-  const endpoint = isAnonymous ? "/api/practice/public" : "/api/practice";
+  const usePublic = isAnonymous || practiceSource === "all";
+  const endpoint = usePublic ? "/api/practice/public" : "/api/practice";
   const res = await fetch(`${endpoint}${qs ? "?" + qs : ""}`);
   if (!res.ok) return null;
   return await res.json();
@@ -1338,8 +1303,8 @@ function submitPracticeAnswer(tile) {
   const isCorrect = tile === expected || normalizeRed(tile) === normalizeRed(expected);
   if (isCorrect) practice.correct++;
 
-  // Record result for spaced repetition (authenticated users only)
-  if (!isAnonymous && practice.problem.mistake_id) {
+  // Record result for spaced repetition (own mistakes only)
+  if (!isAnonymous && practiceSource === "mine" && practice.problem.mistake_id) {
     apiPost("/api/practice/result", { mistake_id: practice.problem.mistake_id, correct: isCorrect });
   }
 
@@ -1364,14 +1329,19 @@ function renderPractice() {
       </div>
     </div>
     <p class="practice-explanation">Practice hand-building decisions where the correct tile can be determined from your hand alone.</p>
-    ${isAnonymous ? '<div class="practice-login-banner">Problems drawn from all users. <a href="/register">Register</a> or <a href="/login">log in</a> to practice your own mistakes and track progress.</div>' : ''}
+    ${isAnonymous ? '<div class="practice-login-banner">Problems drawn from community pool. <a href="/register">Register</a> or <a href="/login">log in</a> to practice your own mistakes and track progress.</div>' : ''}
     <div class="practice-filters">
+      ${!isAnonymous ? `<select onchange="setPracticeSource(this.value)">
+        <option value="mine" ${practiceSource === "mine" ? "selected" : ""}>My mistakes</option>
+        <option value="all" ${practiceSource === "all" ? "selected" : ""}>Community pool</option>
+      </select>` : ''}
       <select onchange="setPracticeFilter('severity', this.value)">
         <option value="" ${!practice.filterSeverity ? "selected" : ""}>All severity</option>
         <option value="???" ${practice.filterSeverity === "???" ? "selected" : ""}>??? only</option>
         <option value="??" ${practice.filterSeverity === "??" ? "selected" : ""}>?? only</option>
       </select>
       <label class="practice-filter-check"><input type="checkbox" ${practice.filterDefense ? "checked" : ""} onchange="setPracticeFilter('defense', this.checked)"> Riichi only</label>
+      ${!isAnonymous ? `<label class="practice-filter-check practice-opt-in"><input type="checkbox" ${practiceOptIn ? "checked" : ""} onchange="togglePracticeOptIn(this.checked)"> Share my games in community pool</label>` : ''}
     </div>
 
     <div class="practice-context">
@@ -1504,6 +1474,18 @@ function setPracticeFilter(key, value) {
   practice.correct = 0;
   practice.total = 0;
   showPractice();
+}
+
+function setPracticeSource(value) {
+  practiceSource = value;
+  practice.correct = 0;
+  practice.total = 0;
+  showPractice();
+}
+
+async function togglePracticeOptIn(checked) {
+  practiceOptIn = checked;
+  await apiPost("/api/me/practice-opt-in", { opt_in: checked });
 }
 
 // --- Help ---
@@ -1887,8 +1869,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         `<a href="/login">Log in</a> | <a href="/register">Register</a>`;
       // Hide authenticated-only UI
       document.querySelector('.sidebar-header button[onclick="showAddModal()"]').style.display = "none";
-      const importBtn = document.getElementById("import-btn");
-      if (importBtn) importBtn.style.display = "none";
       for (const id of ["trends-btn", "help-btn"]) {
         const btn = document.getElementById(id);
         if (btn) btn.style.display = "none";
@@ -1902,6 +1882,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } else {
     const me = await meRes.json();
     csrfToken = me.csrf_token || "";
+    practiceOptIn = !!me.practice_opt_in;
     document.getElementById("user-info").innerHTML =
       `${me.username} <a href="/logout">logout</a>`;
 

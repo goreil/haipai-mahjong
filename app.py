@@ -8,12 +8,9 @@ from flask_login import LoginManager, UserMixin, current_user, login_required, l
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
 from pathlib import Path
-import atexit
 import json
 import os
-import subprocess
 import sys
-import time
 
 import requests as http_requests
 
@@ -22,8 +19,6 @@ from mj_parse import parse_game
 from mj_games import compute_summary, CATEGORY_INFO
 
 DIR = Path(__file__).parent
-NANIKIRU_BIN = Path(os.environ.get("NANIKIRU_BIN", DIR / "mahjong-cpp" / "build" / "install" / "bin" / "nanikiru"))
-NANIKIRU_PORT = 50000
 
 app = Flask(__name__, static_folder="static")
 _secret = os.environ.get("SECRET_KEY")
@@ -69,71 +64,6 @@ def unauthorized():
     if request.path.startswith("/api/"):
         return jsonify({"error": "Login required"}), 401
     return redirect(url_for("login"))
-
-
-# --- nanikiru server management ---
-
-_nanikiru_proc = None
-
-
-def start_nanikiru():
-    """Start the local mahjong-cpp tile efficiency server."""
-    global _nanikiru_proc
-
-    if not NANIKIRU_BIN.exists():
-        print(f"Warning: nanikiru binary not found at {NANIKIRU_BIN}", file=sys.stderr)
-        return
-
-    # Check if already running
-    try:
-        resp = http_requests.post(
-            f"http://127.0.0.1:{NANIKIRU_PORT}/",
-            json={"version": "0.9.1", "hand": [0], "wall": [0]*37},
-            timeout=1,
-        )
-        print(f"nanikiru already running on port {NANIKIRU_PORT}", file=sys.stderr)
-        return
-    except (http_requests.ConnectionError, http_requests.Timeout):
-        pass
-
-    print(f"Starting nanikiru on 127.0.0.1:{NANIKIRU_PORT}...", file=sys.stderr)
-    _nanikiru_proc = subprocess.Popen(
-        [str(NANIKIRU_BIN), str(NANIKIRU_PORT)],
-        cwd=str(DIR),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-
-    # Wait for it to be ready
-    for _ in range(20):
-        time.sleep(0.25)
-        try:
-            http_requests.post(
-                f"http://127.0.0.1:{NANIKIRU_PORT}/",
-                json={"version": "0.9.1", "hand": [0], "wall": [0]*37},
-                timeout=1,
-            )
-            print(f"nanikiru ready (pid {_nanikiru_proc.pid})", file=sys.stderr)
-            return
-        except (http_requests.ConnectionError, http_requests.Timeout):
-            continue
-
-    # Show why nanikiru failed
-    rc = _nanikiru_proc.poll()
-    if rc is not None:
-        stderr_out = _nanikiru_proc.stderr.read().decode(errors="replace") if _nanikiru_proc.stderr else ""
-        print(f"Warning: nanikiru exited with code {rc}. stderr: {stderr_out[:500]}", file=sys.stderr)
-    else:
-        print("Warning: nanikiru started but not responding on port", file=sys.stderr)
-
-
-def stop_nanikiru():
-    """Stop the nanikiru server if we started it."""
-    global _nanikiru_proc
-    if _nanikiru_proc and _nanikiru_proc.poll() is None:
-        _nanikiru_proc.terminate()
-        _nanikiru_proc.wait(timeout=5)
-        print("nanikiru stopped", file=sys.stderr)
 
 
 # --- Error handling ---
@@ -365,12 +295,24 @@ def tiles(filename):
 def api_me():
     from flask_wtf.csrf import generate_csrf
     conn = get_conn()
+    user_row = db.get_user_by_id(conn, current_user.id)
     return jsonify({
         "username": current_user.username,
         "id": current_user.id,
         "is_admin": db.is_admin(conn, current_user.id),
+        "practice_opt_in": bool(user_row["practice_opt_in"]) if user_row else False,
         "csrf_token": generate_csrf(),
     })
+
+
+@app.route("/api/me/practice-opt-in", methods=["POST"])
+@login_required
+def api_practice_opt_in():
+    conn = get_conn()
+    body = request.json or {}
+    opt_in = bool(body.get("opt_in"))
+    db.set_practice_opt_in(conn, current_user.id, opt_in)
+    return jsonify({"ok": True, "practice_opt_in": opt_in})
 
 
 @app.route("/api/categories")
@@ -586,48 +528,6 @@ def api_add():
     if failures:
         result["failures"] = failures
     return jsonify(result)
-
-
-@app.route("/api/games/import", methods=["POST"])
-@login_required
-@limiter.limit("3 per minute")
-def api_import():
-    """Import games from uploaded JSON into the database for the current user."""
-    conn = get_conn()
-    uid = current_user.id
-
-    body = request.json
-    all_games = body.get("games", [])
-    if not all_games:
-        return jsonify({"error": "No games found in games.json"}), 400
-
-    # Get existing games to skip duplicates (by date + log_url)
-    existing = conn.execute(
-        "SELECT date, log_url FROM games WHERE user_id = ?", (uid,)
-    ).fetchall()
-    existing_keys = {(r["date"], r["log_url"]) for r in existing}
-
-    imported = 0
-    skipped = 0
-    for game in all_games:
-        key = (game.get("date"), game.get("log_url"))
-        if key in existing_keys:
-            skipped += 1
-            continue
-        db.add_game(conn, uid, game)
-        existing_keys.add(key)
-        imported += 1
-
-    # Recompute summaries for imported games
-    if imported > 0:
-        game_rows = conn.execute(
-            "SELECT id FROM games WHERE user_id = ? ORDER BY id DESC LIMIT ?",
-            (uid, imported),
-        ).fetchall()
-        for row in game_rows:
-            db.compute_summary_for_game(conn, row["id"])
-
-    return jsonify({"ok": True, "imported": imported, "skipped": skipped, "total": len(all_games)})
 
 
 @app.route("/api/practice")
@@ -846,12 +746,10 @@ def api_feedback_mine():
 
 
 def init_app():
-    """Initialize database and start nanikiru. Called once on startup."""
+    """Initialize database. Called once on startup."""
     conn = db.get_db()
     db.init_db(conn)
     conn.close()
-    start_nanikiru()
-    atexit.register(stop_nanikiru)
 
 
 # Auto-init when imported by gunicorn (not in Flask reloader parent)

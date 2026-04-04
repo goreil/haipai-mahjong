@@ -5,57 +5,58 @@
 
 ## Goal
 
-Let anyone use the practice tool without logging in. Pool all uploaded games' mistakes into an anonymized practice set. Login is only required to track personal progress.
+Let anyone use the practice tool without logging in. Users opt-in to share their games in a community practice pool. Authenticated users can switch between practicing their own mistakes and the community pool. Login is only required to track personal progress.
 
 Future: if demand grows, add a lightweight anonymous progress tracker (cookie/localStorage) before requiring full login.
 
 ---
 
-## High
+## High — DONE
 
 ### ~~AP-01: Anonymized practice problem pool in db.py~~ DONE
 
-**Location**: `db.py` (new function)
-
-Add `get_public_practice_problem(conn, severity=None, group=None, defense_only=False)` that:
-- Queries mistakes across ALL users' games (not filtered by user_id)
-- Strips any user-identifying info (username, game date, notes, annotations) from the returned data
-- Returns the same shape as `get_practice_problem()` but without user-specific spaced repetition weighting (just uniform random or severity-weighted)
-- Only includes dahai-vs-dahai mistakes with a hand (same filters as existing practice)
-- Only includes mistakes from games with `severity IN ('??', '???')` (meaningful mistakes)
+Added `get_public_practice_problem()` in `db.py`. Queries mistakes from opted-in users only (`practice_opt_in=1`), strips notes/dates, uniform random selection.
 
 ### ~~AP-02: Public practice API route in app.py~~ DONE
 
-**Location**: `app.py` (new route)
-
-Add `GET /api/practice/public` — no `@login_required`. Accepts same query params as `/api/practice` (severity, group, defense). Calls `get_public_practice_problem()`. Returns the same JSON shape as the authenticated endpoint so the frontend can reuse rendering logic.
-
-Do NOT add a public result-recording endpoint — anonymous users can't save progress.
+Added `GET /api/practice/public` — no `@login_required`. Same query params and JSON shape as `/api/practice`.
 
 ### ~~AP-03: Update CLAUDE.md API routes list~~ DONE
 
-Add the new `/api/practice/public` route to the API routes section in CLAUDE.md.
+Added `/api/practice/public` and `/api/me/practice-opt-in` to API routes in CLAUDE.md.
 
 ---
 
-## Medium
+## Medium — DONE
 
 ### ~~AP-04: Frontend anonymous practice mode~~ DONE
 
-**Location**: `static/app.js`, `static/style.css`
-
-Modify the practice view to work without authentication:
-- If user is not logged in, call `/api/practice/public` instead of `/api/practice`
-- Hide the stats/progress section for anonymous users
-- Hide the "Record result" button (or show it but prompt to log in)
-- Show a subtle "Log in to track your progress" banner
-- Practice filters (severity, group, defense) should still work
+- Anonymous users at `/practice` get community pool problems
+- Sidebar hides authenticated-only UI (Add Game, Trends, Help, Feedback)
+- Login/register banner shown
+- No result recording for anonymous users
 
 ### ~~AP-05: Landing page integration~~ DONE
 
-**Location**: `static/landing.html`, `app.py`
+"Try Practice Mode" is the primary CTA on the landing page. Description updated to mention community pool.
 
-Add a "Try Practice Mode" CTA button on the landing page that links directly to the anonymous practice view. This gives visitors immediate value before they decide to register.
+### ~~AP-07: Practice opt-in system~~ DONE
+
+- `practice_opt_in` column on users table (default 0, with migration)
+- `POST /api/me/practice-opt-in` to toggle
+- `/api/me` returns `practice_opt_in` status
+- Checkbox in practice view: "Share my games in community pool"
+- Public pool only includes games from opted-in users
+
+### ~~AP-08: Own vs community toggle~~ DONE
+
+- Authenticated users get a "My mistakes" / "Community pool" dropdown in practice view
+- "My mistakes" uses spaced-repetition endpoint, records results
+- "Community pool" uses public endpoint, no result recording
+
+### ~~AP-09: Remove import games.json~~ DONE
+
+Removed deprecated import functionality: button from index.html, `/api/games/import` route from app.py, `importGamesJson()` from app.js.
 
 ---
 
