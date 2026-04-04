@@ -21,35 +21,38 @@ import json
 import os
 import sqlite3
 import sys
+import threading
 from pathlib import Path
 
 DIR = Path(__file__).parent
 # Default to same directory as games.db (DB_PATH) so permissions match
 _default_cache = Path(os.environ.get("DB_PATH", DIR / "games.db")).parent / "cpp_cache.db"
 _CACHE_DB = Path(os.environ.get("CPP_CACHE_PATH", _default_cache))
-_cache_conn = None
+_local = threading.local()
 _cache_broken = False
 
 
 def _get_conn():
-    """Get or create the module-level cache DB connection."""
-    global _cache_conn, _cache_broken
+    """Get or create a thread-local cache DB connection."""
+    global _cache_broken
     if _cache_broken:
         return None
-    if _cache_conn is None:
+    conn = getattr(_local, "conn", None)
+    if conn is None:
         try:
-            _cache_conn = sqlite3.connect(str(_CACHE_DB))
-            _cache_conn.execute("PRAGMA journal_mode=WAL")
-            _cache_conn.execute(
+            conn = sqlite3.connect(str(_CACHE_DB))
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute(
                 "CREATE TABLE IF NOT EXISTS cache "
                 "(key TEXT PRIMARY KEY, response TEXT)"
             )
-            _cache_conn.commit()
+            conn.commit()
+            _local.conn = conn
         except (sqlite3.OperationalError, OSError) as e:
             print(f"  cpp_cache: disabled ({e})", file=sys.stderr)
             _cache_broken = True
             return None
-    return _cache_conn
+    return conn
 
 
 def _make_key(request_data):

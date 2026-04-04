@@ -1058,14 +1058,10 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
             rounds[rn] = []
         rounds[rn].append(mr)
 
-    categorized = 0
-    api_calls = 0
-    failures = 0
-    processed = 0
-    total_mistakes = len(mistake_rows)
-
     from mj_parse import round_header
 
+    # Phase 1: Collect work items (sequential — DB reads + board state backfill)
+    work_items = []
     for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
         rnd_header = round_header(start)
         db_mistakes = rounds.get(rnd_header, [])
@@ -1110,36 +1106,60 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
             if mr["category"] and not force:
                 continue
 
-            needs_api = (m.get("actual", {}).get("type") == "dahai" and
-                         m.get("expected", {}).get("type") == "dahai")
+            work_items.append((mr, m, mortal_data, kyoku_idx, entry,
+                               dora_indicators, defense_ctx))
 
-            if needs_api:
-                api_calls += 1
+    total_work = len(work_items)
+    if total_work == 0:
+        return 0, 0, 0
 
-            cat, cpp_data, safety_data, opp_discards = categorize_mistake(
-                m, mortal_data, kyoku_idx, entry, dora_indicators,
-                defense_ctx=defense_ctx,
-            )
+    # Phase 2: Categorize in parallel (C++ calls release the GIL)
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    import os as _os
+    max_workers = min(total_work, _os.cpu_count() or 4)
 
-            if cat:
-                updates = {"category": cat}
-                if cpp_data:
-                    updates["cpp_best"] = cpp_data["best"]
-                    updates["cpp_stats"] = cpp_data["stats"]
-                    if cpp_data.get("labels"):
-                        updates["labels"] = cpp_data["labels"]
-                if safety_data:
-                    updates["safety_ratings"] = safety_data
-                if opp_discards:
-                    updates["opponent_discards"] = opp_discards
-                dbmod.update_mistake_data(conn, mr["id"], updates)
-                categorized += 1
-            elif needs_api:
-                failures += 1
+    def _do_categorize(item):
+        mr, m, md, ki, entry, dora, dctx = item
+        needs_api = (m.get("actual", {}).get("type") == "dahai" and
+                     m.get("expected", {}).get("type") == "dahai")
+        cat, cpp_data, safety_data, opp_discards = categorize_mistake(
+            m, md, ki, entry, dora, defense_ctx=dctx,
+        )
+        return mr, cat, cpp_data, safety_data, opp_discards, needs_api
 
-            processed += 1
-            if on_progress:
-                on_progress(processed, total_mistakes)
+    results = []
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(_do_categorize, item): item for item in work_items}
+        for future in as_completed(futures):
+            results.append(future.result())
+
+    # Phase 3: Write results to DB (sequential)
+    categorized = 0
+    api_calls = 0
+    failures = 0
+
+    for mr, cat, cpp_data, safety_data, opp_discards, needs_api in results:
+        if needs_api:
+            api_calls += 1
+
+        if cat:
+            updates = {"category": cat}
+            if cpp_data:
+                updates["cpp_best"] = cpp_data["best"]
+                updates["cpp_stats"] = cpp_data["stats"]
+                if cpp_data.get("labels"):
+                    updates["labels"] = cpp_data["labels"]
+            if safety_data:
+                updates["safety_ratings"] = safety_data
+            if opp_discards:
+                updates["opponent_discards"] = opp_discards
+            dbmod.update_mistake_data(conn, mr["id"], updates)
+            categorized += 1
+        elif needs_api:
+            failures += 1
+
+    if on_progress:
+        on_progress(total_work, len(mistake_rows))
 
     return categorized, api_calls, failures
 

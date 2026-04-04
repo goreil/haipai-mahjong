@@ -17,8 +17,8 @@ def isolated_cache(monkeypatch, tmp_path):
 
     db_path = tmp_path / "test_cache.db"
     monkeypatch.setattr(cpp_cache, "_CACHE_DB", db_path)
-    # Reset the module-level connection so it reconnects to the temp DB
-    monkeypatch.setattr(cpp_cache, "_cache_conn", None)
+    # Reset the thread-local connection so it reconnects to the temp DB
+    cpp_cache._local.conn = None
     yield db_path
 
 
