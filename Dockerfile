@@ -1,4 +1,4 @@
-# Stage 1: Build mahjong-cpp nanikiru binary
+# Stage 1: Build mahjong-cpp shared library
 FROM debian:12.9-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -10,15 +10,18 @@ COPY mahjong-cpp /build/mahjong-cpp
 WORKDIR /build/mahjong-cpp
 
 RUN mkdir -p build && cd build \
-    && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SAMPLES=OFF -DBUILD_TEST=OFF \
-    && make -j$(nproc) nanikiru \
+    && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON=ON -DBUILD_SERVER=OFF -DBUILD_SAMPLES=OFF -DBUILD_TEST=OFF \
+    && make -j$(nproc) mahjong-python \
     && cmake --install . --prefix install
 
 # Stage 2: Runtime
 FROM python:3.12.8-slim-bookworm
 
-# Install nanikiru binary + data files
-COPY --from=builder /build/mahjong-cpp/build/install/bin/ /opt/nanikiru/
+# Install shared library + data files (libmahjongcpp.so + .bin/.json lookup tables)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libboost-filesystem1.83.0 libboost-system1.83.0 \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /build/mahjong-cpp/build/install/lib/ /opt/mahjong-cpp/
 
 # Python app
 WORKDIR /app
@@ -27,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gosu && rm -rf 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py cpp_cache.py db.py mj_categorize.py mj_defense.py mj_games.py mj_parse.py ./
+COPY app.py cpp_cache.py db.py mahjong_cpp.py mj_categorize.py mj_defense.py mj_games.py mj_parse.py ./
 COPY static/ static/
 COPY riichi-mahjong-tiles/Regular/ riichi-mahjong-tiles/Regular/
 
@@ -35,10 +38,10 @@ COPY riichi-mahjong-tiles/Regular/ riichi-mahjong-tiles/Regular/
 RUN useradd -r -u 1000 -m -s /bin/false appuser \
     && mkdir -p mortal_analysis data \
     && chown -R appuser:appuser /app \
-    && chmod -R o+rx /opt/nanikiru
+    && chmod -R o+rx /opt/mahjong-cpp
 
 # Environment
-ENV NANIKIRU_BIN=/opt/nanikiru/nanikiru
+ENV MAHJONG_CPP_LIB=/opt/mahjong-cpp/libmahjongcpp.so
 ENV DB_PATH=/app/data/games.db
 ENV PYTHONUNBUFFERED=1
 

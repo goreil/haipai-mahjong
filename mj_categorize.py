@@ -6,14 +6,9 @@ import logging
 import sys
 from pathlib import Path
 
-import requests
-
 logger = logging.getLogger(__name__)
 
 DIR = Path(__file__).parent
-
-# Local mahjong-cpp server (nanikiru binary)
-LOCAL_API_URL = "http://127.0.0.1:50000/"
 
 # --- Tunable categorization rules ---
 # Edit these thresholds, then run: python3 mj_games.py categorize --recheck --dry-run
@@ -344,30 +339,10 @@ def build_api_request(hand_mjai, melds_mjai, round_wind_id, seat_wind_id, dora_i
     }
 
 
-def call_mahjong_cpp(request_data, _retries=2):
-    """Call the local mahjong-cpp tile efficiency calculator (nanikiru server).
-
-    Retries with a delay if the connection is refused (server crashed).
-    """
-    import time
-    for attempt in range(_retries + 1):
-        try:
-            resp = requests.post(
-                LOCAL_API_URL,
-                json=request_data,
-                timeout=10,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            if not data.get("success"):
-                raise RuntimeError(f"API error: {data.get('err_msg', 'unknown')}")
-            return data["response"]
-        except requests.ConnectionError:
-            if attempt < _retries:
-                # Server may have crashed — wait and retry
-                time.sleep(2)
-                continue
-            raise
+def call_mahjong_cpp(request_data):
+    """Call the mahjong-cpp tile efficiency calculator (in-process via shared library)."""
+    from mahjong_cpp import calculate
+    return calculate(request_data)
 
 
 def get_cpp_best_discard(response):

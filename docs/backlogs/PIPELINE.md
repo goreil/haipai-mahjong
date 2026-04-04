@@ -1,119 +1,64 @@
-# Pipeline: Replace Nanikiru
+# Pipeline: Replace Nanikiru ✅ DONE
 
-The nanikiru HTTP server wrapping mahjong-cpp is the #1 reliability problem. It crashes under sustained load (both WSL and Hetzner), silently fails in local dev, and makes game uploads slow and unreliable. We own the mahjong-cpp fork — there's no reason to keep the HTTP layer.
+The nanikiru HTTP server has been replaced with an in-process shared library (`libmahjongcpp.so`).
 
-## Current architecture
-
-```
-Python (mj_categorize.py)
-  → HTTP POST to 127.0.0.1:50000
-    → nanikiru (C++ HTTP server)
-      → mahjong-cpp calculator
-    → JSON response
-  → parse response
-```
-
-Problems:
-- nanikiru crashes under load, needs retry logic and restart wrappers
-- 2 gunicorn workers each try to start nanikiru, only one gets the port
-- Local dev (WSL) often has no running nanikiru — categorization silently fails
-- Each mistake = 1 HTTP roundtrip with 10s timeout + 2 retries with 2s sleep = up to 16s on failure
-- New Python modules (like cpp_cache.py) must be added to Dockerfile COPY list
-
-## Target architecture
+## Architecture (current)
 
 ```
 Python (mj_categorize.py)
   → call_mahjong_cpp(request_data)
-    → C shared library (.so) via ctypes/cffi
-    → mahjong-cpp calculator (in-process)
-  → return result
+    → mahjong_cpp.py (ctypes wrapper)
+      → libmahjongcpp.so (in-process)
+        → mahjong-cpp calculator
+      → JSON response
+    → return result
 ```
 
 No HTTP. No separate process. No port. No crashes. No retry logic.
 
----
+## What was done
 
-## P-01: Build mahjong-cpp as shared library (HIGH)
+- **P-01** ✅ Built mahjong-cpp as shared library
+  - Created `mahjong-cpp/src/python_bridge.cpp` with `extern "C" mahjong_calculate()` 
+  - Added `BUILD_PYTHON` CMake option to build `libmahjongcpp.so`
+  - Changed `boost::dll::program_location()` → `this_line_location()` in core code so data files are found relative to the .so, not the Python interpreter
+  - Data files (.bin, .json) are copied alongside the .so via CMake post-build step
 
-**Current**: mahjong-cpp builds a static library + nanikiru CLI/server.
+- **P-02** ✅ Created Python wrapper
+  - New `mahjong_cpp.py`: loads the .so via ctypes, same input/output contract
+  - `mj_categorize.py`: `call_mahjong_cpp()` now calls `mahjong_cpp.calculate()` instead of HTTP POST
+  - Removed `requests` import and HTTP retry logic from `mj_categorize.py`
 
-**Goal**: Also build a shared library (`libmahjongcpp.so`) that exposes the calculator function.
+- **P-03** ✅ Updated Dockerfile
+  - Build stage: `cmake -DBUILD_PYTHON=ON -DBUILD_SERVER=OFF` → `make mahjong-python`
+  - Runtime stage: installs `libboost-filesystem`, copies .so + data files to `/opt/mahjong-cpp/`
+  - `MAHJONG_CPP_LIB` env var replaces `NANIKIRU_BIN`
 
-**Steps**:
-- Identify the C++ function that nanikiru calls internally (the calculator entry point)
-- Add a C-linkage wrapper: `extern "C" const char* calculate(const char* json_request)`
-- Update CMakeLists.txt to build a shared library target alongside the existing targets
-- Test: `python3 -c "import ctypes; lib = ctypes.CDLL('./libmahjongcpp.so'); print('loaded')"`
+- **P-04** ✅ Removed nanikiru scaffolding
+  - Removed `start_nanikiru()`, `stop_nanikiru()`, atexit handler from `app.py`
+  - Removed `NANIKIRU_BIN`, `NANIKIRU_PORT`, `LOCAL_API_URL` constants
+  - Updated `CLAUDE.md` docs and `.env.example`
 
-**Files**: `mahjong-cpp/CMakeLists.txt`, new file `mahjong-cpp/src/python_bridge.cpp`
+- **P-05** (skipped — shared library worked, fallback not needed)
 
----
+- **P-06** ✅ Cache still works as-is
+  - `cpp_cache.py` imports `call_mahjong_cpp` from `mj_categorize` which now uses in-process calls
+  - No changes needed
 
-## P-02: Python wrapper for shared library (HIGH)
+## Build instructions (local dev)
 
-**Goal**: Replace `call_mahjong_cpp()` HTTP calls with direct library calls.
+```bash
+cd mahjong-cpp
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON=ON -DBUILD_SERVER=OFF -DBUILD_SAMPLES=OFF -DBUILD_TEST=OFF
+make -j$(nproc) mahjong-python
+```
 
-**Steps**:
-- Write `mahjong_cpp.py`: loads the .so, exposes `calculate(request_dict) -> response_dict`
-- Handle JSON serialization (Python dict → JSON string → C → JSON string → Python dict)
-- Drop-in replacement for the HTTP call — same input/output contract
-- Replace `call_mahjong_cpp()` in `mj_categorize.py` to use the new module
-- Remove or deprecate: nanikiru startup/shutdown in `app.py`, retry logic, port management
+The .so and data files will be in `mahjong-cpp/build/`. The Python wrapper auto-discovers them.
 
-**Files**: New `mahjong_cpp.py`, `mj_categorize.py` (replace call_mahjong_cpp), `app.py` (remove nanikiru management)
+## Remaining: deploy and verify on server
 
----
-
-## P-03: Update build and deploy (HIGH)
-
-**Steps**:
-- Dockerfile: build the .so in the build stage, copy it to the runtime stage
-- Remove nanikiru binary from the Docker image (no longer needed)
-- Add `mahjong_cpp.py` to the COPY list in Dockerfile
-- Update `.env.example` to remove NANIKIRU_BIN
-- Test locally and in Docker
-
-**Files**: `Dockerfile`, `docker-compose.yml`, `.env.example`
-
----
-
-## P-04: Remove nanikiru scaffolding (MEDIUM)
-
-After P-01 through P-03 are verified working:
-- Remove `start_nanikiru()`, `stop_nanikiru()`, atexit handler from `app.py`
-- Remove `NANIKIRU_BIN`, `NANIKIRU_PORT`, `LOCAL_API_URL` from `app.py` and `mj_categorize.py`
-- Remove retry logic from `call_mahjong_cpp()` (no longer needed — in-process calls don't have connection errors)
-- Update CLAUDE.md "Local vs Production Differences" section
-- Update tests if any mock the HTTP calls
-
-**Files**: `app.py`, `mj_categorize.py`, `CLAUDE.md`
-
----
-
-## P-05: Fallback — batch API (if shared library is too complex)
-
-If building a shared library with C-linkage proves too difficult (complex C++ types, template-heavy API, etc.), the fallback is:
-
-- Add a `/batch` endpoint to nanikiru: accepts array of requests, returns array of responses
-- Modify `categorize_game_db()` to collect all requests first, send one batch call
-- Reduces crash surface (1 connection instead of N) and latency (1 roundtrip instead of N)
-- Still keeps the HTTP server, but makes it bearable
-
----
-
-## P-06: Keep cache as safety net (LOW)
-
-`cpp_cache.py` should stay even after the HTTP layer is removed. In-process calls are fast but the cache still helps:
-- `--recheck` reruns don't recompute identical hands
-- Development iteration (test categorization changes without recomputing everything)
-- Update `cached_call()` to call the new in-process function instead of HTTP
-
----
-
-## Notes
-
-- The mahjong-cpp fork is at `mahjong-cpp/` (git submodule)
-- Current API contract: POST JSON with `hand`, `melds`, `round_wind`, `seat_wind`, `dora`, `wall` → response with `result` array of discard options with scores
-- The C++ codebase uses templates heavily — inspect the actual calculator API before deciding on ctypes vs cffi vs pybind11
-- pybind11 is another option if ctypes/cffi can't handle the types cleanly
+This needs to be deployed and tested on the Hetzner server to verify:
+- Docker build succeeds with the new Dockerfile
+- libboost-filesystem runtime dependency is satisfied
+- Categorization works end-to-end in production
