@@ -68,7 +68,8 @@ API routes:
 - `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`
 - `POST /api/games/add`, `DELETE /api/games/<id>`
 - `POST /api/games/import`, `GET /api/categories`, `GET /api/me`
-- `POST /api/feedback`
+- `POST /api/feedback`, `GET /api/feedback/mine`
+- `GET /api/admin/feedback`, `POST /api/admin/feedback/<id>`, `POST /api/admin/feedback/<id>/create-issue`
 - `POST /api/games/backfill-board-state`, `POST /api/games/backfill-decisions`
 
 ## Data Format
@@ -111,6 +112,15 @@ SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, 
 - `SECRET_KEY` must be set via `.env` file or environment variable (no insecure defaults).
 - Debug mode requires `FLASK_ENV=development` (off by default).
 
+## Local vs Production Differences
+
+Local dev (WSL) and production (Docker on Hetzner) differ in important ways:
+
+- **Nanikiru**: Auto-started by `app.py` but often not running locally (no build, crashes in WSL). All categorization silently fails — API errors are caught and return `None` category. Code that touches categorization **must be tested on the server** or with a running nanikiru.
+- **File permissions**: Docker runs gunicorn as `appuser` (uid 1000). Files created by `docker compose exec` run as root. Any new file the app writes at runtime (caches, DBs) must go in a directory writable by `appuser` — use the `data/` volume, not `/app/`.
+- **File paths**: Production copies specific `.py` files into `/app/` (see `COPY` line in Dockerfile). New Python modules must be added to the Dockerfile `COPY` list or they won't exist in the container.
+- **gunicorn workers**: Production runs 2 workers. Each starts its own nanikiru instance (only one wins the port). Module-level state is per-worker.
+
 ## Backlog Documents
 
 Issues and improvements are tracked in dedicated backlog docs. When working on a task, check the relevant doc for known issues and mark items as done when fixed.
@@ -122,5 +132,12 @@ Issues and improvements are tracked in dedicated backlog docs. When working on a
 | `TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
 | `INFRA.md` | Docker, deploy, CI/CD, monitoring, backups | `Dockerfile`, `docker-compose.yml`, `.github/` |
 | `PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
+| `PIPELINE.md` | Replace nanikiru HTTP server with in-process calls | `mahjong-cpp/`, `mj_categorize.py`, `app.py`, `Dockerfile` |
+| `FEEDBACK-PIPELINE.md` | Admin dashboard, GitHub issue bridge, notifications | `app.py`, `db.py`, `static/app.js` |
+| `LANDING-PAGE.md` | Public landing page for unauthenticated visitors | `static/landing.html`, `app.py`, `style.css` |
 
-When running multiple Claude instances in parallel, avoid editing the same files concurrently. The table above shows which files each backlog primarily touches.
+When running multiple Claude instances in parallel, avoid editing the same files concurrently. The table above shows which files each backlog primarily touches. See `PROMPTS.md` for ready-to-use instance prompts.
+
+## Roadmap
+
+See `ROADMAP.md` for the full product roadmap: beta launch, post-beta features, monetization plan, and growth strategy.
