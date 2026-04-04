@@ -11,14 +11,6 @@ from pathlib import Path
 DIR = Path(__file__).parent
 GAMES_FILE = DIR / "games.json"
 
-CATEGORIES = [
-    "1A", "1B", "1C", "1D", "1E",
-    "2A", "2B", "2C",
-    "3A", "3B", "3C",
-    "4A", "4B",
-    "5A", "5B",
-]
-
 CATEGORY_INFO = {
     "1A": {"group": "Efficiency",      "label": "Tile Efficiency",       "desc": "Chose a discard with lower tile acceptance or expected score",                                     "study": "Riichi Book Ch 3-4"},
     "2A": {"group": "Value Tiles",     "label": "Value Tile Ordering",   "desc": "Chose wrong between a value tile (honor/terminal) and a number tile when tile efficiency was similar", "study": "Riichi Book Ch 3.2"},
@@ -33,6 +25,8 @@ CATEGORY_INFO = {
     "6A": {"group": "Kan",             "label": "Bad Kan",               "desc": "Declared kan when shouldn't have",                                                                 "study": "Riichi Book Ch 9.3"},
     "6B": {"group": "Kan",             "label": "Missed Kan",            "desc": "Didn't declare kan when should have",                                                              "study": "Riichi Book Ch 9.3"},
 }
+
+CATEGORIES = list(CATEGORY_INFO.keys())
 
 
 def load_games():
