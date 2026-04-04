@@ -130,15 +130,14 @@ Issues and improvements are tracked in dedicated backlog docs. When working on a
 
 | Document | Scope | Primary files |
 |----------|-------|---------------|
-| `docs/backlogs/UX-AUDIT.md` | UI/UX issues, outdated help text, layout | `static/app.js`, `style.css`, `index.html` |
-| `docs/backlogs/BUGS.md` | Known bugs, edge cases, incorrect behavior | `mj_parse.py`, `mj_categorize.py`, `db.py` |
 | `docs/backlogs/TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
-| `docs/backlogs/INFRA.md` | Docker, deploy, CI/CD, monitoring, backups | `Dockerfile`, `docker-compose.yml`, `.github/` |
 | `docs/backlogs/PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
 | `docs/backlogs/PIPELINE.md` | Replace nanikiru HTTP server with in-process calls | `mahjong-cpp/`, `mj_categorize.py`, `app.py`, `Dockerfile` |
-| `docs/backlogs/FEEDBACK-PIPELINE.md` | Admin dashboard, GitHub issue bridge, notifications | `app.py`, `db.py`, `static/app.js` |
-| `docs/backlogs/LANDING-PAGE.md` | Public landing page for unauthenticated visitors | `static/landing.html`, `app.py`, `style.css` |
 | `docs/backlogs/ANON-PRACTICE.md` | Anonymous practice tool (no login required) | `app.py`, `db.py`, `static/app.js`, `static/landing.html` |
+| `docs/backlogs/FEEDBACK-PIPELINE.md` | Feedback admin (1 stretch item remaining) | `app.py`, `db.py`, `static/app.js` |
+| `docs/backlogs/LANDING-PAGE.md` | Landing page (1 stretch item remaining) | `static/landing.html`, `app.py`, `style.css` |
+
+Completed backlogs (archived via git history): BUGS.md, INFRA.md, UX-AUDIT.md.
 
 When running multiple Claude instances in parallel, avoid editing the same files concurrently. The table above shows which files each backlog primarily touches. See `docs/PROMPTS.md` for ready-to-use instance prompts.
 

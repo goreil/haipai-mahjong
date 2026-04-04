@@ -1,5 +1,18 @@
 # Haipai Roadmap
 
+## Competitive Landscape (researched 2026-03-31)
+
+What English riichi players have today:
+- **Mortal** (mjai.ekyu.moe): free per-turn AI review, but raw viewer only. No categorization, no practice mode, no trend tracking.
+- **NAGA**: paid replay analysis, needs Nicovideo account + Japanese knowledge. Inaccessible to most English speakers.
+- **Akochan Reviewer**: CLI tool, static HTML output, no web UI, no taxonomy.
+- **Euophrys' Efficiency Trainer** (itch.io): generic random hands, not your own games.
+- **Riichi Scoring/Waits Trainers**: specific skill drills, no game review.
+
+**Our differentiation**: Mortal tells you WHAT you did wrong. Haipai tells you WHY, tracks it over time, and lets you drill your actual weak spots.
+
+---
+
 ## Phase 1: Beta Launch (this week)
 
 Goal: Get 8 club members using the app and giving useful feedback.
