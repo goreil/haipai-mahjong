@@ -97,7 +97,7 @@ CI runs pytest but doesn't:
 
 ---
 
-### I-09: Deploy has no rollback or health verification
+### ~~I-09: Deploy has no rollback or health verification~~ ✅
 
 **Location**: `.github/workflows/deploy.yml`
 

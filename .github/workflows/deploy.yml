@@ -75,3 +75,16 @@ jobs:
             conn.close()
             print('Stats recomputed')
             "
+
+            # Verify app is healthy after deploy
+            echo "Checking health endpoint..."
+            for i in 1 2 3 4 5; do
+              if curl -sf http://localhost/health > /dev/null 2>&1; then
+                echo "Health check passed"
+                exit 0
+              fi
+              echo "Attempt $i failed, retrying in 3s..."
+              sleep 3
+            done
+            echo "::error::Health check failed after deploy!"
+            exit 1
