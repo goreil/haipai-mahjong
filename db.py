@@ -70,6 +70,10 @@ CREATE TABLE IF NOT EXISTS mistakes (
     note TEXT,
     FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS idx_games_user_id ON games(user_id);
+CREATE INDEX IF NOT EXISTS idx_mistakes_game_id ON mistakes(game_id);
+CREATE INDEX IF NOT EXISTS idx_practice_results_mistake_id ON practice_results(mistake_id);
 """
 
 # Fields stored as columns (not in data_json)
@@ -216,6 +220,9 @@ def get_game(conn, game_id, user_id=None):
 def add_game(conn, user_id, game_dict):
     """Insert a full game dict (as produced by mj_parse.parse_game).
 
+    All inserts are wrapped in a transaction — if any mistake insert fails,
+    the entire game (including the games row) is rolled back.
+
     Returns the new game_id.
     """
     # Build rounds metadata
@@ -228,34 +235,38 @@ def add_game(conn, user_id, game_dict):
             "decision_count": rnd.get("decision_count"),
         })
 
-    cur = conn.execute(
-        """INSERT INTO games (user_id, date, log_url, mortal_file, stats_json, rounds_json)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (
-            user_id,
-            game_dict.get("date"),
-            game_dict.get("log_url"),
-            game_dict.get("mortal_file"),
-            json.dumps(game_dict.get("summary") or {}, ensure_ascii=False),
-            json.dumps(rounds_meta, ensure_ascii=False),
-        ),
-    )
-    game_id = cur.lastrowid
+    try:
+        cur = conn.execute(
+            """INSERT INTO games (user_id, date, log_url, mortal_file, stats_json, rounds_json)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                user_id,
+                game_dict.get("date"),
+                game_dict.get("log_url"),
+                game_dict.get("mortal_file"),
+                json.dumps(game_dict.get("summary") or {}, ensure_ascii=False),
+                json.dumps(rounds_meta, ensure_ascii=False),
+            ),
+        )
+        game_id = cur.lastrowid
 
-    # Insert mistakes
-    for round_idx, rnd in enumerate(game_dict.get("rounds", [])):
-        for mistake_idx, m in enumerate(rnd.get("mistakes", [])):
-            row = mistake_to_row(m, game_id, rnd["round"], round_idx, mistake_idx)
-            conn.execute(
-                """INSERT INTO mistakes
-                   (game_id, round_name, round_idx, mistake_idx, data_json,
-                    category, severity, ev_loss, turn, note)
-                   VALUES (:game_id, :round_name, :round_idx, :mistake_idx, :data_json,
-                           :category, :severity, :ev_loss, :turn, :note)""",
-                row,
-            )
+        # Insert mistakes
+        for round_idx, rnd in enumerate(game_dict.get("rounds", [])):
+            for mistake_idx, m in enumerate(rnd.get("mistakes", [])):
+                row = mistake_to_row(m, game_id, rnd["round"], round_idx, mistake_idx)
+                conn.execute(
+                    """INSERT INTO mistakes
+                       (game_id, round_name, round_idx, mistake_idx, data_json,
+                        category, severity, ev_loss, turn, note)
+                       VALUES (:game_id, :round_name, :round_idx, :mistake_idx, :data_json,
+                               :category, :severity, :ev_loss, :turn, :note)""",
+                    row,
+                )
 
-    conn.commit()
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     return game_id
 
 
@@ -325,6 +336,8 @@ def update_mistake_data(conn, mistake_id, updates):
 
     `updates` can contain column names (category, severity, etc.)
     and data fields (cpp_best, cpp_stats, safety_ratings, etc.).
+    Uses SQLite json_set() for atomic data_json updates to avoid
+    read-modify-write races.
     """
     col_updates = {}
     data_updates = {}
@@ -335,19 +348,28 @@ def update_mistake_data(conn, mistake_id, updates):
             data_updates[k] = v
 
     if data_updates:
-        # Merge into existing data_json
-        row = conn.execute("SELECT data_json FROM mistakes WHERE id = ?", (mistake_id,)).fetchone()
-        if row:
-            data = json.loads(row["data_json"])
-            data.update(data_updates)
-            col_updates["data_json"] = json.dumps(data, ensure_ascii=False)
+        # Atomic merge using json_set — no read-modify-write needed
+        json_expr = "data_json"
+        params = []
+        for key, val in data_updates.items():
+            json_expr = f"json_set({json_expr}, '$.{key}', json(?))"
+            params.append(json.dumps(val, ensure_ascii=False))
+        col_updates["data_json"] = None  # placeholder, handled by raw SQL below
 
-    if col_updates:
-        set_clause = ", ".join(f"{k} = ?" for k in col_updates)
-        conn.execute(
-            f"UPDATE mistakes SET {set_clause} WHERE id = ?",
-            list(col_updates.values()) + [mistake_id],
-        )
+    set_parts = []
+    params_final = []
+    for k, v in col_updates.items():
+        if k == "data_json" and data_updates:
+            set_parts.append(f"data_json = {json_expr}")
+            params_final.extend(params)
+        else:
+            set_parts.append(f"{k} = ?")
+            params_final.append(v)
+
+    if set_parts:
+        sql = f"UPDATE mistakes SET {', '.join(set_parts)} WHERE id = ?"
+        params_final.append(mistake_id)
+        conn.execute(sql, params_final)
         conn.commit()
 
 
