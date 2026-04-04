@@ -5,7 +5,7 @@
 
 ## Goal
 
-Let anyone use the practice tool without logging in. Users opt-in to share their games in a community practice pool. Authenticated users can switch between practicing their own mistakes and the community pool. Login is only required to track personal progress.
+Let anyone use the practice tool without logging in. Users opt-in to share their games in a community practice pool. Community pool is the default; authenticated users can filter to their own mistakes. Login is only required to track personal progress.
 
 Future: if demand grows, add a lightweight anonymous progress tracker (cookie/localStorage) before requiring full login.
 
@@ -50,13 +50,21 @@ Added `/api/practice/public` and `/api/me/practice-opt-in` to API routes in CLAU
 
 ### ~~AP-08: Own vs community toggle~~ DONE
 
-- Authenticated users get a "My mistakes" / "Community pool" dropdown in practice view
-- "My mistakes" uses spaced-repetition endpoint, records results
-- "Community pool" uses public endpoint, no result recording
+- Community pool is the default for all users
+- "My mistakes only" checkbox to filter to own games (authenticated only)
+- Own-mistakes mode uses spaced-repetition endpoint and records results
+- Community mode uses public endpoint, no result recording
 
 ### ~~AP-09: Remove import games.json~~ DONE
 
 Removed deprecated import functionality: button from index.html, `/api/games/import` route from app.py, `importGamesJson()` from app.js.
+
+### ~~AP-10: Categorization progress bar~~ DONE
+
+- `/api/games/add` streams SSE events with categorization progress
+- `categorize_game_db` accepts `on_progress(done, total)` callback
+- Frontend shows animated progress bar: "Analyzing decisions... 3/12"
+- Replaces the old static "Adding..." spinner in the add game modal
 
 ---
 
