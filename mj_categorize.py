@@ -1014,13 +1014,14 @@ def recheck_game(game, game_idx, dry_run=False):
     return changed, transitions
 
 
-def categorize_game_db(conn, game_id, force=False):
+def categorize_game_db(conn, game_id, force=False, on_progress=None):
     """Categorize mistakes for a game using SQLite database.
 
     Reads the mortal JSON, matches entries to DB mistakes, categorizes,
     and updates the DB directly.
 
-    Returns (categorized_count, api_calls).
+    on_progress: optional callback(done, total) called after each mistake.
+    Returns (categorized_count, api_calls, failures).
     """
     import db as dbmod
 
@@ -1060,6 +1061,8 @@ def categorize_game_db(conn, game_id, force=False):
     categorized = 0
     api_calls = 0
     failures = 0
+    processed = 0
+    total_mistakes = len(mistake_rows)
 
     from mj_parse import round_header
 
@@ -1133,6 +1136,10 @@ def categorize_game_db(conn, game_id, force=False):
                 categorized += 1
             elif needs_api:
                 failures += 1
+
+            processed += 1
+            if on_progress:
+                on_progress(processed, total_mistakes)
 
     return categorized, api_calls, failures
 

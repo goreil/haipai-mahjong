@@ -42,7 +42,7 @@ const OUTCOME_EMOJI = { ":D": "\u{1F60E}", ":)": "\u{1F642}", ":|": "\u{1F610}",
 let csrfToken = "";
 let isAnonymous = false;
 let practiceOptIn = false;
-let practiceSource = "mine"; // "mine" or "all"
+let practiceSource = "all"; // "mine" or "all"
 
 let state = {
   games: [],
@@ -525,9 +525,32 @@ async function saveAnnotation(gameId, round, turn, index, category, note) {
   return data;
 }
 
-async function addGame(mortalData, date) {
+async function addGameWithProgress(mortalData, date, onProgress) {
   const res = await apiPost("/api/games/add", { mortal_data: mortalData, date: date || undefined });
-  return await res.json();
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // Parse SSE lines
+    const lines = buffer.split("\n");
+    buffer = lines.pop(); // keep incomplete line
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = JSON.parse(line.slice(6));
+      if (data.step === "done" || data.step === "error") {
+        result = data;
+      } else if (onProgress) {
+        onProgress(data);
+      }
+    }
+  }
+  return result || { error: "No response from server" };
 }
 
 // --- Render: Game List ---
@@ -878,21 +901,40 @@ async function submitAddGame() {
   }
 
   btn.disabled = true;
-  btn.innerHTML = 'Adding...<span class="spinner"></span>';
   errEl.textContent = "";
 
-  try {
-    let mortalData;
-    const text = await fileInput.files[0].text();
-    mortalData = JSON.parse(text);
+  // Show progress bar
+  let progressEl = document.getElementById("add-progress");
+  if (!progressEl) {
+    progressEl = document.createElement("div");
+    progressEl.id = "add-progress";
+    progressEl.className = "add-progress";
+    btn.parentElement.insertBefore(progressEl, btn);
+  }
+  progressEl.innerHTML = '<div class="add-progress-text">Parsing game...</div><div class="add-progress-bar"><div class="add-progress-fill"></div></div>';
+  progressEl.style.display = "";
 
-    const result = await addGame(mortalData, date);
+  try {
+    const text = await fileInput.files[0].text();
+    const mortalData = JSON.parse(text);
+
+    const result = await addGameWithProgress(mortalData, date, (progress) => {
+      const fill = progressEl.querySelector(".add-progress-fill");
+      const label = progressEl.querySelector(".add-progress-text");
+      if (progress.step === "parsing") {
+        label.textContent = progress.message;
+      } else if (progress.step === "categorizing") {
+        const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+        fill.style.width = pct + "%";
+        label.textContent = `Analyzing decisions... ${progress.done}/${progress.total}`;
+      }
+    });
 
     btn.disabled = false;
-    btn.textContent = "Add Game";
+    progressEl.style.display = "none";
 
     if (result.error) {
-      errEl.textContent = result.error;
+      errEl.textContent = result.error || result.message;
       return;
     }
 
@@ -901,7 +943,7 @@ async function submitAddGame() {
     fetchGame(result.game_id);
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = "Add Game";
+    progressEl.style.display = "none";
     errEl.textContent = e.message;
   }
 }
@@ -1331,10 +1373,7 @@ function renderPractice() {
     <p class="practice-explanation">Practice hand-building decisions where the correct tile can be determined from your hand alone.</p>
     ${isAnonymous ? '<div class="practice-login-banner">Problems drawn from community pool. <a href="/register">Register</a> or <a href="/login">log in</a> to practice your own mistakes and track progress.</div>' : ''}
     <div class="practice-filters">
-      ${!isAnonymous ? `<select onchange="setPracticeSource(this.value)">
-        <option value="mine" ${practiceSource === "mine" ? "selected" : ""}>My mistakes</option>
-        <option value="all" ${practiceSource === "all" ? "selected" : ""}>Community pool</option>
-      </select>` : ''}
+      ${!isAnonymous ? `<label class="practice-filter-check"><input type="checkbox" ${practiceSource === "mine" ? "checked" : ""} onchange="setPracticeSource(this.checked ? 'mine' : 'all')"> My mistakes only</label>` : ''}
       <select onchange="setPracticeFilter('severity', this.value)">
         <option value="" ${!practice.filterSeverity ? "selected" : ""}>All severity</option>
         <option value="???" ${practice.filterSeverity === "???" ? "selected" : ""}>??? only</option>
