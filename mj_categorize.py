@@ -1018,12 +1018,19 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
     """Categorize mistakes for a game using SQLite database.
 
     Reads the mortal JSON, matches entries to DB mistakes, categorizes,
-    and updates the DB directly.
+    and updates the DB directly.  Safe to call from a background thread
+    (opens its own connection if the passed one is cross-thread).
 
     on_progress: optional callback(done, total) called after each mistake.
     Returns (categorized_count, api_calls, failures).
     """
     import db as dbmod
+
+    # SQLite connections can't cross threads; open a fresh one if needed
+    try:
+        conn.execute("SELECT 1")
+    except Exception:
+        conn = dbmod.get_db()
 
     game_row = conn.execute(
         "SELECT mortal_file FROM games WHERE id = ?", (game_id,)

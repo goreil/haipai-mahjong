@@ -404,3 +404,41 @@ class TestWallReconstruction:
             in_hand = sum(1 for h in hand_ids if tile_id_to_base(h) == i)
             # Wall + hand should not exceed total copies (4)
             assert wall2[i] + in_hand <= 4, f"tile {i}: wall={wall2[i]} hand={in_hand}"
+
+
+# --- Cross-thread categorization test ---
+
+class TestCategorizeThreadSafety:
+    """Ensure categorize_game_db works from a background thread (like api_add does)."""
+
+    def test_cross_thread_conn(self, tmp_path):
+        """categorize_game_db should not crash when called from a different thread."""
+        import threading
+        from mj_categorize import categorize_game_db
+
+        db_path = tmp_path / "test.db"
+        conn = db.get_db(db_path=db_path)
+        db.init_db(conn)
+
+        # Add a user and a minimal game (no mortal file → returns 0,0,0 but should NOT raise)
+        from werkzeug.security import generate_password_hash
+        db.create_user(conn, "testuser", generate_password_hash("pass"))
+        conn.execute(
+            "INSERT INTO games (user_id, date) VALUES (1, '2026-01-01')"
+        )
+        conn.commit()
+
+        result = {}
+        def run():
+            try:
+                cat, api, fail = categorize_game_db(conn, 1)
+                result["ok"] = (cat, api, fail)
+            except Exception as e:
+                result["error"] = str(e)
+
+        t = threading.Thread(target=run)
+        t.start()
+        t.join(timeout=10)
+
+        assert "error" not in result, f"Cross-thread call failed: {result.get('error')}"
+        assert result["ok"] == (0, 0, 0)
