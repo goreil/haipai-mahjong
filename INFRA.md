@@ -38,7 +38,7 @@ Backups are manual `docker cp` commands stored on the same server as the data. N
 
 ---
 
-### I-04: No .env.example
+### ~~I-04: No .env.example~~ ✅
 
 **Location**: project root (missing)
 
