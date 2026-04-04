@@ -7,7 +7,7 @@
 
 ## Critical
 
-### B-01: parse_game() calls sys.exit() in web context
+### ~~B-01: parse_game() calls sys.exit() in web context~~ ✅ FIXED
 
 **Location**: `mj_parse.py:58-63`
 
@@ -35,7 +35,7 @@ if tid != base:
 
 ---
 
-### B-03: No input validation in parse_game()
+### ~~B-03: No input validation in parse_game()~~ ✅ FIXED
 
 **Location**: `mj_parse.py:52-107`
 
@@ -47,7 +47,7 @@ The parser directly accesses nested fields (`data["review"]["kyokus"]`, `data["m
 
 ## High
 
-### B-04: mj_games.py CATEGORIES list doesn't match CATEGORY_INFO
+### ~~B-04: mj_games.py CATEGORIES list doesn't match CATEGORY_INFO~~ ✅ FIXED
 
 **Location**: `mj_games.py:14-20` vs `mj_games.py:22-35`
 
@@ -60,7 +60,7 @@ The CLI's `--category` flag validates against the stale `CATEGORIES` list, rejec
 
 ---
 
-### B-05: Non-atomic game import can leave orphaned data
+### ~~B-05: Non-atomic game import can leave orphaned data~~ ✅ FIXED
 
 **Location**: `db.py:216-259`
 
@@ -70,7 +70,7 @@ The CLI's `--category` flag validates against the stale `CATEGORIES` list, rejec
 
 ---
 
-### B-06: Silent failure when nanikiru is down during categorization
+### ~~B-06: Silent failure when nanikiru is down during categorization~~ ✅ FIXED
 
 **Location**: `mj_categorize.py:714-721`
 
@@ -82,7 +82,7 @@ The CLI's `--category` flag validates against the stale `CATEGORIES` list, rejec
 
 ## Medium
 
-### B-07: Read-modify-write race on data_json
+### ~~B-07: Read-modify-write race on data_json~~ ✅ FIXED
 
 **Location**: `db.py:342-351`
 
@@ -92,7 +92,7 @@ The CLI's `--category` flag validates against the stale `CATEGORIES` list, rejec
 
 ---
 
-### B-08: No database indexes
+### ~~B-08: No database indexes~~ ✅ FIXED
 
 **Location**: `db.py:12-73` (SCHEMA)
 
@@ -102,7 +102,7 @@ No indexes defined on any table. `SELECT * FROM mistakes WHERE game_id = ?` and 
 
 ---
 
-### B-09: api_backfill_board_state() is misleading
+### ~~B-09: api_backfill_board_state() is misleading~~ ✅ FIXED
 
 **Location**: `app.py:461-477`
 
