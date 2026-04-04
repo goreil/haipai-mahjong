@@ -83,7 +83,7 @@ Certbot runs in a loop with 12h sleep. If renewal fails, nobody knows until user
 
 ---
 
-### I-08: CI missing coverage and linting
+### ~~I-08: CI missing coverage and linting~~ ✅
 
 **Location**: `.github/workflows/test.yml`
 
