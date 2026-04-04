@@ -205,6 +205,7 @@ button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shad
 {% else %}
 <div class="link">Need an account? <a href="/register">Register</a></div>
 {% endif %}
+<div class="link"><a href="/practice">Try practice mode without an account</a></div>
 </div>
 </div></body></html>"""
 
@@ -520,19 +521,15 @@ def api_add():
 
     def generate():
         from mj_categorize import categorize_game_db
+        import threading
+        import queue
+
+        # Own connection — the request-scoped conn may be closed by teardown
+        # before this generator finishes, and the background thread needs its own.
+        gen_conn = db.get_db()
 
         yield f"data: {json.dumps({'step': 'parsing', 'message': 'Game added, categorizing mistakes...'})}\n\n"
 
-        def on_progress(done, total):
-            # Generator can't yield from callback, so we store progress
-            on_progress.done = done
-            on_progress.total = total
-        on_progress.done = 0
-        on_progress.total = 0
-
-        # Use a wrapper that yields progress events
-        import threading
-        import queue
         progress_q = queue.Queue()
 
         def progress_cb(done, total):
@@ -542,7 +539,7 @@ def api_add():
 
         def run_categorize():
             try:
-                cat_n, api_calls_n, failures_n = categorize_game_db(conn, game_id, on_progress=progress_cb)
+                cat_n, api_calls_n, failures_n = categorize_game_db(gen_conn, game_id, on_progress=progress_cb)
                 result_holder["cat_n"] = cat_n
                 result_holder["api_calls"] = api_calls_n
                 result_holder["failures"] = failures_n
@@ -567,12 +564,14 @@ def api_add():
             yield f"data: {json.dumps({'step': 'error', 'message': result_holder['error']})}\n\n"
         else:
             cat_n = result_holder.get("cat_n", 0)
-            stats = db.compute_summary_for_game(conn, game_id) if cat_n > 0 else game_dict.get("summary", {})
+            stats = db.compute_summary_for_game(gen_conn, game_id) if cat_n > 0 else game_dict.get("summary", {})
             final = {"step": "done", "ok": True, "game_id": game_id, "summary": stats,
                       "categorized": cat_n, "api_calls": result_holder.get("api_calls", 0)}
             if result_holder.get("failures"):
                 final["failures"] = result_holder["failures"]
             yield f"data: {json.dumps(final)}\n\n"
+
+        gen_conn.close()
 
     return Response(generate(), mimetype="text/event-stream")
 
