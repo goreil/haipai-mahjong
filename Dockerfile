@@ -18,10 +18,10 @@ RUN mkdir -p build && cd build \
 FROM python:3.12.8-slim-bookworm
 
 # Install shared library + data files (libmahjongcpp.so + .bin/.json lookup tables)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libboost-filesystem1.83.0 libboost-system1.83.0 \
-    && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /build/mahjong-cpp/build/install/lib/ /opt/mahjong-cpp/
+# Copy Boost shared libs needed at runtime (version-agnostic)
+COPY --from=builder /usr/lib/*/libboost_filesystem.so* /usr/lib/
+COPY --from=builder /usr/lib/*/libboost_system.so* /usr/lib/
 
 # Python app
 WORKDIR /app
