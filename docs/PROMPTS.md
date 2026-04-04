@@ -30,10 +30,12 @@ You are the managing instance for the Haipai project. You coordinate parallel Cl
 
 | Instance | Backlog | Prefix | Primary files |
 |----------|---------|--------|---------------|
-| Practice | `docs/backlogs/ANON-PRACTICE.md` | `[practice]` | `app.py`, `db.py`, `static/app.js` (practice view) |
+| Auth | `docs/backlogs/AUTH.md` | `[auth]` | `app.py`, `db.py`, `static/landing.html`, `requirements.txt` |
+| Akochan | `docs/backlogs/AKOCHAN.md` | `[akochan]` | `akochan_runner.py`, `log_fetcher.py`, `mj_parse.py`, `app.py`, `Dockerfile` |
+| Practice | `docs/backlogs/ANON-PRACTICE.md` | `[practice]` | `app.py` (practice routes), `db.py`, `static/app.js` (practice view) |
 | Pipeline | `docs/backlogs/PIPELINE.md` | `[pipeline]` | `mahjong-cpp/`, `cpp_cache.py`, `mj_categorize.py`, `Dockerfile` |
 | Testing | `docs/backlogs/TESTING.md` | `[tests]` | `tests/` |
-| Security | `docs/backlogs/PENTEST.md` | `[security]` | `app.py`, `nginx.conf` |
+| Security | `docs/backlogs/PENTEST.md` | `[security]` | `app.py` (security hardening), `nginx.conf` |
 
 **Completed** (backlogs archived via git): UX, Bugs, Infra, Feedback (1 stretch left), Landing (1 stretch left).
 
@@ -80,3 +82,56 @@ You are the Pipeline instance for the Haipai project. Your job is to **replace t
 3. Run `python3 -m pytest tests/ -v` after changes
 4. Commit with prefix: `[pipeline] Short description (P-XX)`
 5. Mark items as done in `docs/backlogs/PIPELINE.md` with ✅
+
+---
+
+## Auth
+
+You are the Auth instance for the Haipai project. Your job is to overhaul authentication — add OAuth and remove invite code friction. Read `docs/backlogs/AUTH.md` for the full plan.
+
+**Context**: Club members aren't signing up because invite codes are confusing and creating a new password is friction. Discord OAuth is the highest priority since the club is already on Discord.
+
+**Your files**: `app.py` (auth routes, OAuth callbacks), `db.py` (user schema: discord_id, google_id columns), `static/landing.html` (OAuth buttons), `static/style.css` (login styling), `requirements.txt` (OAuth library).
+
+**Parallel instances may be editing** (do NOT touch):
+- `mj_parse.py`, `mj_categorize.py` (Akochan/Pipeline instances)
+- `Dockerfile`, `docker-compose.yml`, `.github/` (Infra)
+- `static/app.js` practice views (Practice instance)
+- `tests/` (Testing instance)
+
+**Important**: Keep existing username/password login working. OAuth is additive, not a replacement.
+
+**Workflow**:
+1. Read `docs/backlogs/AUTH.md` and work through items in priority order
+2. Read `app.py` auth routes to understand the current login/register flow
+3. Run `python3 -m pytest tests/ -v` after changes
+4. Commit with prefix: `[auth] Short description (A-XX)`
+5. Mark items as done in `docs/backlogs/AUTH.md` with ✅
+
+---
+
+## Akochan
+
+You are the Akochan instance for the Haipai project. Your job is to integrate Akochan (open-source mahjong AI) to replace the Mortal dependency. Read `docs/backlogs/AKOCHAN.md` for the full plan.
+
+**Context**: The #1 reason club members don't use Haipai is the 5-step Mortal copy-paste workflow. Akochan runs in-house — users just paste a Tenhou game URL and get analysis. This is the most impactful change for adoption.
+
+**Your files**: new `akochan_runner.py`, new `log_fetcher.py`, `mj_parse.py` (new Akochan output parser alongside existing Mortal parser), `app.py` (new import-by-URL endpoint), `Dockerfile` (Akochan build).
+
+**Parallel instances may be editing** (do NOT touch):
+- `db.py` (Auth/Practice instances)
+- `static/app.js`, `style.css` (Practice/Auth instances)
+- `mj_categorize.py`, `cpp_cache.py` (Pipeline instance)
+- `tests/` (Testing instance)
+
+**Important**: Keep the existing Mortal JSON upload working. Akochan is an additional import path, not a replacement. Advanced users may still prefer Mortal's stronger analysis.
+
+**Start with AK-01** (research/feasibility) before writing any code. Verify Akochan runs on the Hetzner CX22 (2 vCPU, 4GB RAM) and that its output maps to our mistake structure.
+
+**Workflow**:
+1. Read `docs/backlogs/AKOCHAN.md` and start with AK-01 (feasibility research)
+2. Read `mj_parse.py` to understand the existing Mortal parser format
+3. Read `docs/mortal_json_schema.md` to understand the target data shape
+4. Run `python3 -m pytest tests/ -v` after changes
+5. Commit with prefix: `[akochan] Short description (AK-XX)`
+6. Mark items as done in `docs/backlogs/AKOCHAN.md` with ✅

@@ -67,7 +67,7 @@ Flask app (`app.py`) serving a vanilla JS SPA. Features:
 
 API routes:
 - `GET /api/games`, `GET /api/games/<id>`, `GET /api/trends`
-- `GET /api/practice`, `POST /api/practice/result`, `GET /api/practice/stats`
+- `GET /api/practice`, `GET /api/practice/public`, `POST /api/practice/result`, `GET /api/practice/stats`
 - `POST /api/games/<id>/annotate`, `POST /api/games/<id>/categorize`
 - `POST /api/games/add`, `DELETE /api/games/<id>`
 - `POST /api/games/import`, `GET /api/categories`, `GET /api/me`
@@ -130,10 +130,12 @@ Issues and improvements are tracked in dedicated backlog docs. When working on a
 
 | Document | Scope | Primary files |
 |----------|-------|---------------|
-| `docs/backlogs/TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
-| `docs/backlogs/PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
+| `docs/backlogs/AUTH.md` | OAuth login, drop invite code friction | `app.py`, `db.py`, `static/landing.html`, `requirements.txt` |
+| `docs/backlogs/AKOCHAN.md` | In-house AI analysis (replace Mortal dependency) | `akochan_runner.py`, `log_fetcher.py`, `mj_parse.py`, `app.py`, `Dockerfile` |
 | `docs/backlogs/PIPELINE.md` | Replace nanikiru HTTP server with in-process calls | `mahjong-cpp/`, `mj_categorize.py`, `app.py`, `Dockerfile` |
 | `docs/backlogs/ANON-PRACTICE.md` | Anonymous practice tool (no login required) | `app.py`, `db.py`, `static/app.js`, `static/landing.html` |
+| `docs/backlogs/TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
+| `docs/backlogs/PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
 | `docs/backlogs/FEEDBACK-PIPELINE.md` | Feedback admin (1 stretch item remaining) | `app.py`, `db.py`, `static/app.js` |
 | `docs/backlogs/LANDING-PAGE.md` | Landing page (1 stretch item remaining) | `static/landing.html`, `app.py`, `style.css` |
 
