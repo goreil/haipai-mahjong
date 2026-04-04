@@ -28,13 +28,13 @@ No `/health` route exists. Docker can't determine if the app is actually serving
 
 ---
 
-### I-03: No backup automation
+### ~~I-03: No backup automation~~ ✅
 
 **Location**: `DEPLOY.md:129-137`
 
 Backups are manual `docker cp` commands stored on the same server as the data. No scheduling, no offsite copies, no retention policy, no restore testing.
 
-**Fix**: Add a cron job or systemd timer for daily DB backups. Copy to offsite storage (Hetzner backup, S3, etc.). Document restore procedure.
+**Fix**: Added `backup.sh` — safe SQLite `.backup`, 7-day retention, integrity check, optional offsite (S3 or local). Run via cron: `0 3 * * * /opt/haipai/backup.sh`.
 
 ---
 
@@ -73,13 +73,13 @@ No `Cache-Control` headers for static assets (tiles, CSS, JS). No gzip compressi
 
 ---
 
-### I-07: Certbot renewal has no alerting
+### ~~I-07: Certbot renewal has no alerting~~ ✅
 
 **Location**: `docker-compose.yml:36-41`
 
 Certbot runs in a loop with 12h sleep. If renewal fails, nobody knows until users see certificate errors. No logging, no health check, no notification.
 
-**Fix**: Add a cert expiry check endpoint or cron job that alerts (email, webhook) when cert expires within 14 days.
+**Fix**: Added `check-cert.sh` — checks cert expiry via openssl, warns at 14 days, optional webhook alerting. Run via cron: `0 8 * * * /opt/haipai/check-cert.sh`.
 
 ---
 
@@ -119,11 +119,13 @@ The HTTP-to-HTTPS redirect is commented out. If HTTPS is enabled (which it is fo
 
 ## Low Priority
 
-### I-11: No resource limits in docker-compose
+### ~~I-11: No resource limits in docker-compose~~ ✅
 
 **Location**: `docker-compose.yml`
 
 No CPU or memory limits on any container. A runaway process (e.g. mahjong-cpp on a complex hand) could consume all server resources.
+
+**Fix**: Added `deploy.resources.limits` — app: 512M/1 CPU, nginx: 128M/0.5 CPU, certbot: 128M/0.25 CPU.
 
 ---
 
@@ -143,16 +145,20 @@ Compatible release constraints (`~=`) allow minor version drift between installs
 
 ---
 
-### I-14: No deployment approval gate
+### ~~I-14: No deployment approval gate~~ ✅
 
 **Location**: `.github/workflows/deploy.yml`
 
 Any push to main auto-deploys. For a single-operator project this is fine, but becomes risky with multiple contributors.
 
+**Fix**: Added `environment: production` to deploy job. Configure required reviewers in GitHub repo Settings > Environments.
+
 ---
 
-### I-15: deploy.yml race condition on fresh repo
+### ~~I-15: deploy.yml race condition on fresh repo~~ ✅
 
 **Location**: `.github/workflows/deploy.yml:50`
 
 `git diff HEAD~1` fails if the repo has only one commit (e.g. after a force push). Edge case, but would break the deploy.
+
+**Fix**: `git diff HEAD~1 --name-only 2>/dev/null || echo "Dockerfile"` — falls back to full rebuild when diff is unavailable.

@@ -21,6 +21,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    environment: production
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
@@ -34,7 +35,8 @@ jobs:
             git pull origin main
 
             # Rebuild only if Docker-related files changed
-            CHANGED=$(git diff HEAD~1 --name-only)
+            # Handle fresh repos where HEAD~1 doesn't exist (e.g. after force push)
+            CHANGED=$(git diff HEAD~1 --name-only 2>/dev/null || echo "Dockerfile")
             if echo "$CHANGED" | grep -qE '^(Dockerfile|requirements\.txt|docker-compose\.yml|entrypoint\.sh)'; then
               echo "Docker files changed — rebuilding..."
               docker compose up -d --build
