@@ -528,6 +528,10 @@ async function saveAnnotation(gameId, round, turn, index, category, note) {
 async function addGameWithProgress(mortalData, date, onProgress) {
   if (onProgress) onProgress({ step: "categorizing", message: "Adding game and categorizing..." });
   const res = await apiPost("/api/games/add", { mortal_data: mortalData, date: date || undefined });
+  if (!res.ok) {
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { return { error: `Server error ${res.status}: ${text.slice(0, 200)}` }; }
+  }
   return await res.json();
 }
 
