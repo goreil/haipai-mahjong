@@ -50,7 +50,7 @@ No template showing required environment variables. New developers or deployment
 
 ## Medium Priority
 
-### I-05: Image versions not pinned
+### ~~I-05: Image versions not pinned~~ ✅
 
 **Location**: `Dockerfile:2,18`, `docker-compose.yml:24,37`
 

@@ -27,7 +27,7 @@ services:
       - "5000"
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
       - "80:80"
@@ -40,7 +40,7 @@ services:
       - app
 
   certbot:
-    image: certbot/certbot
+    image: certbot/certbot:v3.1.0
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt

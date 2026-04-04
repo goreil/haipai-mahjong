@@ -1,5 +1,5 @@
 # Stage 1: Build mahjong-cpp nanikiru binary
-FROM debian:12-slim AS builder
+FROM debian:12.9-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake g++ make git ca-certificates \
@@ -15,7 +15,7 @@ RUN mkdir -p build && cd build \
     && cmake --install . --prefix install
 
 # Stage 2: Runtime
-FROM python:3.12-slim
+FROM python:3.12.8-slim-bookworm
 
 # Install nanikiru binary + data files
 COPY --from=builder /build/mahjong-cpp/build/install/bin/ /opt/nanikiru/
