@@ -1026,12 +1026,6 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
     """
     import db as dbmod
 
-    # SQLite connections can't cross threads; open a fresh one if needed
-    try:
-        conn.execute("SELECT 1")
-    except Exception:
-        conn = dbmod.get_db()
-
     game_row = conn.execute(
         "SELECT mortal_file FROM games WHERE id = ?", (game_id,)
     ).fetchone()
@@ -1116,39 +1110,24 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
             work_items.append((mr, m, mortal_data, kyoku_idx, entry,
                                dora_indicators, defense_ctx))
 
-    total_work = len(work_items)
-    if total_work == 0:
+    if not work_items:
         return 0, 0, 0
 
-    # Phase 2: Categorize in parallel (C++ calls release the GIL).
-    # Each worker loads ~20MB of C++ lookup tables, so limit concurrency
-    # to avoid OOM on memory-constrained servers.
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-    max_workers = min(total_work, 2)
-
-    def _do_categorize(item):
-        mr, m, md, ki, entry, dora, dctx = item
-        needs_api = (m.get("actual", {}).get("type") == "dahai" and
-                     m.get("expected", {}).get("type") == "dahai")
-        cat, cpp_data, safety_data, opp_discards = categorize_mistake(
-            m, md, ki, entry, dora, defense_ctx=dctx,
-        )
-        return mr, cat, cpp_data, safety_data, opp_discards, needs_api
-
-    results = []
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(_do_categorize, item): item for item in work_items}
-        for future in as_completed(futures):
-            results.append(future.result())
-
-    # Phase 3: Write results to DB (sequential)
+    # Phase 2+3: Categorize and write results
     categorized = 0
     api_calls = 0
     failures = 0
 
-    for mr, cat, cpp_data, safety_data, opp_discards, needs_api in results:
+    for mr, m, mortal_data, kyoku_idx, entry, dora_indicators, defense_ctx in work_items:
+        needs_api = (m.get("actual", {}).get("type") == "dahai" and
+                     m.get("expected", {}).get("type") == "dahai")
         if needs_api:
             api_calls += 1
+
+        cat, cpp_data, safety_data, opp_discards = categorize_mistake(
+            m, mortal_data, kyoku_idx, entry, dora_indicators,
+            defense_ctx=defense_ctx,
+        )
 
         if cat:
             updates = {"category": cat}
@@ -1166,8 +1145,8 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
         elif needs_api:
             failures += 1
 
-    if on_progress:
-        on_progress(total_work, len(mistake_rows))
+        if on_progress:
+            on_progress(categorized + failures, len(work_items))
 
     return categorized, api_calls, failures
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Flask web server for mahjong game review."""
 
-from flask import Flask, Response, g, jsonify, redirect, render_template_string, request, send_from_directory, url_for
+from flask import Flask, g, jsonify, redirect, render_template_string, request, send_from_directory, url_for
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
@@ -519,61 +519,20 @@ def api_add():
 
     game_id = db.add_game(conn, uid, game_dict)
 
-    def generate():
-        from mj_categorize import categorize_game_db
-        import threading
-        import queue
+    # Categorize synchronously — in-process calls are fast (~3s per game)
+    from mj_categorize import categorize_game_db
+    try:
+        cat_n, api_calls, failures = categorize_game_db(conn, game_id)
+    except Exception as e:
+        return jsonify({"ok": True, "game_id": game_id, "summary": game_dict.get("summary", {}),
+                        "categorized": 0, "error": str(e)})
 
-        # Own connection — the request-scoped conn may be closed by teardown
-        # before this generator finishes, and the background thread needs its own.
-        gen_conn = db.get_db()
-
-        yield f"data: {json.dumps({'step': 'parsing', 'message': 'Game added, categorizing mistakes...'})}\n\n"
-
-        progress_q = queue.Queue()
-
-        def progress_cb(done, total):
-            progress_q.put((done, total))
-
-        result_holder = {}
-
-        def run_categorize():
-            try:
-                cat_n, api_calls_n, failures_n = categorize_game_db(gen_conn, game_id, on_progress=progress_cb)
-                result_holder["cat_n"] = cat_n
-                result_holder["api_calls"] = api_calls_n
-                result_holder["failures"] = failures_n
-            except Exception as e:
-                result_holder["error"] = str(e)
-            finally:
-                progress_q.put(None)  # sentinel
-
-        t = threading.Thread(target=run_categorize)
-        t.start()
-
-        while True:
-            item = progress_q.get()
-            if item is None:
-                break
-            done, total = item
-            yield f"data: {json.dumps({'step': 'categorizing', 'done': done, 'total': total})}\n\n"
-
-        t.join()
-
-        if "error" in result_holder:
-            yield f"data: {json.dumps({'step': 'error', 'message': result_holder['error']})}\n\n"
-        else:
-            cat_n = result_holder.get("cat_n", 0)
-            stats = db.compute_summary_for_game(gen_conn, game_id) if cat_n > 0 else game_dict.get("summary", {})
-            final = {"step": "done", "ok": True, "game_id": game_id, "summary": stats,
-                      "categorized": cat_n, "api_calls": result_holder.get("api_calls", 0)}
-            if result_holder.get("failures"):
-                final["failures"] = result_holder["failures"]
-            yield f"data: {json.dumps(final)}\n\n"
-
-        gen_conn.close()
-
-    return Response(generate(), mimetype="text/event-stream")
+    stats = db.compute_summary_for_game(conn, game_id) if cat_n > 0 else game_dict.get("summary", {})
+    result = {"ok": True, "game_id": game_id, "summary": stats,
+              "categorized": cat_n, "api_calls": api_calls}
+    if failures:
+        result["failures"] = failures
+    return jsonify(result)
 
 
 @app.route("/api/practice")

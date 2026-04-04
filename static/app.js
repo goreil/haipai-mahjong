@@ -526,31 +526,9 @@ async function saveAnnotation(gameId, round, turn, index, category, note) {
 }
 
 async function addGameWithProgress(mortalData, date, onProgress) {
+  if (onProgress) onProgress({ step: "categorizing", message: "Adding game and categorizing..." });
   const res = await apiPost("/api/games/add", { mortal_data: mortalData, date: date || undefined });
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let result = null;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    // Parse SSE lines
-    const lines = buffer.split("\n");
-    buffer = lines.pop(); // keep incomplete line
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const data = JSON.parse(line.slice(6));
-      if (data.step === "done" || data.step === "error") {
-        result = data;
-      } else if (onProgress) {
-        onProgress(data);
-      }
-    }
-  }
-  return result || { error: "No response from server" };
+  return await res.json();
 }
 
 // --- Render: Game List ---
@@ -1308,14 +1286,14 @@ async function showPractice() {
 
   const data = await fetchPractice();
   if (!data || data.error) {
-    content.innerHTML = '<div class="empty-state">No eligible practice problems (need ??/??? tile efficiency mistakes)</div>';
-    return;
+    practice.problem = null;
+    practice.poolSize = 0;
+  } else {
+    practice.problem = data;
+    practice.poolSize = data.pool_size;
   }
-
-  practice.problem = data;
   practice.answered = false;
   practice.userPick = null;
-  practice.poolSize = data.pool_size;
   renderPractice();
 }
 
@@ -1356,11 +1334,6 @@ function submitPracticeAnswer(tile) {
 function renderPractice() {
   const content = document.getElementById("content");
   const p = practice.problem;
-  const m = p.mistake;
-  const answered = practice.answered;
-
-  const sc = sevClass(m.severity);
-  const shantenStr = m.shanten != null ? `${m.shanten}-shanten` : "";
 
   let html = `
     <div class="practice-header">
@@ -1381,7 +1354,24 @@ function renderPractice() {
       </select>
       <label class="practice-filter-check"><input type="checkbox" ${practice.filterDefense ? "checked" : ""} onchange="setPracticeFilter('defense', this.checked)"> Riichi only</label>
       ${!isAnonymous ? `<label class="practice-filter-check practice-opt-in"><input type="checkbox" ${practiceOptIn ? "checked" : ""} onchange="togglePracticeOptIn(this.checked)"> Share my games in community pool</label>` : ''}
-    </div>
+    </div>`;
+
+  if (!p) {
+    const hint = practiceSource === "mine"
+      ? "No eligible problems in your games. Uncheck \"My mistakes only\" to try the community pool."
+      : "No problems available yet. Users need to opt in to share their games.";
+    html += `<div class="empty-state">${hint}</div>`;
+    content.innerHTML = html;
+    return;
+  }
+
+  const m = p.mistake;
+  const answered = practice.answered;
+
+  const sc = sevClass(m.severity);
+  const shantenStr = m.shanten != null ? `${m.shanten}-shanten` : "";
+
+  html += `
 
     <div class="practice-context">
       ${p.game_date ? `<span>${p.game_date}</span>` : ''}
