@@ -46,27 +46,7 @@ jobs:
             # Wait for app to be ready
             sleep 3
 
-            # Re-run categorization if categorization code changed
-            if echo "$CHANGED" | grep -qE '^(mj_categorize\.py|mj_defense\.py|mj_games\.py)'; then
-              echo "Categorization code changed — re-running..."
-              docker compose exec -T app python3 -c "
-            import db
-            from mj_categorize import categorize_game_db
-            conn = db.get_db()
-            games = conn.execute('SELECT id FROM games WHERE mortal_file IS NOT NULL').fetchall()
-            total = 0
-            for g in games:
-                n, _, _ = categorize_game_db(conn, g['id'], force=True)
-                total += n
-            conn.commit()
-            for g in games:
-                db.compute_summary_for_game(conn, g['id'])
-            conn.close()
-            print(f'Re-categorized {total} mistakes across {len(games)} games')
-            "
-            fi
-
-            # Always recompute stats (cheap operation)
+            # Recompute stats (cheap, no API calls)
             docker compose exec -T app python3 -c "
             import db
             conn = db.get_db()
