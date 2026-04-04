@@ -702,8 +702,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     req = build_api_request(hand, melds, round_wind, seat_wind, dora_ids, wall)
 
     try:
-        from cpp_cache import cached_call
-        response = cached_call(req)
+        response = call_mahjong_cpp(req)
     except Exception as e:
         err_msg = str(e)
         # Hand already in winning form — strategy decision, not efficiency

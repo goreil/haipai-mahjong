@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gosu && rm -rf 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py cpp_cache.py db.py mahjong_cpp.py mj_categorize.py mj_defense.py mj_games.py mj_parse.py ./
+COPY app.py db.py mahjong_cpp.py mj_categorize.py mj_defense.py mj_games.py mj_parse.py ./
 COPY static/ static/
 COPY riichi-mahjong-tiles/Regular/ riichi-mahjong-tiles/Regular/
 
