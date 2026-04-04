@@ -450,22 +450,37 @@ class TestAddGamePipeline:
         with open(SMALL_MORTAL_FILE) as f:
             return json.load(f)
 
-    def test_add_game_returns_json(self, client, mortal_json):
-        """POST /api/games/add should return valid JSON with game_id."""
+    @staticmethod
+    def _parse_sse(res):
+        """Parse an SSE response, return the final 'done'/'error' event."""
+        result = None
+        for line in res.data.decode().split("\n"):
+            if not line.startswith("data: "):
+                continue
+            data = json.loads(line[6:])
+            if data.get("step") in ("done", "error"):
+                result = data
+        return result
+
+    def _add_game(self, client, mortal_json):
+        """Post a game and return the parsed SSE result."""
         res = client.post("/api/games/add", json={"mortal_data": mortal_json},
                           content_type="application/json")
         assert res.status_code == 200, f"Status {res.status_code}: {res.data[:200]}"
-        data = res.get_json()
-        assert data is not None, f"Response is not JSON: {res.data[:200]}"
+        data = self._parse_sse(res)
+        assert data is not None, f"No done/error event in SSE: {res.data[:500]}"
+        return data
+
+    def test_add_game_returns_json(self, client, mortal_json):
+        """POST /api/games/add should return SSE with done event containing game_id."""
+        data = self._add_game(client, mortal_json)
         assert data.get("ok") is True
         assert "game_id" in data
         assert isinstance(data["game_id"], int)
 
     def test_add_game_categorizes_mistakes(self, client, mortal_json):
         """Added game should have categorized mistakes in the DB."""
-        res = client.post("/api/games/add", json={"mortal_data": mortal_json},
-                          content_type="application/json")
-        data = res.get_json()
+        data = self._add_game(client, mortal_json)
         game_id = data["game_id"]
         assert data.get("categorized", 0) > 0, f"No mistakes categorized: {data}"
 
@@ -484,9 +499,7 @@ class TestAddGamePipeline:
 
     def test_add_game_has_summary(self, client, mortal_json):
         """Added game should have a computed summary with EV stats."""
-        res = client.post("/api/games/add", json={"mortal_data": mortal_json},
-                          content_type="application/json")
-        data = res.get_json()
+        data = self._add_game(client, mortal_json)
         summary = data.get("summary", {})
         assert summary.get("total_mistakes", 0) > 0
         assert "total_ev_loss" in summary
@@ -494,9 +507,7 @@ class TestAddGamePipeline:
 
     def test_add_game_has_board_state(self, client, mortal_json):
         """Each mistake should have board_state populated."""
-        res = client.post("/api/games/add", json={"mortal_data": mortal_json},
-                          content_type="application/json")
-        data = res.get_json()
+        data = self._add_game(client, mortal_json)
         game_id = data["game_id"]
 
         conn = db.get_db()
@@ -507,26 +518,37 @@ class TestAddGamePipeline:
             mdata = json.loads(row["data_json"])
             assert "board_state" in mdata, f"Missing board_state in mistake"
 
-    def test_get_game_after_add(self, client, mortal_json):
-        """GET /api/games/<id> should return the added game with mistakes."""
+    def test_add_game_streams_progress(self, client, mortal_json):
+        """SSE stream should include progress events before the done event."""
         res = client.post("/api/games/add", json={"mortal_data": mortal_json},
                           content_type="application/json")
-        game_id = res.get_json()["game_id"]
+        events = []
+        for line in res.data.decode().split("\n"):
+            if line.startswith("data: "):
+                events.append(json.loads(line[6:]))
+        # Should have: parsing, at least one categorizing, done
+        steps = [e["step"] for e in events]
+        assert "parsing" in steps
+        assert "done" in steps
+        assert any(s == "categorizing" for s in steps), f"No progress events: {steps}"
+
+    def test_get_game_after_add(self, client, mortal_json):
+        """GET /api/games/<id> should return the added game with mistakes."""
+        data = self._add_game(client, mortal_json)
+        game_id = data["game_id"]
 
         res2 = client.get(f"/api/games/{game_id}")
         assert res2.status_code == 200
         game = res2.get_json()
         assert game["id"] == game_id
         assert len(game.get("rounds", [])) > 0
-        # At least one round should have mistakes
         all_mistakes = [m for r in game["rounds"] for m in r.get("mistakes", [])]
         assert len(all_mistakes) > 0
 
     def test_delete_game(self, client, mortal_json):
         """DELETE /api/games/<id> should remove the game."""
-        res = client.post("/api/games/add", json={"mortal_data": mortal_json},
-                          content_type="application/json")
-        game_id = res.get_json()["game_id"]
+        data = self._add_game(client, mortal_json)
+        game_id = data["game_id"]
 
         res2 = client.delete(f"/api/games/{game_id}")
         assert res2.status_code == 200
@@ -536,11 +558,9 @@ class TestAddGamePipeline:
 
     def test_categorize_endpoint(self, client, mortal_json):
         """POST /api/games/<id>/categorize should re-categorize."""
-        res = client.post("/api/games/add", json={"mortal_data": mortal_json},
-                          content_type="application/json")
-        game_id = res.get_json()["game_id"]
+        data = self._add_game(client, mortal_json)
+        game_id = data["game_id"]
 
-        # Force re-categorize
         res2 = client.post(f"/api/games/{game_id}/categorize",
                            json={"force": True}, content_type="application/json")
         assert res2.status_code == 200
@@ -550,8 +570,7 @@ class TestAddGamePipeline:
 
     def test_trends_after_add(self, client, mortal_json):
         """GET /api/trends should include data after adding a game."""
-        client.post("/api/games/add", json={"mortal_data": mortal_json},
-                    content_type="application/json")
+        self._add_game(client, mortal_json)
 
         res = client.get("/api/trends")
         assert res.status_code == 200

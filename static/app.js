@@ -526,13 +526,35 @@ async function saveAnnotation(gameId, round, turn, index, category, note) {
 }
 
 async function addGameWithProgress(mortalData, date, onProgress) {
-  if (onProgress) onProgress({ step: "categorizing", message: "Adding game and categorizing..." });
   const res = await apiPost("/api/games/add", { mortal_data: mortalData, date: date || undefined });
   if (!res.ok) {
     const text = await res.text();
     try { return JSON.parse(text); } catch { return { error: `Server error ${res.status}: ${text.slice(0, 200)}` }; }
   }
-  return await res.json();
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = JSON.parse(line.slice(6));
+      if (data.step === "done" || data.step === "error") {
+        result = data;
+      } else if (onProgress) {
+        onProgress(data);
+      }
+    }
+  }
+  return result || { error: "No response from server" };
 }
 
 // --- Render: Game List ---
