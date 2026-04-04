@@ -465,6 +465,9 @@ async function fetchGames() {
   const res = await fetch("/api/games");
   state.games = await res.json();
   renderGameList();
+  // 6a: Hide import button when games exist
+  const importBtn = document.getElementById("import-btn");
+  if (importBtn) importBtn.style.display = state.games.length > 0 ? "none" : "";
   if (state.games.length === 0 && !state.currentGame) {
     showOnboarding();
   }
@@ -589,6 +592,18 @@ function renderGame() {
       <span>${rating.label}</span>
       ${cleanRounds > 0 ? `<span class="game-rating-detail">${cleanRounds}/${game.rounds.length} clean rounds</span>` : ""}
     </div>`;
+  }
+
+  // Filter banner (7b): show when severity filters hide some mistakes
+  const totalMistakes = game.rounds.reduce((sum, r) => sum + r.mistakes.length, 0);
+  const visibleMistakes = game.rounds.reduce((sum, r) => sum + r.mistakes.filter(m => {
+    if (m.severity === "?" && !state.showMinor) return false;
+    if (m.severity === "??" && !state.showMedium) return false;
+    return true;
+  }).length, 0);
+  if (totalMistakes > 0 && visibleMistakes < totalMistakes) {
+    const hidden = totalMistakes - visibleMistakes;
+    html += `<div class="filter-banner">Showing ${visibleMistakes} of ${totalMistakes} mistakes. ${hidden} hidden by severity filter.</div>`;
   }
 
   // Rounds
@@ -1262,9 +1277,9 @@ function renderGroupStackedChart(games, groups) {
 async function fetchPractice() {
   const params = new URLSearchParams();
   if (practice.filterSeverity) params.set("severity", practice.filterSeverity);
-  if (practice.filterGroup) params.set("group", practice.filterGroup);
   if (practice.filterDefense) params.set("defense", "1");
-  if (practice.filterCalcAgree) params.set("calc_agree", "1");
+  // Always restrict to efficiency categories (1A) for practice
+  params.set("calc_agree", "1");
   const qs = params.toString();
   const res = await fetch(`/api/practice${qs ? "?" + qs : ""}`);
   if (!res.ok) return null;
@@ -1280,7 +1295,7 @@ async function showPractice() {
 
   const data = await fetchPractice();
   if (!data || data.error) {
-    content.innerHTML = '<div class="empty-state">No eligible practice problems (need ??/??? discard mistakes)</div>';
+    content.innerHTML = '<div class="empty-state">No eligible practice problems (need ??/??? tile efficiency mistakes)</div>';
     return;
   }
 
@@ -1334,32 +1349,22 @@ function renderPractice() {
   const sc = sevClass(m.severity);
   const shantenStr = m.shanten != null ? `${m.shanten}-shanten` : "";
 
-  // Build group options from CATEGORY_INFO
-  const groups = [...new Set(Object.values(CATEGORY_INFO).map(c => c.group))];
-  const groupOpts = groups.map(g =>
-    `<option value="${g}" ${practice.filterGroup === g ? "selected" : ""}>${g}</option>`
-  ).join("");
-
   let html = `
     <div class="practice-header">
-      <h2>Practice</h2>
+      <h2>Tile Efficiency Practice</h2>
       <div class="practice-score">
         <span class="practice-score-num">${practice.correct}</span>/<span>${practice.total}</span> correct
         <span class="practice-pool">${practice.poolSize} problems</span>
       </div>
     </div>
+    <p class="practice-explanation">Practice hand-building decisions where the correct tile can be determined from your hand alone.</p>
     <div class="practice-filters">
-      <select onchange="setPracticeFilter('group', this.value)">
-        <option value="">All categories</option>
-        ${groupOpts}
-      </select>
       <select onchange="setPracticeFilter('severity', this.value)">
         <option value="" ${!practice.filterSeverity ? "selected" : ""}>All severity</option>
         <option value="???" ${practice.filterSeverity === "???" ? "selected" : ""}>??? only</option>
         <option value="??" ${practice.filterSeverity === "??" ? "selected" : ""}>?? only</option>
       </select>
       <label class="practice-filter-check"><input type="checkbox" ${practice.filterDefense ? "checked" : ""} onchange="setPracticeFilter('defense', this.checked)"> Riichi only</label>
-      <label class="practice-filter-check"><input type="checkbox" ${practice.filterCalcAgree ? "checked" : ""} onchange="setPracticeFilter('calc_agree', this.checked)"> Calc agrees</label>
     </div>
 
     <div class="practice-context">
@@ -1537,7 +1542,7 @@ function showHelp() {
       <p>&bull; <b>Both agree on the best tile</b> (or nearly agree) &rarr; This is a <span style="color:#4a9eff">Tile Efficiency</span> error. If the choice involves an honor or terminal vs. a number tile, it's categorized as <span style="color:#38bdf8">Value Tile Ordering</span>; otherwise it's a general efficiency mistake.</p>
       <p>&bull; <b>They disagree</b> &rarr; Mortal sees something the calculator doesn't. This is a <span style="color:#ff6b6b">strategic</span> decision. We then check defense context:</p>
       <p style="padding-left:16px">&bull; If an opponent is in riichi and Mortal chose a significantly safer tile &rarr; <b>Defense</b> (you should have played safe)</p>
-      <p style="padding-left:16px">&bull; Otherwise &rarr; <b>Push/Fold</b> (general strategic disagreement)</p>
+      <p style="padding-left:16px">&bull; Otherwise &rarr; <b>Complex Decision</b> (general strategic disagreement)</p>
       <p>&bull; <b>Non-discard actions</b> (chi, pon, riichi, kan) are categorized by type: Meld, Riichi, or Kan.</p>
       <p style="margin-top:8px"><i>"Reasonable agreement"</i>: If Mortal's pick has the same shanten and at least 90% of the calculator's best expected score, we still call it efficiency &mdash; the two engines agree in substance even if they pick different tiles.</p>
     </div>
@@ -1586,10 +1591,11 @@ function showHelp() {
     </div>
 
     <div class="help-section">
-      <h3>Practice Mode</h3>
-      <p>Practice replays your actual past mistakes as quizzes. You see the hand + draw and pick a discard. After answering, the full analysis is revealed.</p>
+      <h3>Tile Efficiency Practice</h3>
+      <p>Practice replays your tile efficiency mistakes as quizzes. You see the hand + draw and pick a discard. After answering, the full analysis is revealed.</p>
+      <p>Only tile efficiency mistakes are included &mdash; decisions where the correct tile can be determined from your hand alone. Strategic decisions (defense, push/fold) are excluded because they depend on game context that a hand quiz can't capture.</p>
       <p><b>Spaced repetition:</b> Problems you get wrong (or haven't seen) appear 3x more often. Problems you've answered correctly multiple times appear less. This focuses practice on your weakest areas.</p>
-      <p><b>Filters:</b> Focus on specific skill areas (Efficiency, Strategy, etc.), severity levels, or riichi-only situations.</p>
+      <p><b>Filters:</b> Focus on severity levels or riichi-only situations.</p>
     </div>
 
     <div class="help-section">
@@ -1689,5 +1695,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const catRes = await fetch("/api/categories");
   CATEGORY_INFO = await catRes.json();
+  // 2b: Override "Push/Fold" — it's a catch-all for strategic disagreements, not specifically push/fold
+  if (CATEGORY_INFO["3A"]) {
+    CATEGORY_INFO["3A"].label = "Complex Decision";
+    CATEGORY_INFO["3A"].desc = "Mortal's strategic evaluation differs from pure tile efficiency — may involve hand value, position, or game state factors";
+    delete CATEGORY_INFO["3A"].study;
+  }
   fetchGames();
 });

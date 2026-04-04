@@ -36,7 +36,7 @@ The UI shows badges like "Strategy / Push/Fold" alongside codes like "3A". The c
 
 **Recommendation:** Drop the category codes from all user-facing UI. Show only the group + label (e.g. "Strategy / Push/Fold"). Keep codes internal for the API and database. The help page currently shows them prominently too (`help-cat-code`) -- remove.
 
-### 2b. "Push/Fold" (3A) doesn't map well to Riichi Book concepts (MEDIUM)
+### 2b. ~~"Push/Fold" (3A) doesn't map well to Riichi Book concepts~~ (MEDIUM) ✅ DONE
 
 The study reference says "Riichi Book Ch 8.1" but Push/Fold is a catch-all for "Mortal and mahjong-cpp disagree, and it's not defense." This covers a huge range of strategic decisions that aren't specifically push/fold. The label is misleading -- many of these are hand value decisions, wait selection, or complex multi-factor tradeoffs that Mortal evaluates differently from pure tile efficiency.
 
@@ -100,13 +100,13 @@ This isn't easily fixable since it's inherent to Mortal's output, but consider a
 
 ## 5. Practice Mode Issues
 
-### 5a. Practice includes non-efficiency categories (HIGH -- noted in vision.txt)
+### 5a. ~~Practice includes non-efficiency categories~~ (HIGH -- noted in vision.txt) ✅ DONE
 
 `vision.txt:76-79` already notes this: practice mode includes strategy/defense mistakes where the "correct" answer depends on reading opponents, game state, etc. The user is shown only their hand and asked to pick a discard, but for a 3A "Push/Fold" mistake, the right answer requires strategic judgment that can't be learned from a hand quiz.
 
 **Recommendation:** (Already in vision.txt) Rename to "Tile Efficiency Practice" and filter to only 1A and 2A categories. Add a clear explanation: "Practice pure hand-building decisions where the correct tile can be determined from your hand alone."
 
-### 5b. Practice "Calc agrees" filter label is unclear (LOW)
+### 5b. ~~Practice "Calc agrees" filter label is unclear~~ (LOW) ✅ DONE
 
 The checkbox label "Calc agrees" doesn't explain what it means. A user who hasn't read the help page won't know this filters to mistakes where mahjong-cpp and Mortal recommend the same tile.
 
@@ -116,7 +116,7 @@ The checkbox label "Calc agrees" doesn't explain what it means. A user who hasn'
 
 ## 6. Game List / Sidebar Issues
 
-### 6a. "Import games.json" button is permanent (LOW)
+### 6a. ~~"Import games.json" button is permanent~~ (LOW) ✅ DONE
 
 `index.html:23` -- the import button is always visible in the sidebar. This is a one-time migration tool for the legacy JSON format. After importing, it serves no purpose and takes up space.
 
@@ -138,7 +138,7 @@ The severity markers `?`, `??`, `???` are compact but non-obvious. New users won
 
 **Recommendation:** Add tooltips to severity markers (e.g. `???` -> "Major mistake (>0.10 EV)"). Or use words: "minor / medium / major" alongside the symbols.
 
-### 7b. Medium and minor mistakes hidden by default with no indication (MEDIUM)
+### 7b. ~~Medium and minor mistakes hidden by default with no indication~~ (MEDIUM) ✅ DONE
 
 `index.html:31-32` -- `??` and `?` mistakes are hidden by default via unchecked checkboxes. A user reviewing a game sees only `???` mistakes and might think the game had very few errors. The round headers show `(2/5)` when filtered, but this is subtle.
 
@@ -179,7 +179,7 @@ After clicking Help, Trends, or Practice, the user can only return by clicking a
 
 **Recommendation:** Change "---" to "Uncategorized" or "Not categorized."
 
-### 9d. "RIICHI" badge in hand row is small and easy to miss
+### 9d. ~~"RIICHI" badge in hand row is small and easy to miss~~ ✅ DONE
 
 `app.js:654` shows a small "Riichi" text badge when `safety_ratings` exist. This is the primary indicator that an opponent declared riichi, which is the single most important piece of defensive context.
 
@@ -193,23 +193,23 @@ After clicking Help, Trends, or Practice, the user can only return by clicking a
 |----------|-------|---------|
 | ~~HIGH~~ | ~~Help page references deleted categories (1B-1E, 2B)~~ ✅ | 1a |
 | ~~HIGH~~ | ~~Opponent melds hidden in "Details" collapse~~ ✅ | 3a |
-| HIGH | Practice includes non-efficiency categories | 5a |
+| ~~HIGH~~ | ~~Practice includes non-efficiency categories~~ ✅ | 5a |
 | ~~HIGH~~ | ~~Category codes add noise without helping users~~ ✅ | 2a |
 | ~~MEDIUM~~ | ~~Discards always open even when irrelevant~~ ✅ | 3b |
-| MEDIUM | "Push/Fold" is a misleading catch-all | 2b |
+| ~~MEDIUM~~ | ~~"Push/Fold" is a misleading catch-all~~ ✅ | 2b |
 | MEDIUM | mj_games.py CATEGORIES list is stale | 1b |
 | ~~MEDIUM~~ | ~~Severity symbols unexplained~~ ✅ | 7a |
-| MEDIUM | Hidden mistakes with subtle indicator | 7b |
+| ~~MEDIUM~~ | ~~Hidden mistakes with subtle indicator~~ ✅ | 7b |
 | MEDIUM | Onboarding JSON extraction is fragile | 8a |
 | ~~MEDIUM~~ | ~~"Tile Calc" header ambiguous~~ ✅ | 4a |
 | LOW | vision.txt says "15-category" | 1c |
 | LOW | 2A elevated to top-level group | 2c |
 | LOW | Scores buried in details | 3c |
-| LOW | "Calc agrees" filter label unclear | 5b |
-| LOW | Import button always visible | 6a |
+| ~~LOW~~ | ~~"Calc agrees" filter label unclear~~ ✅ | 5b |
+| ~~LOW~~ | ~~Import button always visible~~ ✅ | 6a |
 | LOW | Game numbering meaningless | 6b |
 | ~~LOW~~ | ~~Help page titled "Category Reference"~~ ✅ | 9a |
 | ~~LOW~~ | ~~No back navigation from Help/Trends/Practice~~ ✅ | 9b |
 | ~~LOW~~ | ~~"---" for uncategorized~~ ✅ | 9c |
-| LOW | Riichi badge too subtle | 9d |
+| ~~LOW~~ | ~~Riichi badge too subtle~~ ✅ | 9d |
 | LOW | Mortal Q values opaque | 4b |
