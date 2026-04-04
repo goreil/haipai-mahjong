@@ -8,7 +8,7 @@
 
 ## High Priority
 
-### I-01: gunicorn --reload in production
+### ~~I-01: gunicorn --reload in production~~ ✅
 
 **Location**: `docker-compose.yml:19`
 
@@ -18,7 +18,7 @@ The compose file uses `--reload` which watches for file changes and restarts wor
 
 ---
 
-### I-02: No health check endpoint
+### ~~I-02: No health check endpoint~~ ✅
 
 **Location**: `app.py` (missing), `Dockerfile` (no HEALTHCHECK), `docker-compose.yml` (no healthcheck)
 

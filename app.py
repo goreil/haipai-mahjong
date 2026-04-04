@@ -337,6 +337,11 @@ def logout():
     return redirect("/login")
 
 
+@app.route("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.route("/")
 @login_required
 def index():
@@ -548,7 +553,10 @@ def api_add():
     if not dest.exists():
         dest.write_bytes(mortal_bytes)
 
-    game_dict = parse_game(mortal_data, game_date=game_date)
+    try:
+        game_dict = parse_game(mortal_data, game_date=game_date)
+    except (ValueError, KeyError, IndexError, TypeError) as e:
+        return jsonify({"error": f"Failed to parse Mortal data: {e}"}), 400
     game_dict["mortal_file"] = str(dest.relative_to(DIR))
     compute_summary(game_dict)
 
