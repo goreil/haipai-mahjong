@@ -30,7 +30,7 @@ function catDesc(code) {
 
 const GROUP_COLORS = {
   "Efficiency": "#4a9eff",
-  "Value Tiles": "#38bdf8",
+  "Value Tiles": "#6db3e8",
   "Strategy": "#ff6b6b",
   "Meld": "#ffa94d",
   "Riichi": "#a855f7",
@@ -208,16 +208,14 @@ function renderBoardContext(m) {
     }
   }
 
-  // Collapsible details (scores only — melds are now inline with discards)
+  // Scores inline in info bar
   if (b.scores && b.scores.length) {
-    html += `<details class="board-details"><summary>Scores</summary>`;
-    html += `<div class="scores-row">`;
+    html += `<div class="scores-bar">`;
     for (let i = 0; i < b.scores.length; i++) {
       const name = SEAT_NAMES[i] || `P${i}`;
       html += `<span class="score-item"><span class="score-seat">${name}</span> ${b.scores[i].toLocaleString()}</span>`;
     }
     html += `</div>`;
-    html += `</details>`;
   }
 
   html += `</div>`;
@@ -345,9 +343,9 @@ function renderEvComparison(m) {
   html += `<table class="ev-table">`;
   html += `<thead><tr>
     <th>Tile</th>
-    <th class="mortal-col">Mortal Q</th>
-    <th class="mortal-col">Prob</th>
-    <th class="cpp-col">Exp Score</th>
+    <th class="mortal-col" title="AI's strategic evaluation (higher = better)">Mortal Q</th>
+    <th class="mortal-col" title="AI's confidence in this discard">Prob</th>
+    <th class="cpp-col" title="Expected score from pure tile efficiency">Exp Score</th>
     <th class="cpp-col">Win%</th>
     <th class="cpp-col">Shanten</th>
     ${hasSafety ? '<th class="safety-col">Safety</th>' : ''}
@@ -483,12 +481,14 @@ function showOnboarding() {
         <li>Play a game on <a href="https://tenhou.net" target="_blank">Tenhou</a> or <a href="https://mahjongsoul.game.yo-star.com" target="_blank">Mahjong Soul</a></li>
         <li>Go to <a href="https://mjai.ekyu.moe" target="_blank">mjai.ekyu.moe</a> and paste your replay link</li>
         <li>Wait for Mortal AI to finish analysis</li>
-        <li>Once the results page loads, look at the URL in your browser's address bar. It will look like:<br>
-            <code>https://mjai.ekyu.moe/killerducky/?data=<b>/report/abc123.json</b></code><br>
-            Copy the <b>/report/...json</b> part and open it directly:<br>
-            <code>https://mjai.ekyu.moe<b>/report/abc123.json</b></code></li>
-        <li>You should see a page full of raw data. Press <b>Ctrl+S</b> (or Cmd+S on Mac) to save it as a file</li>
-        <li>Click <strong>+ Add Game</strong> in the sidebar and upload that file</li>
+        <li>Download the analysis JSON:
+          <ul class="onboarding-sub">
+            <li>In the address bar, find the part that says <code>/report/...json</code></li>
+            <li>Open that path directly: <code>https://mjai.ekyu.moe/report/abc123.json</code></li>
+            <li>You'll see a page of raw data &mdash; press <b>Ctrl+S</b> (Cmd+S on Mac) to save it</li>
+          </ul>
+        </li>
+        <li>Click <strong>+ Add Game</strong> below and upload the saved file</li>
       </ol>
       <button class="btn btn-primary" onclick="showAddModal()">+ Add Game</button>
     </div>
@@ -541,9 +541,11 @@ function renderGameList() {
     const pct = g.total > 0 ? Math.round((g.annotated / g.total) * 100) : 100;
     const noMajor = !(s.by_severity || {})["???"];
     const rating = gameRating(s);
+    const dateObj = new Date(g.date + "T00:00:00");
+    const shortDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return `
       <div class="game-item ${active}" onclick="fetchGame(${g.id})">
-        <div class="date">Game ${g.id + 1} &mdash; ${g.date}${rating.icon ? ` <span class="game-rating-icon" title="${rating.label}">${rating.icon}</span>` : ""}</div>
+        <div class="date">${shortDate}${rating.icon ? ` <span class="game-rating-icon" title="${rating.label}">${rating.icon}</span>` : ""}</div>
         <div class="stats">
           ${s.total_mistakes || 0} mistakes &middot; ${(s.total_ev_loss || 0).toFixed(2)} EV
           ${s.total_decisions ? ` &middot; ${s.ev_per_decision.toFixed(4)}/D` : ""}
@@ -564,9 +566,11 @@ function renderGame() {
   const s = game.summary || {};
   const sev = s.by_severity || {};
 
+  const dateObj = new Date(game.date + "T00:00:00");
+  const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   let html = `
     <div class="game-header">
-      <h2>Game ${state.currentGame + 1} &mdash; ${game.date}
+      <h2>${displayDate}
         <button class="btn btn-delete" onclick="deleteGame(${state.currentGame})" title="Delete game">Delete</button>
       </h2>
       ${game.log_url ? `<div class="log-link"><a href="${game.log_url}" target="_blank">${game.log_url}</a></div>` : ""}
@@ -905,7 +909,7 @@ async function submitAddGame() {
 // --- Delete game ---
 
 async function deleteGame(id) {
-  if (!confirm(`Delete game ${id + 1}? This cannot be undone.`)) return;
+  if (!confirm(`Delete this game? This cannot be undone.`)) return;
   const res = await apiDelete(`/api/games/${id}`);
   const data = await res.json();
   if (data.ok) {
@@ -1368,7 +1372,7 @@ function renderPractice() {
     </div>
 
     <div class="practice-context">
-      <span>Game ${p.game_id + 1} (${p.game_date})</span>
+      <span>${p.game_date}</span>
       <span>${p.round}</span>
       <span class="severity ${sc}" title="${sevTooltip(m.severity)}">${m.severity}</span>
       ${shantenStr ? `<span class="shanten">${shantenStr}</span>` : ""}
@@ -1610,6 +1614,170 @@ function showHelp() {
   content.innerHTML = html;
 }
 
+// --- Admin Dashboard ---
+
+let adminState = { items: [], filterStatus: "", filterType: "" };
+
+async function showAdmin() {
+  state.currentGame = null;
+  state.currentGameData = null;
+  renderGameList();
+  const content = document.getElementById("content");
+  content.innerHTML = '<div class="empty-state">Loading feedback...</div>';
+
+  const params = new URLSearchParams();
+  if (adminState.filterStatus) params.set("status", adminState.filterStatus);
+  if (adminState.filterType) params.set("type", adminState.filterType);
+
+  const res = await fetch(`/api/admin/feedback?${params}`);
+  if (res.status === 403) {
+    content.innerHTML = '<div class="empty-state">Admin access required</div>';
+    return;
+  }
+  adminState.items = await res.json();
+  renderAdmin();
+}
+
+function renderAdmin() {
+  const content = document.getElementById("content");
+  const items = adminState.items;
+
+  const statusColors = { "new": "#4fc3f7", "in-progress": "#ffa94d", "resolved": "#66bb6a" };
+  const typeColors = { "bug": "#ef5350", "feature": "#a855f7", "general": "#888" };
+
+  let html = `<div class="game-header"><h2>Admin: Feedback (${items.length})</h2></div>`;
+
+  html += `<div class="admin-filters">
+    <select onchange="adminState.filterStatus=this.value;showAdmin()">
+      <option value="">All statuses</option>
+      <option value="new" ${adminState.filterStatus==="new"?"selected":""}>New</option>
+      <option value="in-progress" ${adminState.filterStatus==="in-progress"?"selected":""}>In Progress</option>
+      <option value="resolved" ${adminState.filterStatus==="resolved"?"selected":""}>Resolved</option>
+    </select>
+    <select onchange="adminState.filterType=this.value;showAdmin()">
+      <option value="">All types</option>
+      <option value="bug" ${adminState.filterType==="bug"?"selected":""}>Bug</option>
+      <option value="feature" ${adminState.filterType==="feature"?"selected":""}>Feature</option>
+      <option value="general" ${adminState.filterType==="general"?"selected":""}>General</option>
+    </select>
+  </div>`;
+
+  if (!items.length) {
+    html += '<div class="empty-state">No feedback items</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  for (const item of items) {
+    const sc = statusColors[item.status] || "#888";
+    const tc = typeColors[item.type] || "#888";
+    const date = new Date(item.created_at + "Z").toLocaleString();
+
+    html += `<div class="admin-card" id="fb-${item.id}">
+      <div class="admin-card-header">
+        <span class="admin-badge" style="background:${tc}20;color:${tc}">${item.type}</span>
+        <span class="admin-badge" style="background:${sc}20;color:${sc}">${item.status}</span>
+        <span class="admin-meta">${item.username} &middot; ${date}</span>
+        ${item.github_issue_url ? `<a href="${escapeHtml(item.github_issue_url)}" target="_blank" class="admin-gh-link">GitHub</a>` : ""}
+      </div>
+      <div class="admin-card-body">${escapeHtml(item.message)}</div>
+      ${item.admin_note ? `<div class="admin-note-display"><b>Note:</b> ${escapeHtml(item.admin_note)}</div>` : ""}
+      <div class="admin-card-actions">
+        ${item.status !== "resolved" ? `<button class="btn btn-sm" onclick="adminResolve(${item.id})">Resolve</button>` : ""}
+        ${item.status === "resolved" ? `<button class="btn btn-sm" onclick="adminReopen(${item.id})">Reopen</button>` : ""}
+        <button class="btn btn-sm" onclick="adminToggleNote(${item.id})">Note</button>
+        ${!item.github_issue_url ? `<button class="btn btn-sm" onclick="adminCreateIssue(${item.id})">Create Issue</button>` : ""}
+      </div>
+      <div class="admin-note-form" id="fb-note-${item.id}" style="display:none">
+        <textarea rows="2" placeholder="Admin note..." id="fb-note-text-${item.id}">${escapeHtml(item.admin_note || "")}</textarea>
+        <button class="btn btn-sm btn-primary" onclick="adminSaveNote(${item.id})">Save Note</button>
+      </div>
+    </div>`;
+  }
+
+  content.innerHTML = html;
+}
+
+function escapeHtml(s) {
+  if (!s) return "";
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+async function adminResolve(id) {
+  await apiPost(`/api/admin/feedback/${id}`, { status: "resolved" });
+  showAdmin();
+}
+
+async function adminReopen(id) {
+  await apiPost(`/api/admin/feedback/${id}`, { status: "new" });
+  showAdmin();
+}
+
+function adminToggleNote(id) {
+  const el = document.getElementById(`fb-note-${id}`);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+async function adminSaveNote(id) {
+  const note = document.getElementById(`fb-note-text-${id}`).value.trim();
+  await apiPost(`/api/admin/feedback/${id}`, { admin_note: note });
+  showAdmin();
+}
+
+async function adminCreateIssue(id) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = "Creating...";
+  const res = await apiPost(`/api/admin/feedback/${id}/create-issue`, {});
+  const data = await res.json();
+  if (data.ok) {
+    showAdmin();
+  } else {
+    btn.disabled = false;
+    btn.textContent = "Create Issue";
+    alert(data.error || "Failed to create issue");
+  }
+}
+
+// --- My Feedback ---
+
+async function showMyFeedback() {
+  state.currentGame = null;
+  state.currentGameData = null;
+  renderGameList();
+  const content = document.getElementById("content");
+  content.innerHTML = '<div class="empty-state">Loading...</div>';
+
+  const res = await fetch("/api/feedback/mine");
+  const items = await res.json();
+
+  const statusColors = { "new": "#4fc3f7", "in-progress": "#ffa94d", "resolved": "#66bb6a" };
+
+  let html = `<div class="game-header"><h2>My Feedback</h2></div>`;
+
+  if (!items.length) {
+    html += '<div class="empty-state">No feedback submitted yet</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  for (const item of items) {
+    const sc = statusColors[item.status] || "#888";
+    const date = new Date(item.created_at + "Z").toLocaleString();
+
+    html += `<div class="admin-card">
+      <div class="admin-card-header">
+        <span class="admin-badge" style="background:${sc}20;color:${sc}">${item.status}</span>
+        <span class="admin-meta">${item.type} &middot; ${date}</span>
+      </div>
+      <div class="admin-card-body">${escapeHtml(item.message)}</div>
+      ${item.status === "resolved" && item.admin_note ? `<div class="admin-note-display"><b>Response:</b> ${escapeHtml(item.admin_note)}</div>` : ""}
+    </div>`;
+  }
+
+  content.innerHTML = html;
+}
+
 // --- Feedback ---
 
 function showFeedbackModal() {
@@ -1692,6 +1860,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   csrfToken = me.csrf_token || "";
   document.getElementById("user-info").innerHTML =
     `${me.username} <a href="/logout">logout</a>`;
+
+  // Show admin button only for admins
+  const adminBtn = document.getElementById("admin-btn");
+  if (adminBtn && me.is_admin) adminBtn.style.display = "";
 
   const catRes = await fetch("/api/categories");
   CATEGORY_INFO = await catRes.json();

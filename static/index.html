@@ -34,7 +34,9 @@
         <button class="btn" id="trends-btn" onclick="showTrends()">Trends</button>
         <button class="btn" id="practice-btn" onclick="showPractice()">Practice</button>
         <button class="btn" id="help-btn" onclick="showHelp()">Help</button>
-        <button class="btn" onclick="showFeedbackModal()">Feedback</button>
+        <button class="btn" onclick="showMyFeedback()">My Feedback</button>
+        <button class="btn" onclick="showFeedbackModal()">Send Feedback</button>
+        <button class="btn" id="admin-btn" style="display:none" onclick="showAdmin()">Admin</button>
       </div>
       <div class="content" id="content">
         <div class="empty-state">Select a game to review</div>
@@ -48,7 +50,7 @@
       <h3>Add Game</h3>
       <div class="form-group">
         <label>Mortal analysis JSON file</label>
-        <p class="form-hint">Run your replay through <a href="https://mjai.ekyu.moe" target="_blank">mjai.ekyu.moe</a>. From the results page, open the <code>/report/...json</code> URL from the address bar and press Ctrl+S to save.</p>
+        <p class="form-hint">Run your replay through <a href="https://mjai.ekyu.moe" target="_blank">mjai.ekyu.moe</a>. From the results page, find <code>/report/...json</code> in the address bar, open that URL directly, and save with Ctrl+S.</p>
         <input type="file" id="add-file" accept=".json">
       </div>
       <div class="form-group">

@@ -18,13 +18,15 @@ Similarly, `app.js:1521` references "2B Defense" -- the category is now `3B` (St
 
 **Fix:** Rewrite the "How Auto-Categorization Works" section to match the current 12-category system (1A, 2A, 3A-3C, 4A-4C, 5A-5B, 6A-6B).
 
-### 1b. mj_games.py CATEGORIES list is stale (MEDIUM)
+### 1b. ~~mj_games.py CATEGORIES list is stale~~ (MEDIUM) ✅ FIXED (B-04)
 
 `mj_games.py:14-20` still lists the old categories: `1A, 1B, 1C, 1D, 1E, 2A, 2B, 2C, 3A, 3B, 3C, 4A, 4B, 5A, 5B`. This list no longer matches `CATEGORY_INFO` (which is correct). The CLI `--category` flag accepts these old codes. Another instance is working on categories, but this is worth flagging.
 
-### 1c. vision.txt says "15-category system" (LOW)
+**Fixed:** CATEGORIES now derived from CATEGORY_INFO.keys() (see B-04 in BUGS.md).
 
-`vision.txt:28,40` says "15-category system" -- it's now 12 categories. Minor since this is internal, but worth a quick fix.
+### 1c. ~~vision.txt says "15-category system"~~ (LOW) ✅ DONE
+
+Already fixed — vision.txt no longer references a specific category count.
 
 ---
 
@@ -44,7 +46,7 @@ The user can't study "Push/Fold" as a coherent skill area because it's really "e
 
 **Recommendation:** Consider renaming to "Strategic" or "Complex Decision" with a description like "Mortal's strategic evaluation differs from pure tile efficiency -- may involve hand value, position, or game state factors." Drop the specific chapter reference or broaden it.
 
-### 2c. "Value Tile Ordering" (2A) is a narrow niche elevated to a top-level group (LOW)
+### 2c. ~~"Value Tile Ordering" (2A) is a narrow niche elevated to a top-level group~~ (LOW) ✅ DONE
 
 This has its own group ("Value Tiles") with its own color, but it's really a sub-type of tile efficiency where the choice involves an honor or terminal vs a number tile. It only triggers when cpp scores are within 60 points. Giving it equal visual weight to "Strategy" or "Efficiency" in the trend charts and practice filters may overstate its importance.
 
@@ -74,7 +76,7 @@ Conversely, for melding mistakes (4A-4C), riichi decisions (5A-5B), kan (6A-6B),
 - The mistake has `safety_ratings` (opponent in riichi)
 - No category is set yet (user needs full context to annotate)
 
-### 3c. Scores buried in "Details" alongside melds (LOW)
+### 3c. ~~Scores buried in "Details" alongside melds~~ (LOW) ✅ DONE
 
 Scores are in the same "Details" collapse as opponent melds. If melds move inline, scores could either:
 - Go into the wind/dora info bar (compact: `E 25000 | S 32000 | ...`)
@@ -90,7 +92,7 @@ The EV table header says "Tile Calc" which could mean many things. The help page
 
 **Recommendation:** Rename to "Exp Score" or add a unit hint. The tooltip or a small subtitle like "(expected score)" would help first-time users.
 
-### 4b. "Mortal Q" values are opaque (LOW)
+### 4b. ~~"Mortal Q" values are opaque~~ (LOW) ✅ DONE
 
 Q-values like `0.847` are meaningless to users who don't understand reinforcement learning. The help page explains it, but in practice users ignore this column and focus on the tile calc numbers.
 
@@ -122,7 +124,7 @@ The checkbox label "Calc agrees" doesn't explain what it means. A user who hasn'
 
 **Recommendation:** Hide after first use, or move to a settings/admin area. At minimum, only show it when no games exist yet.
 
-### 6b. Game numbering is confusing (LOW)
+### 6b. ~~Game numbering is confusing~~ (LOW) ✅ DONE
 
 Games are labeled "Game 1", "Game 2" etc. based on their database ID. These numbers have no meaning to the user. When a game is deleted, the numbering has gaps.
 
@@ -148,7 +150,7 @@ The severity markers `?`, `??`, `???` are compact but non-obvious. New users won
 
 ## 8. Onboarding Issues
 
-### 8a. Onboarding instructions are fragile (MEDIUM)
+### 8a. ~~Onboarding instructions are fragile~~ (MEDIUM) ✅ DONE
 
 `app.js:462-481` -- the onboarding walks users through extracting the JSON URL from mjai.ekyu.moe's address bar. This is brittle:
 - The URL format could change
@@ -197,19 +199,19 @@ After clicking Help, Trends, or Practice, the user can only return by clicking a
 | ~~HIGH~~ | ~~Category codes add noise without helping users~~ ✅ | 2a |
 | ~~MEDIUM~~ | ~~Discards always open even when irrelevant~~ ✅ | 3b |
 | ~~MEDIUM~~ | ~~"Push/Fold" is a misleading catch-all~~ ✅ | 2b |
-| MEDIUM | mj_games.py CATEGORIES list is stale | 1b |
+| ~~MEDIUM~~ | ~~mj_games.py CATEGORIES list is stale~~ ✅ (B-04) | 1b |
 | ~~MEDIUM~~ | ~~Severity symbols unexplained~~ ✅ | 7a |
 | ~~MEDIUM~~ | ~~Hidden mistakes with subtle indicator~~ ✅ | 7b |
-| MEDIUM | Onboarding JSON extraction is fragile | 8a |
+| ~~MEDIUM~~ | ~~Onboarding JSON extraction is fragile~~ ✅ | 8a |
 | ~~MEDIUM~~ | ~~"Tile Calc" header ambiguous~~ ✅ | 4a |
-| LOW | vision.txt says "15-category" | 1c |
-| LOW | 2A elevated to top-level group | 2c |
-| LOW | Scores buried in details | 3c |
+| ~~LOW~~ | ~~vision.txt says "15-category"~~ ✅ | 1c |
+| ~~LOW~~ | ~~2A elevated to top-level group~~ ✅ | 2c |
+| ~~LOW~~ | ~~Scores buried in details~~ ✅ | 3c |
 | ~~LOW~~ | ~~"Calc agrees" filter label unclear~~ ✅ | 5b |
 | ~~LOW~~ | ~~Import button always visible~~ ✅ | 6a |
-| LOW | Game numbering meaningless | 6b |
+| ~~LOW~~ | ~~Game numbering meaningless~~ ✅ | 6b |
 | ~~LOW~~ | ~~Help page titled "Category Reference"~~ ✅ | 9a |
 | ~~LOW~~ | ~~No back navigation from Help/Trends/Practice~~ ✅ | 9b |
 | ~~LOW~~ | ~~"---" for uncategorized~~ ✅ | 9c |
 | ~~LOW~~ | ~~Riichi badge too subtle~~ ✅ | 9d |
-| LOW | Mortal Q values opaque | 4b |
+| ~~LOW~~ | ~~Mortal Q values opaque~~ ✅ | 4b |
