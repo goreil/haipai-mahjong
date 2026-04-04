@@ -349,6 +349,11 @@ def index():
     return send_from_directory("static", "index.html")
 
 
+@app.route("/practice")
+def practice_page():
+    return send_from_directory("static", "index.html")
+
+
 @app.route("/tiles/<filename>")
 def tiles(filename):
     return send_from_directory(DIR / "riichi-mahjong-tiles" / "Regular", filename)
@@ -638,6 +643,21 @@ def api_practice():
 
     pick = db.get_practice_problem(conn, uid, severity=sev, group=group,
                                    defense_only=defense, calc_agree=calc_agree)
+    if not pick:
+        return jsonify({"error": "No matching practice problems"}), 404
+    return jsonify(pick)
+
+
+@app.route("/api/practice/public")
+def api_practice_public():
+    conn = get_conn()
+    sev = request.args.get("severity")
+    group = request.args.get("group")
+    defense = request.args.get("defense") == "1"
+    calc_agree = request.args.get("calc_agree") == "1"
+
+    pick = db.get_public_practice_problem(conn, severity=sev, group=group,
+                                          defense_only=defense, calc_agree=calc_agree)
     if not pick:
         return jsonify({"error": "No matching practice problems"}), 404
     return jsonify(pick)

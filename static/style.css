@@ -1207,6 +1207,16 @@ body {
   font-size: 13px;
   margin: -8px 0 12px 0;
 }
+.practice-login-banner {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.practice-login-banner a { color: var(--accent); }
 
 .practice-filters {
   display: flex;

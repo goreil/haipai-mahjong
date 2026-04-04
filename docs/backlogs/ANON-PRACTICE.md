@@ -13,7 +13,7 @@ Future: if demand grows, add a lightweight anonymous progress tracker (cookie/lo
 
 ## High
 
-### AP-01: Anonymized practice problem pool in db.py
+### ~~AP-01: Anonymized practice problem pool in db.py~~ DONE
 
 **Location**: `db.py` (new function)
 
@@ -24,7 +24,7 @@ Add `get_public_practice_problem(conn, severity=None, group=None, defense_only=F
 - Only includes dahai-vs-dahai mistakes with a hand (same filters as existing practice)
 - Only includes mistakes from games with `severity IN ('??', '???')` (meaningful mistakes)
 
-### AP-02: Public practice API route in app.py
+### ~~AP-02: Public practice API route in app.py~~ DONE
 
 **Location**: `app.py` (new route)
 
@@ -32,7 +32,7 @@ Add `GET /api/practice/public` — no `@login_required`. Accepts same query para
 
 Do NOT add a public result-recording endpoint — anonymous users can't save progress.
 
-### AP-03: Update CLAUDE.md API routes list
+### ~~AP-03: Update CLAUDE.md API routes list~~ DONE
 
 Add the new `/api/practice/public` route to the API routes section in CLAUDE.md.
 
@@ -40,7 +40,7 @@ Add the new `/api/practice/public` route to the API routes section in CLAUDE.md.
 
 ## Medium
 
-### AP-04: Frontend anonymous practice mode
+### ~~AP-04: Frontend anonymous practice mode~~ DONE
 
 **Location**: `static/app.js`, `static/style.css`
 
@@ -51,7 +51,7 @@ Modify the practice view to work without authentication:
 - Show a subtle "Log in to track your progress" banner
 - Practice filters (severity, group, defense) should still work
 
-### AP-05: Landing page integration
+### ~~AP-05: Landing page integration~~ DONE
 
 **Location**: `static/landing.html`, `app.py`
 

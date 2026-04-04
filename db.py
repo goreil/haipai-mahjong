@@ -525,6 +525,68 @@ def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=
     return pick
 
 
+def get_public_practice_problem(conn, severity=None, group=None, defense_only=False,
+                                calc_agree=False):
+    """Get a random practice problem from all users' games, anonymized.
+
+    No spaced repetition — uniform random selection.
+    Strips user-identifying info (notes, game dates).
+    """
+    from mj_games import CATEGORY_INFO
+    import random
+
+    where = ["m.severity IN ('??', '???' )"]
+    params = []
+
+    if severity:
+        where.append("m.severity = ?")
+        params.append(severity)
+
+    if calc_agree:
+        where.append("m.category IN ('1A','1B','1C','1D','1E')")
+
+    rows = conn.execute(
+        f"""SELECT m.*, g.id as gid
+            FROM mistakes m JOIN games g ON m.game_id = g.id
+            WHERE {' AND '.join(where)}""",
+        params,
+    ).fetchall()
+
+    candidates = []
+    for row in rows:
+        data = json.loads(row["data_json"])
+        actual = data.get("actual") or {}
+        expected = data.get("expected") or {}
+        if actual.get("type") != "dahai" or expected.get("type") != "dahai":
+            continue
+        if not data.get("hand"):
+            continue
+        if defense_only and not data.get("safety_ratings"):
+            continue
+        if group:
+            cat = row["category"] or ""
+            cat_group = CATEGORY_INFO.get(cat, {}).get("group", "")
+            if cat_group != group:
+                continue
+
+        mistake = row_to_mistake(row)
+        mistake["note"] = None  # strip user annotation
+
+        candidates.append({
+            "game_id": row["gid"],
+            "round": row["round_name"],
+            "mistake": mistake,
+            "mistake_id": row["id"],
+        })
+
+    if not candidates:
+        return None
+
+    pick = random.choice(candidates)
+    pick["pool_size"] = len(candidates)
+    return pick
+
+
 def get_trends(conn, user_id):
     """Get per-game trend data."""
     from mj_games import CATEGORY_INFO

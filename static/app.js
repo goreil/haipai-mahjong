@@ -40,6 +40,7 @@ const GROUP_COLORS = {
 const OUTCOME_EMOJI = { ":D": "\u{1F60E}", ":)": "\u{1F642}", ":|": "\u{1F610}", ":(": "\u{1F61E}" };
 
 let csrfToken = "";
+let isAnonymous = false;
 
 let state = {
   games: [],
@@ -1285,7 +1286,8 @@ async function fetchPractice() {
   // Always restrict to efficiency categories (1A) for practice
   params.set("calc_agree", "1");
   const qs = params.toString();
-  const res = await fetch(`/api/practice${qs ? "?" + qs : ""}`);
+  const endpoint = isAnonymous ? "/api/practice/public" : "/api/practice";
+  const res = await fetch(`${endpoint}${qs ? "?" + qs : ""}`);
   if (!res.ok) return null;
   return await res.json();
 }
@@ -1336,8 +1338,8 @@ function submitPracticeAnswer(tile) {
   const isCorrect = tile === expected || normalizeRed(tile) === normalizeRed(expected);
   if (isCorrect) practice.correct++;
 
-  // Record result for spaced repetition
-  if (practice.problem.mistake_id) {
+  // Record result for spaced repetition (authenticated users only)
+  if (!isAnonymous && practice.problem.mistake_id) {
     apiPost("/api/practice/result", { mistake_id: practice.problem.mistake_id, correct: isCorrect });
   }
 
@@ -1362,6 +1364,7 @@ function renderPractice() {
       </div>
     </div>
     <p class="practice-explanation">Practice hand-building decisions where the correct tile can be determined from your hand alone.</p>
+    ${isAnonymous ? '<div class="practice-login-banner">Problems drawn from all users. <a href="/register">Register</a> or <a href="/login">log in</a> to practice your own mistakes and track progress.</div>' : ''}
     <div class="practice-filters">
       <select onchange="setPracticeFilter('severity', this.value)">
         <option value="" ${!practice.filterSeverity ? "selected" : ""}>All severity</option>
@@ -1372,7 +1375,7 @@ function renderPractice() {
     </div>
 
     <div class="practice-context">
-      <span>${p.game_date}</span>
+      ${p.game_date ? `<span>${p.game_date}</span>` : ''}
       <span>${p.round}</span>
       <span class="severity ${sc}" title="${sevTooltip(m.severity)}">${m.severity}</span>
       ${shantenStr ? `<span class="shanten">${shantenStr}</span>` : ""}
@@ -1872,20 +1875,40 @@ document.addEventListener("mouseout", (e) => {
 // --- Init ---
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const onPracticePage = window.location.pathname === "/practice";
+
   // Load user info
   const meRes = await fetch("/api/me");
   if (meRes.status === 401) {
-    window.location.href = "/login";
-    return;
-  }
-  const me = await meRes.json();
-  csrfToken = me.csrf_token || "";
-  document.getElementById("user-info").innerHTML =
-    `${me.username} <a href="/logout">logout</a>`;
+    if (onPracticePage) {
+      // Anonymous practice mode
+      isAnonymous = true;
+      document.getElementById("user-info").innerHTML =
+        `<a href="/login">Log in</a> | <a href="/register">Register</a>`;
+      // Hide authenticated-only UI
+      document.querySelector('.sidebar-header button[onclick="showAddModal()"]').style.display = "none";
+      const importBtn = document.getElementById("import-btn");
+      if (importBtn) importBtn.style.display = "none";
+      for (const id of ["trends-btn", "help-btn"]) {
+        const btn = document.getElementById(id);
+        if (btn) btn.style.display = "none";
+      }
+      document.querySelector('button[onclick="showMyFeedback()"]').style.display = "none";
+      document.querySelector('button[onclick="showFeedbackModal()"]').style.display = "none";
+    } else {
+      window.location.href = "/login";
+      return;
+    }
+  } else {
+    const me = await meRes.json();
+    csrfToken = me.csrf_token || "";
+    document.getElementById("user-info").innerHTML =
+      `${me.username} <a href="/logout">logout</a>`;
 
-  // Show admin button only for admins
-  const adminBtn = document.getElementById("admin-btn");
-  if (adminBtn && me.is_admin) adminBtn.style.display = "";
+    // Show admin button only for admins
+    const adminBtn = document.getElementById("admin-btn");
+    if (adminBtn && me.is_admin) adminBtn.style.display = "";
+  }
 
   const catRes = await fetch("/api/categories");
   CATEGORY_INFO = await catRes.json();
@@ -1895,5 +1918,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     CATEGORY_INFO["3A"].desc = "Mortal's strategic evaluation differs from pure tile efficiency — may involve hand value, position, or game state factors";
     delete CATEGORY_INFO["3A"].study;
   }
-  fetchGames();
+
+  if (isAnonymous) {
+    showPractice();
+  } else {
+    fetchGames();
+  }
 });
