@@ -549,7 +549,11 @@ def api_add():
         t.start()
 
         while True:
-            item = progress_q.get()
+            try:
+                item = progress_q.get(timeout=10)
+            except queue.Empty:
+                yield ": keepalive\n\n"
+                continue
             if item is None:
                 break
             done, total = item
