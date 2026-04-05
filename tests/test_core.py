@@ -450,29 +450,15 @@ class TestAddGamePipeline:
         with open(SMALL_MORTAL_FILE) as f:
             return json.load(f)
 
-    @staticmethod
-    def _parse_sse(res):
-        """Parse an SSE response, return the final 'done'/'error' event."""
-        result = None
-        for line in res.data.decode().split("\n"):
-            if not line.startswith("data: "):
-                continue
-            data = json.loads(line[6:])
-            if data.get("step") in ("done", "error"):
-                result = data
-        return result
-
     def _add_game(self, client, mortal_json):
-        """Post a game and return the parsed SSE result."""
+        """Post a game and return the JSON result."""
         res = client.post("/api/games/add", json={"mortal_data": mortal_json},
                           content_type="application/json")
         assert res.status_code == 200, f"Status {res.status_code}: {res.data[:200]}"
-        data = self._parse_sse(res)
-        assert data is not None, f"No done/error event in SSE: {res.data[:500]}"
-        return data
+        return res.get_json()
 
     def test_add_game_returns_json(self, client, mortal_json):
-        """POST /api/games/add should return SSE with done event containing game_id."""
+        """POST /api/games/add should return JSON with ok and game_id."""
         data = self._add_game(client, mortal_json)
         assert data.get("ok") is True
         assert "game_id" in data
@@ -518,19 +504,12 @@ class TestAddGamePipeline:
             mdata = json.loads(row["data_json"])
             assert "board_state" in mdata, f"Missing board_state in mistake"
 
-    def test_add_game_streams_progress(self, client, mortal_json):
-        """SSE stream should include progress events before the done event."""
-        res = client.post("/api/games/add", json={"mortal_data": mortal_json},
-                          content_type="application/json")
-        events = []
-        for line in res.data.decode().split("\n"):
-            if line.startswith("data: "):
-                events.append(json.loads(line[6:]))
-        # Should have: parsing, at least one categorizing, done
-        steps = [e["step"] for e in events]
-        assert "parsing" in steps
-        assert "done" in steps
-        assert any(s == "categorizing" for s in steps), f"No progress events: {steps}"
+    def test_add_game_returns_categorization_stats(self, client, mortal_json):
+        """POST /api/games/add should return categorization stats."""
+        data = self._add_game(client, mortal_json)
+        assert data.get("ok") is True
+        assert "categorized" in data
+        assert "api_calls" in data
 
     def test_get_game_after_add(self, client, mortal_json):
         """GET /api/games/<id> should return the added game with mistakes."""

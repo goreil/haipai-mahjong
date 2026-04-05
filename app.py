@@ -519,62 +519,16 @@ def api_add():
 
     game_id = db.add_game(conn, uid, game_dict)
 
-    def generate():
-        import threading, queue
-        from mj_categorize import categorize_game_db
+    # Auto-categorize (synchronous — in-process shared library is fast enough)
+    from mj_categorize import categorize_game_db
+    cat_n, api_calls, failures = categorize_game_db(conn, game_id)
 
-        yield f"data: {json.dumps({'step': 'parsing', 'message': 'Game added, categorizing mistakes...'})}\n\n"
-
-        progress_q = queue.Queue()
-        result_holder = {}
-
-        def run_categorize():
-            # Own connection — SQLite connections can't cross threads
-            cat_conn = db.get_db()
-            try:
-                cat_n, api_calls, failures = categorize_game_db(
-                    cat_conn, game_id,
-                    on_progress=lambda done, total: progress_q.put((done, total)),
-                )
-                result_holder["cat_n"] = cat_n
-                result_holder["api_calls"] = api_calls
-                result_holder["failures"] = failures
-            except Exception as e:
-                result_holder["error"] = str(e)
-            finally:
-                cat_conn.close()
-                progress_q.put(None)  # sentinel
-
-        t = threading.Thread(target=run_categorize)
-        t.start()
-
-        while True:
-            try:
-                item = progress_q.get(timeout=10)
-            except queue.Empty:
-                yield ": keepalive\n\n"
-                continue
-            if item is None:
-                break
-            done, total = item
-            yield f"data: {json.dumps({'step': 'categorizing', 'done': done, 'total': total})}\n\n"
-
-        t.join()
-
-        if "error" in result_holder:
-            yield f"data: {json.dumps({'step': 'error', 'message': result_holder['error']})}\n\n"
-        else:
-            cat_n = result_holder.get("cat_n", 0)
-            summary_conn = db.get_db()
-            stats = db.compute_summary_for_game(summary_conn, game_id) if cat_n > 0 else game_dict.get("summary", {})
-            summary_conn.close()
-            final = {"step": "done", "ok": True, "game_id": game_id, "summary": stats,
-                      "categorized": cat_n, "api_calls": result_holder.get("api_calls", 0)}
-            if result_holder.get("failures"):
-                final["failures"] = result_holder["failures"]
-            yield f"data: {json.dumps(final)}\n\n"
-
-    return Response(generate(), mimetype="text/event-stream")
+    stats = db.compute_summary_for_game(conn, game_id) if cat_n > 0 else game_dict.get("summary", {})
+    result = {"ok": True, "game_id": game_id, "summary": stats,
+              "categorized": cat_n, "api_calls": api_calls}
+    if failures:
+        result["failures"] = failures
+    return jsonify(result)
 
 
 @app.route("/api/practice")

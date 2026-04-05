@@ -531,30 +531,7 @@ async function addGameWithProgress(mortalData, date, onProgress) {
     const text = await res.text();
     try { return JSON.parse(text); } catch { return { error: `Server error ${res.status}: ${text.slice(0, 200)}` }; }
   }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let result = null;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    const lines = buffer.split("\n");
-    buffer = lines.pop();
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const data = JSON.parse(line.slice(6));
-      if (data.step === "done" || data.step === "error") {
-        result = data;
-      } else if (onProgress) {
-        onProgress(data);
-      }
-    }
-  }
-  return result || { error: "No response from server" };
+  return await res.json();
 }
 
 // --- Render: Game List ---
@@ -915,24 +892,14 @@ async function submitAddGame() {
     progressEl.className = "add-progress";
     btn.parentElement.insertBefore(progressEl, btn);
   }
-  progressEl.innerHTML = '<div class="add-progress-text">Parsing game...</div><div class="add-progress-bar"><div class="add-progress-fill"></div></div>';
+  progressEl.innerHTML = '<div class="add-progress-text">Adding and analyzing game...</div><div class="add-progress-bar"><div class="add-progress-fill" style="width:100%;animation:pulse 1.5s ease-in-out infinite"></div></div>';
   progressEl.style.display = "";
 
   try {
     const text = await fileInput.files[0].text();
     const mortalData = JSON.parse(text);
 
-    const result = await addGameWithProgress(mortalData, date, (progress) => {
-      const fill = progressEl.querySelector(".add-progress-fill");
-      const label = progressEl.querySelector(".add-progress-text");
-      if (progress.step === "parsing") {
-        label.textContent = progress.message;
-      } else if (progress.step === "categorizing") {
-        const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
-        fill.style.width = pct + "%";
-        label.textContent = `Analyzing decisions... ${progress.done}/${progress.total}`;
-      }
-    });
+    const result = await addGameWithProgress(mortalData, date);
 
     btn.disabled = false;
     progressEl.style.display = "none";
