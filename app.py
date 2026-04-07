@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Flask web server for mahjong game review."""  # deploy test
+"""Flask web server for mahjong game review."""
 
 from flask import Flask, Response, g, jsonify, redirect, render_template_string, request, send_from_directory, url_for
 from flask_limiter import Limiter
