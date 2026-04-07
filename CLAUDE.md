@@ -8,7 +8,10 @@ Riichi Mahjong game analysis web app ("Haipai"). Analyzes Tenhou/MJS replays via
 
 ## Key Files
 
-- `app.py` - Flask web server (port 5000). Multi-user auth, API routes.
+- `app.py` - Flask web server (port 5000). App setup, auth, static routes, blueprint registration.
+- `routes_games.py` - Game CRUD blueprint: list, get, delete, add, annotate, categorize, backfill, background categorization.
+- `routes_practice.py` - Practice mode blueprint: get problem, public problem, record result, stats.
+- `routes_admin.py` - Admin + feedback blueprint: admin stats, feedback CRUD, GitHub issue creation, user feedback.
 - `db.py` - SQLite database layer. Games, mistakes, users, practice results, feedback.
 - `mahjong_cpp.py` - ctypes wrapper for libmahjongcpp.so. In-process tile efficiency calculator.
 - `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp. Wall reconstruction, defense-aware 2A/2B split, safety rating computation.

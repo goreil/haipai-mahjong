@@ -352,6 +352,26 @@ body {
   font-size: 13px;
 }
 
+.categorization-banner {
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.categorization-banner.pending {
+  background: rgba(100, 181, 246, 0.1);
+  border: 1px solid rgba(100, 181, 246, 0.25);
+  color: #64b5f6;
+}
+.categorization-banner.failed {
+  background: rgba(239, 83, 80, 0.1);
+  border: 1px solid rgba(239, 83, 80, 0.25);
+  color: #ef5350;
+}
+.annotation-bar.categorizing .fill {
+  background: #64b5f6;
+}
+
 /* Round */
 .round {
   margin-bottom: 16px;

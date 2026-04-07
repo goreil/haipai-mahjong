@@ -500,6 +500,9 @@ async function fetchGame(id) {
   state.currentGameData = await res.json();
   state.currentGame = id;
   renderGame();
+  if (state.currentGameData.categorization_status === "pending") {
+    pollCategorization(id);
+  }
 }
 
 async function saveAnnotation(gameId, round, turn, index, category, note) {
@@ -554,7 +557,9 @@ function renderGameList() {
           ${s.total_mistakes || 0} mistakes &middot; ${(s.total_ev_loss || 0).toFixed(2)} EV
           ${s.total_decisions ? ` &middot; ${s.ev_per_decision.toFixed(4)}/D` : ""}
         </div>
-        <div class="annotation-bar"><div class="fill" style="width:${pct}%"></div></div>
+        ${g.categorization_status === "pending"
+          ? `<div class="annotation-bar categorizing"><div class="fill" style="width:100%;animation:pulse 1.5s ease-in-out infinite"></div></div>`
+          : `<div class="annotation-bar"><div class="fill" style="width:${pct}%"></div></div>`}
       </div>
     `;
   }).join("");
@@ -590,6 +595,13 @@ function renderGame() {
       <div class="stat"><span class="value" style="color:var(--sev-minor)">${sev["?"] || 0}</span><span class="label">?</span></div>
     </div>
   `;
+
+  // Categorization status banner
+  if (game.categorization_status === "pending") {
+    html += `<div class="categorization-banner pending">Categorizing mistakes... Categories will appear automatically.</div>`;
+  } else if (game.categorization_status === "failed") {
+    html += `<div class="categorization-banner failed">Categorization failed. You can retry from the game menu or categorize manually.</div>`;
+  }
 
   // Positive feedback banner
   const rating = gameRating(s);
@@ -911,12 +923,31 @@ async function submitAddGame() {
 
     hideAddModal();
     await fetchGames();
-    fetchGame(result.game_id);
+    await fetchGame(result.game_id);
+    pollCategorization(result.game_id);
   } catch (e) {
     btn.disabled = false;
     progressEl.style.display = "none";
     errEl.textContent = e.message;
   }
+}
+
+function pollCategorization(gameId) {
+  if (state._catPollTimer) clearInterval(state._catPollTimer);
+  state._catPollTimer = setInterval(async () => {
+    const res = await fetch(`/api/games/${gameId}`);
+    if (!res.ok) return;
+    const game = await res.json();
+    if (game.categorization_status !== "pending") {
+      clearInterval(state._catPollTimer);
+      state._catPollTimer = null;
+      await fetchGames();
+      if (state.currentGame === gameId) {
+        state.currentGameData = game;
+        renderGame();
+      }
+    }
+  }, 2000);
 }
 
 // --- Delete game ---

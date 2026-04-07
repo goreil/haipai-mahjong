@@ -10,6 +10,9 @@ services:
       - app-data:/app/data
       - mortal-files:/app/mortal_analysis
       - ./app.py:/app/app.py:ro
+      - ./routes_games.py:/app/routes_games.py:ro
+      - ./routes_practice.py:/app/routes_practice.py:ro
+      - ./routes_admin.py:/app/routes_admin.py:ro
       - ./db.py:/app/db.py:ro
       - ./mj_categorize.py:/app/mj_categorize.py:ro
       - ./mj_defense.py:/app/mj_defense.py:ro
