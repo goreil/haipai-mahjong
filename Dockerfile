@@ -1,4 +1,4 @@
-# Stage 1: Build mahjong-cpp shared library
+# Stage 1: Build mahjong-cpp nanikiru server
 FROM debian:12.9-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -9,17 +9,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY mahjong-cpp /build/mahjong-cpp
 WORKDIR /build/mahjong-cpp
 
+# Remove static linking flags (breaks boost::dll at runtime in Docker)
+RUN sed -i 's/-static-libgcc -static-libstdc++ -static//g' src/server/CMakeLists.txt
+
 RUN mkdir -p build && cd build \
-    && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON=ON -DBUILD_SERVER=OFF -DBUILD_SAMPLES=OFF -DBUILD_TEST=OFF \
-    && make -j$(nproc) mahjong-python \
+    && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SERVER=ON -DBUILD_PYTHON=OFF -DBUILD_SAMPLES=OFF -DBUILD_TEST=OFF \
+    && make -j$(nproc) nanikiru \
     && cmake --install . --prefix install
 
 # Stage 2: Runtime
 FROM python:3.12.8-slim-bookworm
 
-# Install shared library + data files (libmahjongcpp.so + .bin/.json lookup tables)
-COPY --from=builder /build/mahjong-cpp/build/install/lib/ /opt/mahjong-cpp/
-# Copy Boost shared libs needed at runtime (version-agnostic)
+# Install nanikiru binary + data files (.bin/.json lookup tables)
+COPY --from=builder /build/mahjong-cpp/build/install/bin/ /opt/nanikiru/
+# Boost shared libs needed at runtime
 COPY --from=builder /usr/lib/*/libboost_filesystem.so* /usr/lib/
 COPY --from=builder /usr/lib/*/libboost_system.so* /usr/lib/
 
@@ -38,10 +41,10 @@ COPY riichi-mahjong-tiles/Regular/ riichi-mahjong-tiles/Regular/
 RUN useradd -r -u 1000 -m -s /bin/false appuser \
     && mkdir -p mortal_analysis data \
     && chown -R appuser:appuser /app \
-    && chmod -R o+rx /opt/mahjong-cpp
+    && chmod -R o+rwx /opt/nanikiru
 
 # Environment
-ENV MAHJONG_CPP_LIB=/opt/mahjong-cpp/libmahjongcpp.so
+ENV NANIKIRU_URL=http://nanikiru:50000/
 ENV DB_PATH=/app/data/games.db
 ENV PYTHONUNBUFFERED=1
 

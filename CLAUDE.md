@@ -142,6 +142,7 @@ Issues and improvements are tracked in dedicated backlog docs. When working on a
 | `docs/backlogs/PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
 | `docs/backlogs/FEEDBACK-PIPELINE.md` | Feedback admin (1 stretch item remaining) | `app.py`, `db.py`, `static/app.js` |
 | `docs/backlogs/LANDING-PAGE.md` | Landing page (1 stretch item remaining) | `static/landing.html`, `app.py`, `style.css` |
+| `docs/backlogs/UX-FEEDBACK.md` | UX improvements: practice tutorial, simpler UI, guest upload, opt-in popup | `static/app.js`, `static/landing.html`, `app.py`, `db.py` |
 
 Completed backlogs (archived via git history): BUGS.md, INFRA.md, UX-AUDIT.md.
 

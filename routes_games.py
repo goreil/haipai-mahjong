@@ -102,14 +102,20 @@ def api_categorize(game_id):
     body = request.json or {}
     force = body.get("force", False)
 
-    from mj_categorize import categorize_game_db
-    n, api_calls, failures = categorize_game_db(conn, game_id, force=force)
+    # Set status to pending and run in background
+    conn.execute(
+        "UPDATE games SET categorization_status = 'pending' WHERE id = ?",
+        (game_id,),
+    )
+    conn.commit()
 
-    stats = db.compute_summary_for_game(conn, game_id) if n > 0 else game.get("summary", {})
-    result = {"ok": True, "categorized": n, "api_calls": api_calls, "summary": stats}
-    if failures:
-        result["failures"] = failures
-    return jsonify(result)
+    threading.Thread(
+        target=_categorize_background,
+        args=(game_id, force),
+        daemon=True,
+    ).start()
+
+    return jsonify({"ok": True, "status": "pending"})
 
 
 @games_bp.route("/api/games/backfill-board-state", methods=["POST"])
@@ -222,12 +228,12 @@ def api_add():
     return jsonify({"ok": True, "game_id": game_id, "summary": game_dict.get("summary", {})})
 
 
-def _categorize_background(game_id):
+def _categorize_background(game_id, force=False):
     """Run categorization in a background thread with its own DB connection."""
     from mj_categorize import categorize_game_db
     conn = db.get_db()
     try:
-        categorize_game_db(conn, game_id)
+        categorize_game_db(conn, game_id, force=force)
         db.compute_summary_for_game(conn, game_id)
         conn.execute(
             "UPDATE games SET categorization_status = 'done' WHERE id = ?",

@@ -1,75 +1,108 @@
 #!/usr/bin/env python3
-"""In-process wrapper for the mahjong-cpp tile efficiency calculator.
+"""HTTP client for the nanikiru mahjong-cpp tile efficiency server.
 
-Loads libmahjongcpp.so via ctypes and calls the calculator directly,
-replacing the old HTTP-based nanikiru server approach.
-
-Usage (drop-in replacement for the old call_mahjong_cpp):
-
+Usage:
     from mahjong_cpp import calculate
-    response = calculate(request_data)  # same dict format as before
+    response = calculate(request_data)
 """
 
-import ctypes
 import json
 import os
+import socket
 import sys
-from pathlib import Path
+import time
+import urllib.request
+import urllib.error
 
-DIR = Path(__file__).parent
+NANIKIRU_URL = os.environ.get("NANIKIRU_URL", "http://localhost:50000/")
 
-# Search order for the shared library:
-# 1. MAHJONG_CPP_LIB env var (explicit path)
-# 2. Next to this Python file (production Docker layout)
-# 3. Build directory (local dev)
-_LIB_SEARCH = [
-    os.environ.get("MAHJONG_CPP_LIB", ""),
-    str(DIR / "libmahjongcpp.so"),
-    str(DIR / "mahjong-cpp" / "build" / "libmahjongcpp.so"),
-]
-
-_lib = None
+# Parse host/port from URL for health checks
+_url_parts = NANIKIRU_URL.replace("http://", "").rstrip("/").split(":")
+_NANIKIRU_HOST = _url_parts[0]
+_NANIKIRU_PORT = int(_url_parts[1]) if len(_url_parts) > 1 else 50000
 
 
-def _load_lib():
-    """Load the shared library. Called once on first use."""
-    global _lib
-    for path in _LIB_SEARCH:
-        if path and os.path.isfile(path):
-            try:
-                _lib = ctypes.CDLL(path)
-                _lib.mahjong_calculate.restype = ctypes.c_char_p
-                _lib.mahjong_calculate.argtypes = [ctypes.c_char_p]
-                return
-            except OSError as e:
-                print(f"  mahjong_cpp: failed to load {path}: {e}", file=sys.stderr)
-                continue
-    raise RuntimeError(
-        f"libmahjongcpp.so not found. Searched: {[p for p in _LIB_SEARCH if p]}"
-    )
+def _wait_for_server(timeout=20):
+    """Wait for nanikiru to be ready to serve requests."""
+    deadline = time.time() + timeout
+    # First wait for TCP port
+    while time.time() < deadline:
+        try:
+            s = socket.create_connection((_NANIKIRU_HOST, _NANIKIRU_PORT), timeout=2)
+            s.close()
+            break
+        except (ConnectionRefusedError, OSError):
+            time.sleep(0.5)
+    else:
+        return False
+
+    # Then verify it can actually handle a request (tables loaded)
+    test_req = json.dumps({
+        "hand": [0,1,2,9,10,11,18,19,20,27,28,29,30],
+        "melds": [], "round_wind": 27, "seat_wind": 27,
+        "dora_indicators": [0],
+        "enable_reddora": True, "enable_uradora": True,
+        "enable_shanten_down": True, "enable_tegawari": True,
+        "enable_riichi": False, "version": "0.9.1"
+    }).encode("utf-8")
+    while time.time() < deadline:
+        try:
+            req = urllib.request.Request(
+                NANIKIRU_URL, data=test_req,
+                headers={"Content-Type": "application/json"}, method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                result = json.loads(resp.read())
+                if result.get("success"):
+                    return True
+        except Exception:
+            time.sleep(1)
+    return False
 
 
 def calculate(request_data):
-    """Calculate tile efficiency for a mahjong hand.
+    """Calculate tile efficiency for a mahjong hand via nanikiru HTTP server.
 
-    Args:
-        request_data: dict with the same format as the old nanikiru HTTP API
-            (hand, melds, round_wind, seat_wind, dora_indicators, wall, etc.)
+    The nanikiru server may crash on certain inputs. Docker auto-restarts it.
+    This function retries with server health checks between attempts.
 
     Returns:
         dict: The "response" portion of the result (shanten, stats, time, config).
 
     Raises:
-        RuntimeError: If the calculation fails (e.g. winning hand, invalid tiles).
+        RuntimeError: If the calculation fails or server is unreachable.
     """
-    if _lib is None:
-        _load_lib()
+    # Strip null values — nanikiru's JSON schema rejects null fields
+    cleaned = {k: v for k, v in request_data.items() if v is not None}
+    json_bytes = json.dumps(cleaned, separators=(",", ":")).encode("utf-8")
 
-    json_bytes = json.dumps(request_data, separators=(",", ":")).encode("utf-8")
-    result_ptr = _lib.mahjong_calculate(json_bytes)
-    result = json.loads(result_ptr.decode("utf-8"))
+    for attempt in range(4):
+        if attempt > 0:
+            # Server may have crashed — wait for Docker to restart it
+            if not _wait_for_server():
+                raise RuntimeError("nanikiru server did not restart in time")
+            # Extra pause after server comes up to let it fully initialize
+            time.sleep(0.5)
 
-    if not result.get("success"):
-        raise RuntimeError(f"mahjong-cpp error: {result.get('err_msg', 'unknown')}")
+        try:
+            req = urllib.request.Request(
+                NANIKIRU_URL,
+                data=json_bytes,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
 
-    return result["response"]
+            if not result.get("success"):
+                raise RuntimeError(f"mahjong-cpp error: {result.get('err_msg', 'unknown')}")
+
+            return result["response"]
+
+        except RuntimeError:
+            raise  # Don't retry application-level errors (bad input, winning hand)
+        except Exception as e:
+            if attempt == 3:
+                raise RuntimeError(f"nanikiru unreachable after retries: {e}")
+
+    raise RuntimeError("nanikiru unreachable after retries")

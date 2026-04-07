@@ -4,8 +4,11 @@ services:
     restart: unless-stopped
     environment:
       - SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in .env file}
-      - NANIKIRU_BIN=/opt/nanikiru/nanikiru
+      - NANIKIRU_URL=http://nanikiru:50000/
       - DB_PATH=/app/data/games.db
+    depends_on:
+      nanikiru:
+        condition: service_healthy
     volumes:
       - app-data:/app/data
       - mortal-files:/app/mortal_analysis
@@ -14,6 +17,7 @@ services:
       - ./routes_practice.py:/app/routes_practice.py:ro
       - ./routes_admin.py:/app/routes_admin.py:ro
       - ./db.py:/app/db.py:ro
+      - ./mahjong_cpp.py:/app/mahjong_cpp.py:ro
       - ./mj_categorize.py:/app/mj_categorize.py:ro
       - ./mj_defense.py:/app/mj_defense.py:ro
       - ./mj_games.py:/app/mj_games.py:ro
@@ -33,6 +37,27 @@ services:
           cpus: "1.0"
     expose:
       - "5000"
+
+  nanikiru:
+    build: .
+    restart: unless-stopped
+    command: ["/opt/nanikiru/nanikiru", "50000", "0.0.0.0"]
+    working_dir: /tmp
+    environment:
+      - LD_LIBRARY_PATH=/opt/nanikiru/lib:/usr/lib
+    expose:
+      - "50000"
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.create_connection(('localhost',50000),2); s.close()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1.0"
 
   nginx:
     image: nginx:1.27-alpine

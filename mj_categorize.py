@@ -1112,6 +1112,10 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
     if not work_items:
         return 0, 0, 0
 
+    # Sort by severity: ??? first, then ??, then ?
+    SEV_ORDER = {"???": 0, "??": 1, "?": 2}
+    work_items.sort(key=lambda w: SEV_ORDER.get(w[0]["severity"], 9))
+
     # Phase 2+3: Categorize and write results
     categorized = 0
     api_calls = 0
@@ -1143,6 +1147,9 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
             categorized += 1
         elif needs_api:
             failures += 1
+            # Server may have crashed — wait before next request
+            import time
+            time.sleep(3)
 
         if on_progress:
             on_progress(categorized + failures, len(work_items))
