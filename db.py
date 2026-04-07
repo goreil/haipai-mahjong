@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS games (
     mortal_file TEXT,
     stats_json TEXT,
     rounds_json TEXT,
+    categorization_status TEXT NOT NULL DEFAULT 'done',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -121,6 +122,9 @@ def _migrate(conn):
         if not _has_column("feedback", col):
             conn.execute(f"ALTER TABLE feedback ADD COLUMN {col} {typedef}")
             altered = True
+    if not _has_column("games", "categorization_status"):
+        conn.execute("ALTER TABLE games ADD COLUMN categorization_status TEXT NOT NULL DEFAULT 'done'")
+        altered = True
     if altered:
         conn.commit()
 
@@ -161,7 +165,7 @@ def row_to_mistake(row):
 def list_games(conn, user_id):
     """List all games for a user (summary info for sidebar)."""
     rows = conn.execute(
-        "SELECT id, date, log_url, stats_json FROM games WHERE user_id = ? ORDER BY date DESC, id DESC",
+        "SELECT id, date, log_url, stats_json, categorization_status FROM games WHERE user_id = ? ORDER BY date DESC, id DESC",
         (user_id,),
     ).fetchall()
     result = []
@@ -183,6 +187,7 @@ def list_games(conn, user_id):
             "summary": stats,
             "annotated": annotated,
             "total": total,
+            "categorization_status": row["categorization_status"],
         })
     return result
 
@@ -243,6 +248,7 @@ def get_game(conn, game_id, user_id=None):
         "mortal_file": game_row["mortal_file"],
         "summary": stats,
         "rounds": rounds,
+        "categorization_status": game_row["categorization_status"],
     }
 
 
@@ -265,9 +271,10 @@ def add_game(conn, user_id, game_dict):
         })
 
     try:
+        cat_status = game_dict.get("categorization_status", "done")
         cur = conn.execute(
-            """INSERT INTO games (user_id, date, log_url, mortal_file, stats_json, rounds_json)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO games (user_id, date, log_url, mortal_file, stats_json, rounds_json, categorization_status)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
                 user_id,
                 game_dict.get("date"),
@@ -275,6 +282,7 @@ def add_game(conn, user_id, game_dict):
                 game_dict.get("mortal_file"),
                 json.dumps(game_dict.get("summary") or {}, ensure_ascii=False),
                 json.dumps(rounds_meta, ensure_ascii=False),
+                cat_status,
             ),
         )
         game_id = cur.lastrowid
