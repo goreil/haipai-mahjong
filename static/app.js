@@ -254,11 +254,15 @@ function renderBoardContext(m) {
         html += `<span class="discard-label">${seatName}</span>`;
         html += `<span class="tiles">`;
         for (let di = 0; di < d.discards.length; di++) {
+          const raw = d.discards[di];
+          const tile = typeof raw === "string" ? raw : raw.tile;
+          const calledBy = typeof raw === "object" ? raw.called_by : undefined;
           const isRiichi = di === d.riichi_idx;
-          const isDora = d.discards[di] === "5mr" || d.discards[di] === "5pr" || d.discards[di] === "5sr"
-            || doraTiles.has(tileBase(d.discards[di]));
-          const cls = `action-tile-sm${isRiichi ? " riichi-tile" : ""}${isDora ? " dora-highlight" : ""}`;
-          html += renderTile(d.discards[di], cls);
+          const isDora = tile === "5mr" || tile === "5pr" || tile === "5sr"
+            || doraTiles.has(tileBase(tile));
+          let cls = `action-tile-sm${isRiichi ? " riichi-tile" : ""}${isDora ? " dora-highlight" : ""}`;
+          if (calledBy != null) cls += " ghost-tile";
+          html += renderTile(tile, cls);
         }
         html += `</span>`;
         if (seatMelds) {

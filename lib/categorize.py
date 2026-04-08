@@ -234,7 +234,7 @@ def extract_board_state(mortal_data, kyoku_idx, tiles_left_target):
             tiles_left -= 1
 
         elif etype == "dahai" and actor is not None:
-            discards[actor]["tiles"].append(e["pai"])
+            discards[actor]["tiles"].append({"tile": e["pai"]})
 
         elif etype == "reach" and actor is not None:
             d = discards[actor]
@@ -247,11 +247,10 @@ def extract_board_state(mortal_data, kyoku_idx, tiles_left_target):
                 "pai": e.get("pai"),
                 "target": e.get("target"),
             })
-            # Called tile is removed from the caller's discard pool
-            # (the target's last dahai gets "consumed" by the call)
+            # Mark called tile as ghost in the target's discard pool
             target = e.get("target")
             if target is not None and discards[target]["tiles"]:
-                discards[target]["tiles"].pop()
+                discards[target]["tiles"][-1]["called_by"] = actor
 
         elif etype == "ankan" and actor is not None:
             melds[actor].append({
@@ -1159,9 +1158,10 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
     return categorized, api_calls, failures
 
 
-def backfill_board_state_db(conn, game_id):
+def backfill_board_state_db(conn, game_id, force=False):
     """Populate board_state on all mistakes missing it (no API calls).
 
+    If force=True, re-extracts board_state even for mistakes that already have it.
     Returns the number of mistakes updated.
     """
     import db as dbmod  # noqa: top-level import avoided for circular dep
@@ -1222,7 +1222,7 @@ def backfill_board_state_db(conn, game_id):
             mistake_idx += 1
 
             m = dbmod.row_to_mistake(mr)
-            if m.get("board_state"):
+            if m.get("board_state") and not force:
                 continue
 
             board = extract_board_state(mortal_data, kyoku_idx, entry["tiles_left"])

@@ -761,6 +761,13 @@ body {
   gap: 4px;
 }
 
+/* Ghost tile (called from discard pool) */
+.tile.ghost-tile {
+  opacity: 0.3;
+  border: 1px dashed var(--text-dim);
+  border-radius: 3px;
+}
+
 /* Safety indicators on hand tiles */
 .tile.safety-safe { border-bottom: 3px solid var(--sev-minor); }
 .tile.safety-caution { border-bottom: 3px solid var(--sev-medium); }
