@@ -205,7 +205,7 @@ button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shad
 <div class="link">Need an account? <a href="/register">Register</a></div>
 {% endif %}
 <div class="link"><a href="/practice">Try practice mode without an account</a></div>
-<div class="link"><a href="/about">What is Haipai?</a></div>
+<div class="link"><a href="/">What is Haipai?</a></div>
 </div>
 <div class="preview">
   <img src="/static/screenshot-review.png" alt="Game review with mistake analysis">
@@ -277,13 +277,8 @@ def health():
 @app.route("/")
 def index():
     if not current_user.is_authenticated:
-        return redirect("/practice")
+        return send_from_directory("static", "landing.html")
     return send_from_directory("static", "index.html")
-
-
-@app.route("/about")
-def about():
-    return send_from_directory("static", "landing.html")
 
 
 @app.route("/practice")
