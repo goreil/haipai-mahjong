@@ -254,7 +254,7 @@ def get_tile_safety_for_mistake(hand_mjai, mjai_log_events, start_pos, end_pos,
     for mjai_tile, rt_idx in MJAI_TO_RT.items():
         if mjai_tile.endswith("r"):
             continue  # red fives share index with base
-        from mj_categorize import MJAI_TO_ID
+        from lib.categorize import MJAI_TO_ID
         base_id = MJAI_TO_ID.get(mjai_tile)
         if base_id is not None and base_id < len(wall_remaining):
             rt_remaining[rt_idx] = wall_remaining[base_id]

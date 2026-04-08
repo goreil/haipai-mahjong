@@ -396,7 +396,7 @@ def cmd_categorize(args):
 
     if args.recheck:
         # Re-run categorization logic on stored data (no API calls)
-        from mj_categorize import recheck_game, RULES
+        from lib.categorize import recheck_game, RULES
         total_changed = 0
         all_transitions = {}
         for idx in indices:
@@ -418,7 +418,7 @@ def cmd_categorize(args):
               f" defense_gap={RULES['defense_safety_gap']}")
         return
 
-    from mj_categorize import categorize_game
+    from lib.categorize import categorize_game
     total_categorized = 0
     total_api = 0
 
@@ -442,7 +442,7 @@ def cmd_categorize(args):
 
 def cmd_add(args):
     """Fetch Mortal JSON, parse it, and append game to games.json."""
-    from mj_parse import parse_game
+    from lib.parse import parse_game
 
     url = args.url
     game_date = args.date or date.today().isoformat()
@@ -500,7 +500,7 @@ def cmd_add(args):
     print(f"  ???:{sev['???']} ??:{sev['??']} ?:{sev['?']} !:{sev['!']}")
 
     # Auto-categorize
-    from mj_categorize import categorize_game
+    from lib.categorize import categorize_game
     print(f"\nAuto-categorizing...")
     cat_n, api_calls = categorize_game(game, n - 1)
     if cat_n > 0:

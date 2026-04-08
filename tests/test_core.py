@@ -12,8 +12,8 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import db
-from mj_parse import parse_game, round_header, severity
-from mj_categorize import (
+from lib.parse import parse_game, round_header, severity
+from lib.categorize import (
     MJAI_TO_ID, ID_TO_MJAI, mjai_to_tile_id, tile_id_to_base,
     extract_board_state, reconstruct_context, subtract_hand_from_wall,
     flatten_mjai_log,

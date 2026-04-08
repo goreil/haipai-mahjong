@@ -33,7 +33,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends gosu && rm -rf 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py routes_games.py routes_practice.py routes_admin.py db.py mahjong_cpp.py mj_categorize.py mj_defense.py mj_games.py mj_parse.py ./
+COPY app.py db.py ./
+COPY lib/ lib/
+COPY routes/ routes/
+COPY scripts/entrypoint.sh /entrypoint.sh
 COPY static/ static/
 COPY riichi-mahjong-tiles/Regular/ riichi-mahjong-tiles/Regular/
 
@@ -48,7 +51,6 @@ ENV NANIKIRU_URL=http://nanikiru:50000/
 ENV DB_PATH=/app/data/games.db
 ENV PYTHONUNBUFFERED=1
 
-COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 5000

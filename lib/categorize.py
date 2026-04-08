@@ -341,7 +341,7 @@ def build_api_request(hand_mjai, melds_mjai, round_wind_id, seat_wind_id, dora_i
 
 def call_mahjong_cpp(request_data):
     """Call the mahjong-cpp tile efficiency calculator (in-process via shared library)."""
-    from mahjong_cpp import calculate
+    from lib.mahjong_cpp import calculate
     return calculate(request_data)
 
 
@@ -561,7 +561,7 @@ def _classify_strategic(mistake, defense_ctx, tiles_left, wall):
     If an opponent is in riichi and mortal chose a significantly safer tile,
     it's a defense play (2B). Otherwise it stays as 2A (push/fold).
     """
-    from mj_defense import get_tile_safety_for_mistake
+    from lib.defense import get_tile_safety_for_mistake
 
     safety = get_tile_safety_for_mistake(
         mistake["hand"],
@@ -684,7 +684,7 @@ def categorize_mistake(mistake, mortal_data, kyoku_idx, entry, dora_indicators,
     safety_data = None
     opp_discards = None
     if defense_ctx:
-        from mj_defense import get_tile_safety_for_mistake, get_opponent_discards
+        from lib.defense import get_tile_safety_for_mistake, get_opponent_discards
         safety_data = get_tile_safety_for_mistake(
             hand, defense_ctx["mjai_events"], defense_ctx["start_pos"],
             defense_ctx["end_pos"], defense_ctx["player_id"],
@@ -797,7 +797,7 @@ def categorize_game(game, game_idx, force=False, dry_run=False):
 
     for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
         # Match kyoku to round in games.json
-        from mj_parse import round_header
+        from lib.parse import round_header
         rnd_header = round_header(start)
 
         game_round = None
@@ -909,7 +909,7 @@ def recheck_game(game, game_idx, dry_run=False):
 
     changed = 0
     transitions = {}  # (old_cat, new_cat) -> count
-    from mj_parse import round_header
+    from lib.parse import round_header
 
     for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
         rnd_header = round_header(start)
@@ -979,7 +979,7 @@ def recheck_game(game, game_idx, dry_run=False):
                     wall[i] = 0
 
             # Compute safety ratings and opponent discards for defense visuals
-            from mj_defense import get_tile_safety_for_mistake, get_opponent_discards
+            from lib.defense import get_tile_safety_for_mistake, get_opponent_discards
             safety = get_tile_safety_for_mistake(
                 m["hand"], events, start_pos, end_pos,
                 player_id, tiles_left, wall,
@@ -1023,7 +1023,7 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
     on_progress: optional callback(done, total) called after each mistake.
     Returns (categorized_count, api_calls, failures).
     """
-    import db as dbmod
+    import db as dbmod  # noqa: top-level import avoided for circular dep
 
     game_row = conn.execute(
         "SELECT mortal_file FROM games WHERE id = ?", (game_id,)
@@ -1058,7 +1058,7 @@ def categorize_game_db(conn, game_id, force=False, on_progress=None):
             rounds[rn] = []
         rounds[rn].append(mr)
 
-    from mj_parse import round_header
+    from lib.parse import round_header
 
     # Phase 1: Collect work items (sequential — DB reads + board state backfill)
     work_items = []
@@ -1162,7 +1162,7 @@ def backfill_board_state_db(conn, game_id):
 
     Returns the number of mistakes updated.
     """
-    import db as dbmod
+    import db as dbmod  # noqa: top-level import avoided for circular dep
 
     game_row = conn.execute(
         "SELECT mortal_file FROM games WHERE id = ?", (game_id,)
@@ -1194,7 +1194,7 @@ def backfill_board_state_db(conn, game_id):
         rounds[rn].append(mr)
 
     updated = 0
-    from mj_parse import round_header
+    from lib.parse import round_header
 
     for kyoku_idx, (kyoku, start) in enumerate(zip(kyokus, start_events)):
         rnd_header = round_header(start)

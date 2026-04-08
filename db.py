@@ -428,7 +428,7 @@ def record_practice_result(conn, user_id, mistake_id, correct):
 
 def get_practice_stats(conn, user_id):
     """Get practice accuracy stats by category group."""
-    from mj_games import CATEGORY_INFO
+    from lib.games import CATEGORY_INFO
     rows = conn.execute(
         """SELECT m.category, pr.correct, COUNT(*) as cnt
            FROM practice_results pr
@@ -455,7 +455,7 @@ def get_practice_problem(conn, user_id, severity=None, group=None, defense_only=
 
     Weighting: unseen problems x3, previously wrong x3, right once x1, right 2+ times x0.5.
     """
-    from mj_games import CATEGORY_INFO
+    from lib.games import CATEGORY_INFO
     import random
 
     where = ["g.user_id = ?", "m.severity IN ('??', '???' )"]
@@ -545,7 +545,7 @@ def get_public_practice_problem(conn, severity=None, group=None, defense_only=Fa
     Only includes games from users with practice_opt_in=1.
     Strips user-identifying info (notes, game dates).
     """
-    from mj_games import CATEGORY_INFO
+    from lib.games import CATEGORY_INFO
     import random
 
     where = ["m.severity IN ('??', '???' )", "u.practice_opt_in = 1"]
@@ -606,7 +606,7 @@ def get_public_practice_problem(conn, severity=None, group=None, defense_only=Fa
 
 def get_trends(conn, user_id):
     """Get per-game trend data."""
-    from mj_games import CATEGORY_INFO
+    from lib.games import CATEGORY_INFO
     rows = conn.execute(
         "SELECT id, date, stats_json FROM games WHERE user_id = ? ORDER BY date, id",
         (user_id,),

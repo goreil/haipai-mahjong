@@ -12,7 +12,7 @@ import os
 import sys
 
 import db
-from mj_games import CATEGORY_INFO
+from lib.games import CATEGORY_INFO
 
 DIR = Path(__file__).parent
 
@@ -329,9 +329,9 @@ def api_trends():
 
 # --- Register blueprints ---
 
-from routes_games import games_bp
-from routes_practice import practice_bp
-from routes_admin import admin_bp
+from routes.games import games_bp
+from routes.practice import practice_bp
+from routes.admin import admin_bp
 
 app.register_blueprint(games_bp)
 app.register_blueprint(practice_bp)

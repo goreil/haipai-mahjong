@@ -9,28 +9,30 @@ Riichi Mahjong game analysis web app ("Haipai"). Analyzes Tenhou/MJS replays via
 ## Key Files
 
 - `app.py` - Flask web server (port 5000). App setup, auth, static routes, blueprint registration.
-- `routes_games.py` - Game CRUD blueprint: list, get, delete, add, annotate, categorize, backfill, background categorization.
-- `routes_practice.py` - Practice mode blueprint: get problem, public problem, record result, stats.
-- `routes_admin.py` - Admin + feedback blueprint: admin stats, feedback CRUD, GitHub issue creation, user feedback.
 - `db.py` - SQLite database layer. Games, mistakes, users, practice results, feedback.
-- `mahjong_cpp.py` - ctypes wrapper for libmahjongcpp.so. In-process tile efficiency calculator.
-- `mj_categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp. Wall reconstruction, defense-aware 2A/2B split, safety rating computation.
-- `mj_defense.py` - Suji-based tile safety evaluator (ported from Riichi-Trainer). Rates tiles 0-15.
-- `mj_parse.py` - Core parser. `parse_game(data, date)` returns structured game dict from Mortal JSON.
-- `mj_games.py` - CLI tool for games.json (legacy format, still functional for local use).
-- `static/` - Web frontend: `index.html`, `style.css`, `app.js` (vanilla JS SPA).
+- `routes/` - Flask blueprints:
+  - `routes/games.py` - Game CRUD: list, get, delete, add, annotate, categorize, backfill, background categorization.
+  - `routes/practice.py` - Practice mode: get problem, public problem, record result, stats.
+  - `routes/admin.py` - Admin + feedback: admin stats, feedback CRUD, GitHub issue creation, user feedback.
+- `lib/` - Core logic modules:
+  - `lib/categorize.py` - Auto-categorization engine. Compares Mortal AI vs mahjong-cpp. Wall reconstruction, defense-aware 2A/2B split, safety rating computation.
+  - `lib/defense.py` - Suji-based tile safety evaluator (ported from Riichi-Trainer). Rates tiles 0-15.
+  - `lib/parse.py` - Core parser. `parse_game(data, date)` returns structured game dict from Mortal JSON.
+  - `lib/games.py` - CLI tool for games.json (legacy format, still functional for local use).
+  - `lib/mahjong_cpp.py` - HTTP client for nanikiru tile efficiency server.
+- `scripts/` - Ops scripts: `backup.sh`, `check-cert.sh`, `entrypoint.sh`, `migrate_categories.sh`.
+- `static/` - Web frontend: `index.html`, `landing.html`, `style.css`, `app.js` (vanilla JS SPA).
 - `tests/test_core.py` - pytest suite (26 tests): parsing, tile conversion, board state, DB, API, wall reconstruction.
-- `Dockerfile` - Multi-stage build (libmahjongcpp.so + Python runtime). Non-root user.
-- `docker-compose.yml` - App + nginx + certbot. Bind mounts for hot reload.
+- `Dockerfile` - Multi-stage build (nanikiru + Python runtime). Non-root user.
+- `docker-compose.yml` - App + nanikiru + nginx + certbot. Bind mounts for hot reload.
 - `nginx.conf.template` - Nginx config template with security headers. Copy to nginx.conf on server.
 - `docs/DEPLOY.md` - Full deployment guide with auto-deploy setup.
 - `docs/PROMPTS.md` - Instance prompts for parallel Claude sessions.
 - `docs/ROADMAP.md` - Product roadmap: beta, post-beta, monetization, growth.
-- `docs/backlogs/` - Backlog docs for each parallel instance (BUGS.md, UX-AUDIT.md, etc.).
+- `docs/backlogs/` - Backlog docs for each parallel instance.
 - `riichi-mahjong-tiles/` - Git submodule with SVG tile graphics.
 - `mahjong-cpp/` - Git submodule, C++ mahjong library for tile efficiency.
 - `Riichi-Trainer/` - Git submodule. Source of defense analysis logic.
-- `archive/` - Legacy/one-shot scripts (migration tools, deployment notes, brainstorming).
 - `notes/` - Personal scratch files (gitignored).
 
 ## Commands
@@ -48,12 +50,12 @@ docker-compose restart app                  # Restart after code changes
 docker-compose logs -f app                  # View logs
 
 # CLI (legacy, works with games.json)
-python3 mj_games.py list
-python3 mj_games.py review --game 3
-python3 mj_games.py categorize --recheck --dry-run
+python3 -m lib.games list
+python3 -m lib.games review --game 3
+python3 -m lib.games categorize --recheck --dry-run
 
 # Lower-level
-python3 mj_parse.py analysis.json          # Parse Mortal JSON to stdout
+python3 -m lib.parse analysis.json          # Parse Mortal JSON to stdout
 ```
 
 ## Web UI
@@ -103,7 +105,7 @@ When adding a game (CLI or web), mistakes are automatically categorized:
    - **cpp != mortal** otherwise: **3A** (Push/Fold)
    - **Hand already winning**: defaults to **3A**
 
-Thresholds in `RULES` dict at top of `mj_categorize.py`. Iterate with `--recheck --dry-run`.
+Thresholds in `RULES` dict at top of `lib/categorize.py`. Iterate with `--recheck --dry-run`.
 
 ## Tile Notation
 
@@ -114,8 +116,8 @@ SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, 
 ## Important Notes
 
 - Downloads from mjai.ekyu.moe must use the `requests` library — Cloudflare blocks bare urllib.
-- `mahjong-cpp` uses MPSZ notation — conversion needed (see `MJAI_TO_ID` in mj_categorize.py).
-- `mahjong-cpp` is loaded in-process via `mahjong_cpp.py` (ctypes wrapper for `libmahjongcpp.so`). No HTTP server needed.
+- `mahjong-cpp` uses MPSZ notation — conversion needed (see `MJAI_TO_ID` in `lib/categorize.py`).
+- `mahjong-cpp` runs as a separate Docker service (`nanikiru`) on port 50000. `lib/mahjong_cpp.py` is the HTTP client with retry logic.
 - `SECRET_KEY` must be set via `.env` file or environment variable (no insecure defaults).
 - Debug mode requires `FLASK_ENV=development` (off by default).
 
@@ -123,10 +125,10 @@ SVG files: `Man1.svg`-`Man9.svg`, `Pin1.svg`-`Pin9.svg`, `Sou1.svg`-`Sou9.svg`, 
 
 Local dev (WSL) and production (Docker on Hetzner) differ in important ways:
 
-- **mahjong-cpp**: Loaded as a shared library (`libmahjongcpp.so`) in-process via ctypes. Requires the .so to be built locally (`cd mahjong-cpp && mkdir build && cd build && cmake .. -DBUILD_PYTHON=ON -DBUILD_SERVER=OFF -DBUILD_SAMPLES=OFF && make mahjong-python`). Data files (`.bin`, `.json`) must be in the same directory as the `.so`.
+- **mahjong-cpp**: Runs as a separate Docker service (`nanikiru`) on port 50000. Python calls it via HTTP (`lib/mahjong_cpp.py`). For local dev without Docker, build the nanikiru binary: `cd mahjong-cpp && mkdir build && cd build && cmake .. -DBUILD_SERVER=ON && make nanikiru`, then run `./nanikiru 50000` and set `NANIKIRU_URL=http://localhost:50000/`.
 - **File permissions**: Docker runs gunicorn as `appuser` (uid 1000). Files created by `docker compose exec` run as root. Any new file the app writes at runtime (caches, DBs) must go in a directory writable by `appuser` — use the `data/` volume, not `/app/`.
-- **File paths**: Production copies specific `.py` files into `/app/` (see `COPY` line in Dockerfile). New Python modules must be added to the Dockerfile `COPY` list or they won't exist in the container.
-- **gunicorn workers**: Production runs 2 workers. Module-level state is per-worker. The mahjong-cpp library is loaded once per worker (in-process, no port conflicts).
+- **File paths**: Production copies `app.py`, `db.py`, `lib/`, `routes/` into `/app/`. Bind mounts in docker-compose.yml overlay these for hot reload. New Python files under `lib/` or `routes/` are picked up automatically.
+- **gunicorn workers**: Production runs 2 workers. Module-level state is per-worker.
 
 ## Backlog Documents
 
@@ -135,8 +137,8 @@ Issues and improvements are tracked in dedicated backlog docs. When working on a
 | Document | Scope | Primary files |
 |----------|-------|---------------|
 | `docs/backlogs/AUTH.md` | OAuth login, drop invite code friction | `app.py`, `db.py`, `static/landing.html`, `requirements.txt` |
-| `docs/backlogs/AKOCHAN.md` | In-house AI analysis (replace Mortal dependency) | `akochan_runner.py`, `log_fetcher.py`, `mj_parse.py`, `app.py`, `Dockerfile` |
-| `docs/backlogs/PIPELINE.md` | Replace nanikiru HTTP server with in-process calls | `mahjong-cpp/`, `mj_categorize.py`, `app.py`, `Dockerfile` |
+| `docs/backlogs/AKOCHAN.md` | In-house AI analysis (replace Mortal dependency) | `akochan_runner.py`, `log_fetcher.py`, `lib/parse.py`, `app.py`, `Dockerfile` |
+| `docs/backlogs/PIPELINE.md` | Nanikiru sidecar stability | `mahjong-cpp/`, `lib/categorize.py`, `lib/mahjong_cpp.py`, `docker-compose.yml` |
 | `docs/backlogs/ANON-PRACTICE.md` | Anonymous practice tool (no login required) | `app.py`, `db.py`, `static/app.js`, `static/landing.html` |
 | `docs/backlogs/TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
 | `docs/backlogs/PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |

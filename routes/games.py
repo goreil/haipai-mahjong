@@ -9,10 +9,10 @@ import sys
 import threading
 
 import db
-from mj_parse import parse_game
-from mj_games import compute_summary
+from lib.parse import parse_game
+from lib.games import compute_summary
 
-DIR = Path(__file__).parent
+DIR = Path(__file__).parent.parent
 games_bp = Blueprint("games", __name__)
 
 
@@ -130,7 +130,7 @@ def api_backfill_board_state():
         "SELECT id FROM games WHERE user_id = ?", (uid,)
     ).fetchall()]
 
-    from mj_categorize import backfill_board_state_db
+    from lib.categorize import backfill_board_state_db
     total_updated = 0
     for gid in game_ids:
         total_updated += backfill_board_state_db(conn, gid)
@@ -230,7 +230,7 @@ def api_add():
 
 def _categorize_background(game_id, force=False):
     """Run categorization in a background thread with its own DB connection."""
-    from mj_categorize import categorize_game_db
+    from lib.categorize import categorize_game_db
     conn = db.get_db()
     try:
         categorize_game_db(conn, game_id, force=force)
