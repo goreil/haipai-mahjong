@@ -103,7 +103,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  overflow:hidden;
+  padding:40px 0;
 }
 body::before{
   content:'';position:fixed;inset:0;
@@ -112,7 +112,7 @@ body::before{
     radial-gradient(ellipse 50% 40% at 80% 20%, rgba(67,160,71,0.05) 0%, transparent 70%);
   pointer-events:none;
 }
-.login-wrap{position:relative;z-index:1;width:380px;max-width:92vw}
+.login-wrap{position:relative;z-index:1;width:480px;max-width:92vw}
 .brand{text-align:center;margin-bottom:32px}
 .brand-tiles{
   display:inline-flex;gap:4px;margin-bottom:16px;
@@ -175,6 +175,9 @@ button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shad
 .link{text-align:center;margin-top:18px;font-size:13px;color:#5a6078}
 .link a{color:#4fc3f7;text-decoration:none;font-weight:500}
 .link a:hover{text-decoration:underline}
+.preview{margin-top:24px;border-radius:10px;overflow:hidden;border:1px solid #1e2540;box-shadow:0 6px 24px rgba(0,0,0,0.3)}
+.preview img{width:100%;display:block}
+.preview-label{text-align:center;font-size:11px;color:#5a6078;padding:6px 0 2px}
 </style></head><body>
 <div class="login-wrap">
 <div class="brand">
@@ -203,6 +206,10 @@ button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shad
 {% endif %}
 <div class="link"><a href="/practice">Try practice mode without an account</a></div>
 </div>
+<div class="preview">
+  <img src="/static/screenshot-review.png" alt="Game review with mistake analysis">
+</div>
+<div class="preview-label">Upload Mortal analysis &middot; See every mistake categorized &middot; Track improvement</div>
 </div></body></html>"""
 
 
