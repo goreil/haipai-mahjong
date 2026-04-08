@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/ — NOT ignored (project uses lib/ for core modules)
 lib64/
 parts/
 sdist/
