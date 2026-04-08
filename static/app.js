@@ -1619,9 +1619,9 @@ function renderPractice() {
       <p>You'll see a mahjong hand after drawing a tile. Pick which tile you would discard.</p>
       <ul>
         <li>Problems come from real games analyzed by <strong>Mortal AI</strong></li>
-        <li>The correct answer is what Mortal recommends &mdash; the most efficient discard</li>
-        <li>Tiles with a <span style="color:#ef5350">red border</span> are dangerous when an opponent is in riichi</li>
-        <li>The draw (last tile added) is shown with a small gap</li>
+        <li>The correct answer is Mortal's recommendation &mdash; considering efficiency, defense, and hand value</li>
+        <li>A <span style="color:#ef5350"><b>RIICHI</b></span> badge means an opponent declared riichi &mdash; tiles are colored by safety (green = safe, red = dangerous)</li>
+        <li>The draw (last tile added to your hand) is shown with a small gap</li>
       </ul>
     </div>`;
   }
@@ -1929,11 +1929,11 @@ function showHelp() {
     </div>
 
     <div class="help-section">
-      <h3>Tile Efficiency Practice</h3>
-      <p>Practice replays your tile efficiency mistakes as quizzes. You see the hand + draw and pick a discard. After answering, the full analysis is revealed.</p>
-      <p>Only tile efficiency mistakes are included &mdash; decisions where the correct tile can be determined from your hand alone. Strategic decisions (defense, push/fold) are excluded because they depend on game context that a hand quiz can't capture.</p>
+      <h3>Practice Mode</h3>
+      <p>Practice replays your discard mistakes as quizzes. You see the hand, draw, and board context, then pick a discard. After answering, the full analysis is revealed.</p>
+      <p>Problems include all discard-vs-discard mistakes &mdash; efficiency, defense, and strategy. Board context (discards, dora, scores) is shown so you have the same information you'd have in a real game.</p>
       <p><b>Spaced repetition:</b> Problems you get wrong (or haven't seen) appear 3x more often. Problems you've answered correctly multiple times appear less. This focuses practice on your weakest areas.</p>
-      <p><b>Filters:</b> Focus on severity levels or riichi-only situations.</p>
+      <p><b>Filters:</b> Focus on severity levels (??? / ??) or riichi-only situations. Switch between community pool and your own mistakes.</p>
     </div>
 
     <div class="help-section">
