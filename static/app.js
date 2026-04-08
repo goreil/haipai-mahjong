@@ -664,7 +664,7 @@ function renderMistakeCard(m, opts = {}) {
     html += `<span class="cat-badge" style="background:${color}20;color:${color};border:1px solid ${color}40" title="${catDesc(m.category)}">${catLabel(m.category)}</span>`;
   }
   if (m.shanten != null) html += `<span class="shanten">${m.shanten}-shanten</span>`;
-  if (showLink) html += `<span class="mistake-link" onclick="fetchGame(${showLink})" title="Go to game">&#x2197;</span>`;
+  if (showLink) html += `<span class="mistake-link" onclick="fetchGame(${showLink})">View game</span>`;
   if (m.actual && m.expected) {
     const actStr = formatAction(m.actual);
     const expStr = formatAction(m.expected);
@@ -705,7 +705,13 @@ function renderMistakeCard(m, opts = {}) {
   return html;
 }
 
+function setSeverityFiltersVisible(show) {
+  const el = document.getElementById("severity-filters");
+  if (el) el.style.display = show ? "" : "none";
+}
+
 function renderGame() {
+  setSeverityFiltersVisible(true);
   const game = state.currentGameData;
   if (!game) return;
   const content = document.getElementById("content");
@@ -1273,6 +1279,7 @@ function navigateHome() {
 }
 
 async function showTrends() {
+  setSeverityFiltersVisible(false);
   state.currentGame = null;
   state.currentGameData = null;
   renderGameList();
@@ -1596,6 +1603,7 @@ async function fetchPractice() {
 }
 
 async function showPractice() {
+  setSeverityFiltersVisible(false);
   state.currentGame = null;
   state.currentGameData = null;
   renderGameList();
@@ -2228,6 +2236,13 @@ async function submitFeedback() {
 }
 
 // --- Keyboard shortcuts ---
+
+// Close toolbar dropdown when clicking outside
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".toolbar-menu")) {
+    document.querySelectorAll(".toolbar-menu.open").forEach(m => m.classList.remove("open"));
+  }
+});
 
 document.addEventListener("keydown", (e) => {
   // Practice mode: Space/Enter for next problem after answering

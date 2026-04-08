@@ -194,6 +194,48 @@ body {
 .toolbar input[type="checkbox"] {
   accent-color: var(--accent);
 }
+.severity-filters {
+  display: inline-flex;
+  gap: 8px;
+}
+.toolbar-menu {
+  position: relative;
+}
+.toolbar-menu-btn {
+  font-size: 18px;
+  padding: 4px 8px;
+  line-height: 1;
+}
+.toolbar-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 160px;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.toolbar-menu.open .toolbar-dropdown {
+  display: block;
+}
+.toolbar-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.toolbar-dropdown button:hover {
+  background: rgba(255,255,255,0.05);
+}
 
 .btn {
   padding: 6px 14px;
@@ -1247,14 +1289,19 @@ body {
   color: var(--text-dim);
 }
 .mistake-link {
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
   color: var(--accent);
-  opacity: 0.6;
   margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  opacity: 0.7;
+  text-decoration: none;
 }
 .mistake-link:hover {
   opacity: 1;
+  background: rgba(79, 195, 247, 0.1);
 }
 
 /* Trends */

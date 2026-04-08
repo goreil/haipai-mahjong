@@ -27,15 +27,22 @@
     <div class="main">
       <div class="toolbar">
         <button class="btn sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">&#9776;</button>
-        <label><input type="checkbox" onchange="onToggleMedium(this)"> Show ?? (medium)</label>
-        <label><input type="checkbox" onchange="onToggleMinor(this)"> Show ? (minor)</label>
+        <span class="severity-filters" id="severity-filters" style="display:none">
+          <label><input type="checkbox" onchange="onToggleMedium(this)"> ??</label>
+          <label><input type="checkbox" onchange="onToggleMinor(this)"> ?</label>
+        </span>
         <div class="spacer"></div>
         <button class="btn" id="trends-btn" onclick="showTrends()">Trends</button>
         <button class="btn" id="practice-btn" onclick="showPractice()">Practice</button>
-        <button class="btn" id="help-btn" onclick="showHelp()">Help</button>
-        <button class="btn" onclick="showMyFeedback()">My Feedback</button>
-        <button class="btn" onclick="showFeedbackModal()">Send Feedback</button>
-        <button class="btn" id="admin-btn" style="display:none" onclick="showAdmin()">Admin</button>
+        <div class="toolbar-menu">
+          <button class="btn toolbar-menu-btn" onclick="this.parentElement.classList.toggle('open')">&#8943;</button>
+          <div class="toolbar-dropdown">
+            <button onclick="showHelp()">Help</button>
+            <button onclick="showFeedbackModal()">Send Feedback</button>
+            <button onclick="showMyFeedback()">My Feedback</button>
+            <button id="admin-btn" style="display:none" onclick="showAdmin()">Admin</button>
+          </div>
+        </div>
       </div>
       <div class="content" id="content">
         <div class="empty-state">Select a game to review</div>
