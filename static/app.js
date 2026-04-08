@@ -174,10 +174,9 @@ function renderMeld(meld, tileClass = "action-tile-sm", actorSeat, doraTiles) {
 
   if (type === "kakan") {
     // Added kan: pon layout with 4th tile stacked on top of the rotated called tile
-    // consumed has 3 tiles, pai is the 4th (added) tile
     const tile = consumed[0] || pai;
-    // Two rotated tiles stacked vertically
-    const ct = `<span class="meld-kakan">${meldTile(pai, "meld-stacked-tile")}${meldTile(tile)}</span>`;
+    // Called position: bottom rotated tile + top rotated tile overlapping
+    const ct = `<span class="meld-called meld-kakan">${meldTile(tile)}<span class="meld-added">${meldTile(pai)}</span></span>`;
     const t1 = meldTile(tile);
     const t2 = meldTile(tile);
     if (relPos === 3) return `<span class="meld-group">${ct}${t1}${t2}${windSup}</span>`;
@@ -721,22 +720,14 @@ function renderGame() {
 
   const dateObj = new Date(game.date + "T00:00:00");
   const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  const isPreview = game.preview;
   let html = `
     <div class="game-header">
       <h2>${displayDate}
-        ${!isPreview ? `<button class="btn btn-delete" onclick="deleteGame(${state.currentGame})" title="Delete game">Delete</button>` : ""}
+        <button class="btn btn-delete" onclick="deleteGame(${state.currentGame})" title="Delete game">Delete</button>
       </h2>
       ${game.log_url ? `<div class="log-link"><a href="${game.log_url}" target="_blank">${game.log_url}</a></div>` : ""}
-    </div>`;
+    </div>
 
-  if (isPreview) {
-    html += `<div class="categorization-banner pending" style="background:rgba(79,195,247,0.08);border-color:rgba(79,195,247,0.2)">
-      Preview mode &mdash; this game is not saved. <a href="/register">Register</a> to keep your games, track progress, and get auto-categorization.
-    </div>`;
-  }
-
-  html += `
 
     <div class="summary-bar">
       <div class="stat"><span class="value">${s.total_mistakes || 0}</span><span class="label">Mistakes</span></div>
@@ -911,8 +902,8 @@ function renderGame() {
         html += `</div>`;
       }
 
-      // Annotation (hidden in preview mode)
-      if (!isPreview) {
+      // Annotation
+      {
         const catOptions = CATEGORIES.map(c => {
           const sel = (m.category || "") === c ? "selected" : "";
           const label = c ? catLabel(c) : "Uncategorized";
@@ -1119,58 +1110,6 @@ async function submitAddGame() {
   } catch (e) {
     btn.disabled = false;
     progressEl.style.display = "none";
-    errEl.textContent = e.message;
-  }
-}
-
-function showPreviewUpload() {
-  const overlay = document.createElement("div");
-  overlay.className = "modal-overlay show";
-  overlay.innerHTML = `
-    <div class="modal" style="max-width:420px">
-      <h3>Preview a game</h3>
-      <p style="color:var(--text-dim);font-size:13px;margin:8px 0 16px;line-height:1.5">
-        Upload a Mortal analysis JSON to see your mistakes. Nothing is saved &mdash; <a href="/register">register</a> to keep your games.
-      </p>
-      <input type="file" id="preview-file" accept=".json">
-      <div id="preview-error" style="color:#ef5350;font-size:13px;margin-top:8px"></div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitPreview(this)">Preview</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-async function submitPreview(btn) {
-  const fileInput = document.getElementById("preview-file");
-  const errEl = document.getElementById("preview-error");
-  if (!fileInput.files.length) { errEl.textContent = "Select a file"; return; }
-
-  btn.disabled = true;
-  errEl.textContent = "";
-  try {
-    const text = await fileInput.files[0].text();
-    const mortalData = JSON.parse(text);
-    const res = await fetch("/api/games/preview", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({mortal_data: mortalData}),
-    });
-    const data = await res.json();
-    btn.disabled = false;
-    if (data.error) { errEl.textContent = data.error; return; }
-
-    // Close modal and show the game
-    btn.closest(".modal-overlay").remove();
-    state.currentGameData = data;
-    state.currentGame = null;
-    // Switch to game view (hide practice sidebar etc.)
-    document.getElementById("sidebar").style.display = "";
-    renderGame();
-  } catch (e) {
-    btn.disabled = false;
     errEl.textContent = e.message;
   }
 }
@@ -1688,7 +1627,7 @@ function renderPractice() {
   }
 
   html += `${isAnonymous ? `<div class="practice-login-banner"><strong>Haipai</strong> &mdash; Riichi Mahjong mistake trainer. Pick the best discard below!
-    <span class="banner-links"><a href="/register">Register</a> or <a href="/login">log in</a> to save your games. <a href="#" onclick="showPreviewUpload(); return false">Try uploading a game</a> &middot; <a href="/about">Learn more</a></span></div>` : ''}`;
+    <span class="banner-links"><a href="/register">Register</a> or <a href="/login">log in</a> to save your games. <a href="/about">Learn more</a></span></div>` : ''}`;
 
   // Collapsible filters
   html += `<div class="practice-filters-toggle" onclick="togglePracticeFilters()">Filters ${showFilters ? '&#9650;' : '&#9660;'}</div>`;

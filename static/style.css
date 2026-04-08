@@ -123,10 +123,10 @@ body {
 }
 
 .game-item {
-  padding: 12px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   border: 1px solid transparent;
   transition: background 0.15s;
 }
@@ -146,9 +146,9 @@ body {
 }
 
 .game-item .stats {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-dim);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .game-item .annotation-bar {
@@ -858,18 +858,19 @@ body {
 .meld-kakan {
   display: inline-flex;
   flex-direction: column;
-  align-items: center;
-  position: relative;
+  align-items: flex-start;
   vertical-align: bottom;
 }
 .meld-kakan > .tile {
+  /* base tile — already rotated by .meld-called > .tile */
+}
+.meld-added {
+  display: block;
+  margin-bottom: -4px;
+}
+.meld-added > .tile {
   transform: rotate(90deg);
   margin: -3px 0;
-}
-.meld-kakan > .tile.meld-stacked-tile {
-  margin-bottom: -10px;
-  z-index: 1;
-  position: relative;
 }
 
 .action-meld {
@@ -992,10 +993,19 @@ body {
 
 /* Annotation row */
 .annotation-row {
-  margin-top: 8px;
+  margin-top: 4px;
   display: flex;
   align-items: center;
   gap: 8px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.2s, opacity 0.2s;
+}
+.mistake:hover .annotation-row,
+.mistake:focus-within .annotation-row {
+  max-height: 40px;
+  opacity: 1;
 }
 
 .annotation-row select,

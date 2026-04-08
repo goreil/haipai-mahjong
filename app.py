@@ -390,8 +390,6 @@ app.register_blueprint(practice_bp)
 app.register_blueprint(admin_bp)
 
 # CSRF exemptions for anonymous endpoints
-from routes.games import api_preview
-csrf.exempt(api_preview)
 
 
 # --- Init ---
