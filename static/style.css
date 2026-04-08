@@ -792,6 +792,12 @@ body {
   color: var(--text-dim);
   margin-right: 4px;
 }
+.meld-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-right: 3px;
+  white-space: nowrap;
+}
 .meld-called {
   display: inline-flex;
   align-items: flex-end;

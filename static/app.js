@@ -131,9 +131,8 @@ function renderMeld(meld, tileClass = "action-tile-sm", actorSeat) {
   const target = meld.target;
 
   if (type === "ankan") {
-    // Closed kan: back-back-face-face (show 2 face-down, 2 face-up)
     const tile = consumed[0] || pai || "?";
-    return `<span class="meld-group meld-kan">${renderBackTile(tileClass)}${renderTile(tile, tileClass)}${renderTile(tile, tileClass)}${renderBackTile(tileClass)}</span>`;
+    return `<span class="meld-group meld-kan"><span class="meld-label">ankan</span>${renderBackTile(tileClass)}${renderTile(tile, tileClass)}${renderTile(tile, tileClass)}${renderBackTile(tileClass)}</span>`;
   }
 
   // For open melds, determine relative position of called tile
@@ -146,44 +145,41 @@ function renderMeld(meld, tileClass = "action-tile-sm", actorSeat) {
   }
   const windTitle = targetWind ? ` (from ${targetWind})` : "";
 
+  const label = `<span class="meld-label">${type}${windTitle}</span>`;
+
   if (type === "chi") {
     // Chi: always from left (kamicha), called tile sorted into sequence
     const all = [...consumed, pai].sort((a, b) => {
       const na = parseInt(a) || 0, nb = parseInt(b) || 0;
       return na - nb;
     });
-    // Called tile (pai) is shown sideways (rotated)
-    return `<span class="meld-group" title="chi${windTitle}">${all.map(t =>
+    return `<span class="meld-group" title="chi${windTitle}">${label}${all.map(t =>
       t === pai ? `<span class="meld-called">${renderTile(t, tileClass)}</span>` : renderTile(t, tileClass)
     ).join("")}</span>`;
   }
 
   if (type === "pon") {
-    // Pon: called tile position depends on source
     const calledTile = `<span class="meld-called">${renderTile(pai, tileClass)}</span>`;
     const ownTiles = consumed.map(t => renderTile(t, tileClass));
-    if (relPos === 3) return `<span class="meld-group" title="pon${windTitle}">${calledTile}${ownTiles.join("")}</span>`;
-    if (relPos === 2) return `<span class="meld-group" title="pon${windTitle}">${ownTiles[0]}${calledTile}${ownTiles[1]}</span>`;
-    // relPos === 1 or unknown: called tile on right
-    return `<span class="meld-group" title="pon${windTitle}">${ownTiles.join("")}${calledTile}</span>`;
+    if (relPos === 3) return `<span class="meld-group" title="pon${windTitle}">${label}${calledTile}${ownTiles.join("")}</span>`;
+    if (relPos === 2) return `<span class="meld-group" title="pon${windTitle}">${label}${ownTiles[0]}${calledTile}${ownTiles[1]}</span>`;
+    return `<span class="meld-group" title="pon${windTitle}">${label}${ownTiles.join("")}${calledTile}</span>`;
   }
 
   if (type === "daiminkan") {
-    // Open kan: like pon but with 4 tiles, called tile rotated
     const calledTile = `<span class="meld-called">${renderTile(pai, tileClass)}</span>`;
     const ownTiles = consumed.map(t => renderTile(t, tileClass));
-    if (relPos === 3) return `<span class="meld-group meld-kan" title="kan${windTitle}">${calledTile}${ownTiles.join("")}</span>`;
-    if (relPos === 2) return `<span class="meld-group meld-kan" title="kan${windTitle}">${ownTiles[0]}${calledTile}${ownTiles.slice(1).join("")}</span>`;
-    return `<span class="meld-group meld-kan" title="kan${windTitle}">${ownTiles.join("")}${calledTile}</span>`;
+    if (relPos === 3) return `<span class="meld-group meld-kan" title="kan${windTitle}">${label}${calledTile}${ownTiles.join("")}</span>`;
+    if (relPos === 2) return `<span class="meld-group meld-kan" title="kan${windTitle}">${label}${ownTiles[0]}${calledTile}${ownTiles.slice(1).join("")}</span>`;
+    return `<span class="meld-group meld-kan" title="kan${windTitle}">${label}${ownTiles.join("")}${calledTile}</span>`;
   }
 
   if (type === "kakan") {
-    // Added kan: pon display + 4th tile stacked on the called tile
     const calledTile = `<span class="meld-called meld-kakan"><span class="meld-stacked">${renderTile(pai, tileClass)}</span>${renderTile(consumed[0] || pai, tileClass)}</span>`;
     const ownTiles = consumed.slice(1).map(t => renderTile(t, tileClass));
-    if (relPos === 3) return `<span class="meld-group meld-kan" title="added kan${windTitle}">${calledTile}${ownTiles.join("")}</span>`;
-    if (relPos === 2) return `<span class="meld-group meld-kan" title="added kan${windTitle}">${ownTiles[0] || ""}${calledTile}${ownTiles.slice(1).join("")}</span>`;
-    return `<span class="meld-group meld-kan" title="added kan${windTitle}">${ownTiles.join("")}${calledTile}</span>`;
+    if (relPos === 3) return `<span class="meld-group meld-kan" title="added kan${windTitle}">${label}${calledTile}${ownTiles.join("")}</span>`;
+    if (relPos === 2) return `<span class="meld-group meld-kan" title="added kan${windTitle}">${label}${ownTiles[0] || ""}${calledTile}${ownTiles.slice(1).join("")}</span>`;
+    return `<span class="meld-group meld-kan" title="added kan${windTitle}">${label}${ownTiles.join("")}${calledTile}</span>`;
   }
 
   // Fallback: just show all tiles
