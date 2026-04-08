@@ -136,19 +136,12 @@ Issues and improvements are tracked in dedicated backlog docs. When working on a
 
 | Document | Scope | Primary files |
 |----------|-------|---------------|
-| `docs/backlogs/AUTH.md` | OAuth login, drop invite code friction | `app.py`, `db.py`, `static/landing.html`, `requirements.txt` |
-| `docs/backlogs/AKOCHAN.md` | In-house AI analysis (replace Mortal dependency) | `akochan_runner.py`, `log_fetcher.py`, `lib/parse.py`, `app.py`, `Dockerfile` |
-| `docs/backlogs/PIPELINE.md` | Nanikiru sidecar stability | `mahjong-cpp/`, `lib/categorize.py`, `lib/mahjong_cpp.py`, `docker-compose.yml` |
-| `docs/backlogs/ANON-PRACTICE.md` | Anonymous practice tool (no login required) | `app.py`, `db.py`, `static/app.js`, `static/landing.html` |
-| `docs/backlogs/TESTING.md` | Test coverage gaps, missing test cases | `tests/` |
-| `docs/backlogs/PENTEST.md` | Security findings and remediation | `app.py`, `nginx.conf` |
-| `docs/backlogs/FEEDBACK-PIPELINE.md` | Feedback admin (1 stretch item remaining) | `app.py`, `db.py`, `static/app.js` |
-| `docs/backlogs/LANDING-PAGE.md` | Landing page (1 stretch item remaining) | `static/landing.html`, `app.py`, `style.css` |
-| `docs/backlogs/UX-FEEDBACK.md` | UX improvements: practice tutorial, simpler UI, guest upload, opt-in popup | `static/app.js`, `static/landing.html`, `app.py`, `db.py` |
+| `docs/backlogs/AUTH.md` | OAuth login (Discord, Google) | `app.py`, `db.py`, `requirements.txt` |
+| `docs/backlogs/AKOCHAN.md` | In-house AI analysis (replace Mortal dependency) | `lib/parse.py`, `app.py`, `Dockerfile` |
+| `docs/backlogs/TESTING.md` | Test coverage gaps | `tests/` |
+| `docs/backlogs/UX-FEEDBACK.md` | Guest upload, Google OAuth | `routes/games.py`, `static/app.js`, `app.py` |
 
-Completed backlogs (archived via git history): BUGS.md, INFRA.md, UX-AUDIT.md.
-
-When running multiple Claude instances in parallel, avoid editing the same files concurrently. The table above shows which files each backlog primarily touches. See `docs/PROMPTS.md` for ready-to-use instance prompts.
+Completed backlogs (archived via git history): BUGS.md, INFRA.md, UX-AUDIT.md, ANON-PRACTICE.md, FEEDBACK-PIPELINE.md, LANDING-PAGE.md, PIPELINE.md, PENTEST.md.
 
 ## Roadmap
 
