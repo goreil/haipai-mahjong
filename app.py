@@ -193,7 +193,7 @@ button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shad
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <label>Username</label><input name="username" required autofocus autocomplete="username">
 <label>Password</label><input name="password" type="password" required autocomplete="{{ 'new-password' if register else 'current-password' }}">
-{% if register %}<label>Invite Code</label><input name="invite_code" required placeholder="From a club member">{% endif %}
+{% if register %}{% endif %}
 <button>{{ title }}</button>
 </form>
 {% if register %}
@@ -238,19 +238,16 @@ def register():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        invite_code = request.form.get("invite_code", "").strip()
         conn = get_conn()
 
         if not username or not password:
             error = "Username and password required"
         elif len(password) < 8:
             error = "Password must be at least 8 characters"
-        elif not db.validate_invite_code(conn, invite_code):
-            error = "Invalid or already used invite code"
         else:
             try:
                 pw_hash = generate_password_hash(password)
-                user_id = db.create_user(conn, username, pw_hash, invite_code)
+                user_id = db.create_user(conn, username, pw_hash)
                 login_user(User(user_id, username))
                 return redirect("/")
             except Exception:
@@ -272,8 +269,13 @@ def health():
 @app.route("/")
 def index():
     if not current_user.is_authenticated:
-        return send_from_directory("static", "landing.html")
+        return redirect("/practice")
     return send_from_directory("static", "index.html")
+
+
+@app.route("/about")
+def about():
+    return send_from_directory("static", "landing.html")
 
 
 @app.route("/practice")

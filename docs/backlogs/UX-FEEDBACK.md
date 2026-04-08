@@ -5,7 +5,7 @@
 
 ---
 
-## UX-01: Practice mode tutorial for beginners (HIGH)
+## ~~UX-01: Practice mode tutorial for beginners~~ DONE
 
 Practice mode needs more explanation for newcomers. Add an introductory tutorial or guided first-use experience that explains what the practice mode is, how problems are sourced, what the severity/category filters mean, and how scoring works.
 
@@ -13,7 +13,7 @@ Practice mode needs more explanation for newcomers. Add an introductory tutorial
 
 ---
 
-## UX-02: Simplify UI for beginners, expandable for advanced (HIGH)
+## ~~UX-02: Simplify UI for beginners, expandable for advanced~~ DONE
 
 The current UX is overwhelming. Design a simpler default view for beginners (fewer controls, less jargon, clear next actions) with an option for advanced players to expand into the full view (filters, stats, category breakdowns, etc.).
 
@@ -21,7 +21,7 @@ The current UX is overwhelming. Design a simpler default view for beginners (few
 
 ---
 
-## UX-03: Back button from practice mode to start page (MEDIUM)
+## ~~UX-03: Back button from practice mode to start page~~ DONE
 
 There's no way to navigate back from practice mode to the main landing/start page. Add a back/home button.
 
@@ -29,7 +29,7 @@ There's no way to navigate back from practice mode to the main landing/start pag
 
 ---
 
-## UX-04: Show practice mode directly on frontpage (HIGH)
+## ~~UX-04: Show practice mode directly on frontpage~~ DONE
 
 The frontpage should display the practice mode immediately so nobody has to click through. Reduce friction — community practice should be the first thing a visitor sees, not a CTA button.
 
@@ -39,7 +39,7 @@ See also: `LANDING-PAGE.md` L-03 (demo mode) — this overlaps but is more speci
 
 ---
 
-## UX-05: Remove invite code requirement (HIGH)
+## ~~UX-05: Remove invite code requirement~~ DONE
 
 Drop the invite code gate for registration entirely. It's confusing and blocks signups.
 
@@ -69,8 +69,16 @@ See also: `LANDING-PAGE.md` L-03 (demo mode) — this is a more concrete version
 
 ---
 
-## UX-08: Practice opt-in popup on first use (MEDIUM)
+## ~~UX-08: Practice opt-in popup on first use~~ DONE
 
 Instead of a buried checkbox, show a popup/modal the first time a user enters their private practice mode asking if they want to share their games in the community pool. Explain the benefit clearly.
 
 **Files**: `static/app.js`, `db.py` (track whether user has been prompted)
+
+---
+
+## ~~UX-09: Hide original play for community practice problems~~ DONE
+
+In practice mode, when showing a community pool problem (not the user's own game), don't reveal what the original player actually chose. Showing their play confuses the practicing player — they only need to see the hand and decide what to discard. The "original play" reveal should only appear for the user's own mistakes (where seeing what they did wrong is the point).
+
+**Files**: `static/app.js`, possibly `db.py` or `routes_practice.py` (strip `actual` from public problems server-side)

@@ -586,12 +586,14 @@ def get_public_practice_problem(conn, severity=None, group=None, defense_only=Fa
 
         mistake = row_to_mistake(row)
         mistake["note"] = None  # strip user annotation
+        mistake.pop("actual", None)  # don't reveal original play
 
         candidates.append({
             "game_id": row["gid"],
             "round": row["round_name"],
             "mistake": mistake,
             "mistake_id": row["id"],
+            "is_community": True,
         })
 
     if not candidates:

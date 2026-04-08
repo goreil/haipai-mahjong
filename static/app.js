@@ -1429,17 +1429,37 @@ function renderPractice() {
   const content = document.getElementById("content");
   const p = practice.problem;
 
+  const showTutorial = !localStorage.getItem("practiceTutorialDismissed");
+  const showFilters = localStorage.getItem("practiceShowFilters") === "1";
+
   let html = `
     <div class="practice-header">
-      <h2>Tile Efficiency Practice</h2>
+      <h2><a href="/" class="practice-back" title="Back to home">&larr;</a> Practice</h2>
       <div class="practice-score">
         <span class="practice-score-num">${practice.correct}</span>/<span>${practice.total}</span> correct
-        <span class="practice-pool">${practice.poolSize} problems</span>
       </div>
-    </div>
-    <p class="practice-explanation">Practice hand-building decisions where the correct tile can be determined from your hand alone.</p>
-    ${isAnonymous ? '<div class="practice-login-banner">Problems drawn from community pool. <a href="/register">Register</a> or <a href="/login">log in</a> to practice your own mistakes and track progress.</div>' : ''}
-    <div class="practice-filters">
+    </div>`;
+
+  if (showTutorial) {
+    html += `
+    <div class="practice-tutorial">
+      <button class="practice-tutorial-close" onclick="localStorage.setItem('practiceTutorialDismissed','1'); this.parentElement.remove()">&times;</button>
+      <h3>How it works</h3>
+      <p>You'll see a mahjong hand after drawing a tile. Pick which tile you would discard.</p>
+      <ul>
+        <li>Problems come from real games analyzed by <strong>Mortal AI</strong></li>
+        <li>The correct answer is what Mortal recommends &mdash; the most efficient discard</li>
+        <li>Tiles with a <span style="color:#ef5350">red border</span> are dangerous when an opponent is in riichi</li>
+        <li>The draw (last tile added) is shown with a small gap</li>
+      </ul>
+    </div>`;
+  }
+
+  html += `${isAnonymous ? '<div class="practice-login-banner"><strong>Haipai</strong> &mdash; Riichi Mahjong mistake trainer. Pick the best discard below! <a href="/register">Register</a> or <a href="/login">log in</a> to upload your own games. <a href="/about">Learn more</a></div>' : ''}`;
+
+  // Collapsible filters
+  html += `<div class="practice-filters-toggle" onclick="togglePracticeFilters()">Filters ${showFilters ? '&#9650;' : '&#9660;'}</div>`;
+  html += `<div class="practice-filters" style="display:${showFilters ? 'flex' : 'none'}">
       ${!isAnonymous ? `<label class="practice-filter-check"><input type="checkbox" ${practiceSource === "mine" ? "checked" : ""} onchange="setPracticeSource(this.checked ? 'mine' : 'all')"> My mistakes only</label>` : ''}
       <select onchange="setPracticeFilter('severity', this.value)">
         <option value="" ${!practice.filterSeverity ? "selected" : ""}>All severity</option>
@@ -1497,7 +1517,7 @@ function renderPractice() {
     if (m.safety_ratings) html += `<span class="defense-badge">Riichi</span>`;
     html += `<span class="tiles">`;
     const expected = m.expected.pai;
-    const actual = m.actual.pai;
+    const actual = m.actual ? m.actual.pai : null;
     html += m.hand.map((t, i) => {
       const isDraw = m.draw && i === m.hand.length - 1 && t === m.draw;
       let cls = isDraw ? "draw" : "";
@@ -1546,8 +1566,10 @@ function renderPractice() {
     }
     html += `<div class="practice-result-detail">`;
     html += `<span>You picked: </span><span class="played">${renderTile(practice.userPick, "action-tile")}</span>`;
-    html += `<span class="arrow"> &rarr; </span>`;
-    html += `<span>Original play: </span><span class="played">${renderTile(m.actual.pai, "action-tile")}</span>`;
+    if (m.actual) {
+      html += `<span class="arrow"> &rarr; </span>`;
+      html += `<span>Original play: </span><span class="played">${renderTile(m.actual.pai, "action-tile")}</span>`;
+    }
     if (m.category) {
       const grp = catGroup(m.category);
       const color = GROUP_COLORS[grp] || "#888";
@@ -1599,11 +1621,44 @@ function setPracticeFilter(key, value) {
   showPractice();
 }
 
+function togglePracticeFilters() {
+  const show = localStorage.getItem("practiceShowFilters") !== "1";
+  localStorage.setItem("practiceShowFilters", show ? "1" : "0");
+  renderPractice();
+}
+
 function setPracticeSource(value) {
   practiceSource = value;
   practice.correct = 0;
   practice.total = 0;
+
+  // Show opt-in prompt on first switch to "My mistakes only"
+  if (value === "mine" && !isAnonymous && !localStorage.getItem("practiceOptInPrompted")) {
+    localStorage.setItem("practiceOptInPrompted", "1");
+    showPracticeOptInPopup();
+    return;
+  }
+
   showPractice();
+}
+
+function showPracticeOptInPopup() {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay show";
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <h3 style="margin-bottom:12px">Share your games?</h3>
+      <p style="margin-bottom:16px;color:var(--text-dim);font-size:14px;line-height:1.5">
+        Would you like to contribute your mistakes to the community practice pool?
+        Other players can practice on anonymized versions of your mistakes (no names or notes shared), and you can practice on theirs.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove(); showPractice()">No thanks</button>
+        <button class="btn btn-primary" onclick="togglePracticeOptIn(true); this.closest('.modal-overlay').remove(); showPractice()">Yes, share my games</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
 }
 
 async function togglePracticeOptIn(checked) {
