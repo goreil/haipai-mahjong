@@ -122,65 +122,71 @@ function renderBackTile(cls = "action-tile-sm") {
   return `<img class="tile ${cls}" src="/tiles/Back.svg" alt="?" title="hidden">`;
 }
 
-function renderMeld(meld, tileClass = "action-tile-sm", actorSeat) {
-  // Determine called tile position based on relative seat
-  // (target - actor) % 4: 1=right, 2=across, 3=left
+function renderMeld(meld, tileClass = "action-tile-sm", actorSeat, doraTiles) {
   const type = meld.type;
   const consumed = meld.consumed || [];
   const pai = meld.pai;
   const target = meld.target;
 
+  function meldTile(t, extra = "") {
+    let cls = tileClass;
+    if (doraTiles && (t === "5mr" || t === "5pr" || t === "5sr" || doraTiles.has(tileBase(t)))) cls += " dora-highlight";
+    if (extra) cls += " " + extra;
+    return renderTile(t, cls);
+  }
+  function calledTile(t) { return `<span class="meld-called">${meldTile(t)}</span>`; }
+
+  // Relative position: 1=right, 2=across, 3=left
+  let relPos = null;
+  const WINDS = ["E", "S", "W", "N"];
+  let windChar = "";
+  if (target != null && actorSeat != null) {
+    relPos = ((target - actorSeat) % 4 + 4) % 4;
+    windChar = WINDS[target % 4];
+  }
+  const windSup = windChar ? `<sup class="meld-wind">${windChar}</sup>` : "";
+
   if (type === "ankan") {
     const tile = consumed[0] || pai || "?";
-    return `<span class="meld-group meld-kan"><span class="meld-label">ankan</span>${renderBackTile(tileClass)}${renderTile(tile, tileClass)}${renderTile(tile, tileClass)}${renderBackTile(tileClass)}</span>`;
+    return `<span class="meld-group">${renderBackTile(tileClass)}${meldTile(tile)}${meldTile(tile)}${renderBackTile(tileClass)}</span>`;
   }
-
-  // For open melds, determine relative position of called tile
-  let relPos = null; // null = unknown
-  const WINDS = ["E", "S", "W", "N"];
-  let targetWind = null;
-  if (target != null && actorSeat != null) {
-    relPos = ((target - actorSeat) % 4 + 4) % 4; // 1=right, 2=across, 3=left
-    targetWind = WINDS[target % 4];
-  }
-  const windTitle = targetWind ? ` (from ${targetWind})` : "";
-
-  const label = `<span class="meld-label">${type}${windTitle}</span>`;
 
   if (type === "chi") {
-    // Chi: always from left (kamicha), called tile always on the left (rotated)
     const own = [...consumed].sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
-    return `<span class="meld-group" title="chi${windTitle}">${label}<span class="meld-called">${renderTile(pai, tileClass)}</span>${own.map(t => renderTile(t, tileClass)).join("")}</span>`;
+    return `<span class="meld-group">${calledTile(pai)}${own.map(t => meldTile(t)).join("")}${windSup}</span>`;
   }
 
   if (type === "pon") {
-    const calledTile = `<span class="meld-called">${renderTile(pai, tileClass)}</span>`;
-    const ownTiles = consumed.map(t => renderTile(t, tileClass));
-    if (relPos === 3) return `<span class="meld-group" title="pon${windTitle}">${label}${calledTile}${ownTiles.join("")}</span>`;
-    if (relPos === 2) return `<span class="meld-group" title="pon${windTitle}">${label}${ownTiles[0]}${calledTile}${ownTiles[1]}</span>`;
-    return `<span class="meld-group" title="pon${windTitle}">${label}${ownTiles.join("")}${calledTile}</span>`;
+    const ct = calledTile(pai);
+    const ot = consumed.map(t => meldTile(t));
+    if (relPos === 3) return `<span class="meld-group">${ct}${ot.join("")}${windSup}</span>`;
+    if (relPos === 2) return `<span class="meld-group">${ot[0]}${ct}${ot[1]}${windSup}</span>`;
+    return `<span class="meld-group">${ot.join("")}${ct}${windSup}</span>`;
   }
 
   if (type === "daiminkan") {
-    const calledTile = `<span class="meld-called">${renderTile(pai, tileClass)}</span>`;
-    const ownTiles = consumed.map(t => renderTile(t, tileClass));
-    if (relPos === 3) return `<span class="meld-group meld-kan" title="kan${windTitle}">${label}${calledTile}${ownTiles.join("")}</span>`;
-    if (relPos === 2) return `<span class="meld-group meld-kan" title="kan${windTitle}">${label}${ownTiles[0]}${calledTile}${ownTiles.slice(1).join("")}</span>`;
-    return `<span class="meld-group meld-kan" title="kan${windTitle}">${label}${ownTiles.join("")}${calledTile}</span>`;
+    const ct = calledTile(pai);
+    const ot = consumed.map(t => meldTile(t));
+    if (relPos === 3) return `<span class="meld-group">${ct}${ot.join("")}${windSup}</span>`;
+    if (relPos === 2) return `<span class="meld-group">${ot[0]}${ct}${ot.slice(1).join("")}${windSup}</span>`;
+    return `<span class="meld-group">${ot.join("")}${ct}${windSup}</span>`;
   }
 
   if (type === "kakan") {
-    const calledTile = `<span class="meld-called meld-kakan"><span class="meld-stacked">${renderTile(pai, tileClass)}</span>${renderTile(consumed[0] || pai, tileClass)}</span>`;
-    const ownTiles = consumed.slice(1).map(t => renderTile(t, tileClass));
-    if (relPos === 3) return `<span class="meld-group meld-kan" title="added kan${windTitle}">${label}${calledTile}${ownTiles.join("")}</span>`;
-    if (relPos === 2) return `<span class="meld-group meld-kan" title="added kan${windTitle}">${label}${ownTiles[0] || ""}${calledTile}${ownTiles.slice(1).join("")}</span>`;
-    return `<span class="meld-group meld-kan" title="added kan${windTitle}">${label}${ownTiles.join("")}${calledTile}</span>`;
+    // Added kan: 3 tiles like pon, with 4th tile stacked on the called tile
+    const addedTile = pai;
+    const baseTile = consumed[0] || pai;
+    const ct = `<span class="meld-called meld-kakan">${meldTile(addedTile, "meld-stacked-tile")}${meldTile(baseTile)}</span>`;
+    const ot = consumed.slice(1).map(t => meldTile(t));
+    if (relPos === 3) return `<span class="meld-group">${ct}${ot.join("")}${windSup}</span>`;
+    if (relPos === 2) return `<span class="meld-group">${ot[0] || ""}${ct}${ot.slice(1).join("")}${windSup}</span>`;
+    return `<span class="meld-group">${ot.join("")}${ct}${windSup}</span>`;
   }
 
-  // Fallback: just show all tiles
+  // Fallback
   const all = [...consumed];
   if (pai) all.push(pai);
-  return `<span class="meld-group">${type} ${all.map(t => renderTile(t, tileClass)).join("")}</span>`;
+  return `<span class="meld-group">${all.map(t => meldTile(t)).join("")}</span>`;
 }
 
 function renderHand(tiles, draw, safetyRatings, doraTiles) {
@@ -268,7 +274,7 @@ function renderBoardContext(m) {
         if (seatMelds) {
           html += `<span class="inline-melds">`;
           for (const meld of seatMelds) {
-            html += renderMeld(meld, "action-tile-sm", d.seat) + " ";
+            html += renderMeld(meld, "action-tile-sm", d.seat, doraTiles) + " ";
           }
           html += `</span>`;
         }
@@ -674,14 +680,14 @@ function renderMistakeCard(m, opts = {}) {
     html += `<div class="hand-row">
       <span class="label">Hand</span>
       ${m.safety_ratings ? '<span class="defense-badge">Riichi</span>' : ''}
-      <span class="tiles">${renderHand(m.hand, m.draw, m.safety_ratings, doraTiles)}</span>
-    </div>`;
-  }
-  if (m.melds && m.melds.length) {
-    html += `<div class="hand-row"><span class="label">Melds</span><span class="tiles">`;
-    const playerSeat = m.actual ? m.actual.actor : null;
-    for (const meld of m.melds) html += renderMeld(meld, "action-tile-sm", playerSeat) + " ";
-    html += `</span></div>`;
+      <span class="tiles">${renderHand(m.hand, m.draw, m.safety_ratings, doraTiles)}</span>`;
+    if (m.melds && m.melds.length) {
+      const playerSeat = m.actual ? m.actual.actor : null;
+      html += `<span class="inline-melds">`;
+      for (const meld of m.melds) html += renderMeld(meld, "action-tile-sm", playerSeat, doraTiles) + " ";
+      html += `</span>`;
+    }
+    html += `</div>`;
   }
   html += renderBoardContext(m);
   if (m.top_actions && m.top_actions.length && m.cpp_stats && m.cpp_stats.length) {
@@ -847,26 +853,22 @@ function renderGame() {
       }
       html += `</div>`;
 
-      // Hand
+      // Hand + melds on same row
       if (m.hand && m.hand.length) {
         const doraTiles = m.board_state ? getDoraTiles(m.board_state.dora_indicators) : new Set();
         html += `<div class="hand-row">
           <span class="label">Hand</span>
           ${m.safety_ratings ? '<span class="defense-badge">Riichi</span>' : ''}
-          <span class="tiles">${renderHand(m.hand, m.draw, m.safety_ratings, doraTiles)}</span>
-        </div>`;
-      }
-
-      // Melds
-      if (m.melds && m.melds.length) {
-        html += `<div class="hand-row">
-          <span class="label">Melds</span>
-          <span class="tiles">`;
-        const playerSeat = m.actual ? m.actual.actor : null;
-        for (const meld of m.melds) {
-          html += renderMeld(meld, "action-tile-sm", playerSeat) + " ";
+          <span class="tiles">${renderHand(m.hand, m.draw, m.safety_ratings, doraTiles)}</span>`;
+        if (m.melds && m.melds.length) {
+          const playerSeat = m.actual ? m.actual.actor : null;
+          html += `<span class="inline-melds">`;
+          for (const meld of m.melds) {
+            html += renderMeld(meld, "action-tile-sm", playerSeat, doraTiles) + " ";
+          }
+          html += `</span>`;
         }
-        html += `</span></div>`;
+        html += `</div>`;
       }
 
       // Board context (dora, winds, all discards, scores, opponent melds)
@@ -1717,18 +1719,18 @@ function renderPractice() {
     </div>
   `;
 
+  // Hand
+  const doraTiles = m.board_state ? getDoraTiles(m.board_state.dora_indicators) : new Set();
+
   // Melds
   if (m.melds && m.melds.length) {
     const playerSeat = m.actual ? m.actual.actor : null;
     html += `<div class="practice-melds">`;
     for (const meld of m.melds) {
-      html += renderMeld(meld, "action-tile-sm", playerSeat);
+      html += renderMeld(meld, "action-tile-sm", playerSeat, doraTiles);
     }
     html += `</div>`;
   }
-
-  // Hand
-  const doraTiles = m.board_state ? getDoraTiles(m.board_state.dora_indicators) : new Set();
 
   if (answered) {
     // Show hand with answer indicators

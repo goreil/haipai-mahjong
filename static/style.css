@@ -799,11 +799,11 @@ body {
   color: var(--text-dim);
   margin-right: 4px;
 }
-.meld-label {
-  font-size: 10px;
+.meld-wind {
+  font-size: 9px;
   color: var(--text-dim);
-  margin-right: 3px;
-  white-space: nowrap;
+  margin-left: 1px;
+  vertical-align: super;
 }
 .meld-called {
   display: inline-flex;
@@ -812,6 +812,16 @@ body {
 .meld-called > .tile {
   transform: rotate(90deg);
   margin: -3px 0;
+}
+.meld-kakan {
+  position: relative;
+}
+.meld-stacked-tile {
+  position: absolute;
+  bottom: 60%;
+  left: 0;
+  transform: rotate(90deg);
+  z-index: 1;
 }
 
 .action-meld {
