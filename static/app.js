@@ -877,10 +877,11 @@ function renderGame() {
     html += `<div class="category-groups">`;
     for (const [grp, data] of Object.entries(groups).sort((a, b) => b[1].ev - a[1].ev)) {
       const color = GROUP_COLORS[grp] || "#888";
+      const grpId = grp.replace(/\s/g, "-").toLowerCase();
       html += `<div class="cat-group" style="border-left: 3px solid ${color}">
-        <div class="cat-group-header">
+        <div class="cat-group-header" onclick="toggleTopMistakes('${grp}', '${grpId}')" style="cursor:pointer">
           <span class="cat-group-name" style="color:${color}">${grp}</span>
-          <span class="cat-group-stat">${data.count} mistakes &middot; ${data.ev.toFixed(2)} EV</span>
+          <span class="cat-group-stat">${data.count} mistakes &middot; ${data.ev.toFixed(2)} EV <span class="cat-expand">&#9660;</span></span>
         </div>`;
       // Subcategories
       const subs = Object.entries(data.subs).sort((a, b) => b[1].ev - a[1].ev);
@@ -893,6 +894,7 @@ function renderGame() {
           <span class="cat-sub-stat">${sub.count} (${sub.ev.toFixed(2)} EV)</span>
         </div>`;
       }
+      html += `<div id="top-mistakes-${grpId}" class="top-mistakes-panel" style="display:none"></div>`;
       html += `</div>`;
     }
     html += `</div></div>`;
@@ -944,6 +946,37 @@ function onAnnotate(el) {
 }
 
 // --- Filter handlers ---
+
+async function toggleTopMistakes(group, grpId) {
+  const panel = document.getElementById(`top-mistakes-${grpId}`);
+  if (!panel) return;
+  if (panel.style.display !== "none") {
+    panel.style.display = "none";
+    return;
+  }
+  panel.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:6px">Loading...</div>';
+  panel.style.display = "";
+
+  const res = await fetch(`/api/top-mistakes?group=${encodeURIComponent(group)}&limit=3&games=10`);
+  const mistakes = await res.json();
+
+  if (!mistakes.length) {
+    panel.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:6px">No mistakes in this category from recent games</div>';
+    return;
+  }
+
+  let html = '<div class="top-mistakes-list">';
+  for (const m of mistakes) {
+    const date = new Date(m.game_date + "T00:00:00").toLocaleDateString("en-US", {month: "short", day: "numeric"});
+    html += `<div class="top-mistake-item" onclick="fetchGame(${m.game_id})">
+      <span class="top-mistake-meta">${date} ${m.round} T${m.turn}</span>
+      <span class="top-mistake-ev">${m.severity} ${m.ev_loss.toFixed(2)} EV</span>
+      <span class="top-mistake-play">${renderAction(m.actual)} &rarr; ${renderAction(m.expected)}</span>
+    </div>`;
+  }
+  html += '</div>';
+  panel.innerHTML = html;
+}
 
 function onToggleMinor(cb) {
   state.showMinor = cb.checked;
