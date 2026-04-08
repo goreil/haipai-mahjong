@@ -8,7 +8,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-DIR = Path(__file__).parent
+DIR = Path(__file__).parent.parent
 
 # --- Tunable categorization rules ---
 # Edit these thresholds, then run: python3 mj_games.py categorize --recheck --dry-run

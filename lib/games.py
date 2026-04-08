@@ -8,7 +8,7 @@ import urllib.parse
 from datetime import date
 from pathlib import Path
 
-DIR = Path(__file__).parent
+DIR = Path(__file__).parent.parent
 GAMES_FILE = DIR / "games.json"
 
 CATEGORY_INFO = {

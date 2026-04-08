@@ -327,6 +327,66 @@ def api_trends():
     return jsonify(db.get_trends(conn, uid))
 
 
+@app.route("/api/top-mistakes")
+@login_required
+def api_top_mistakes():
+    conn = get_conn()
+    uid = current_user.id
+    group = request.args.get("group")
+    limit = min(int(request.args.get("limit", 5)), 20)
+    games_limit = min(int(request.args.get("games", 10)), 50)
+
+    # Get recent game IDs
+    game_ids = [r["id"] for r in conn.execute(
+        "SELECT id FROM games WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
+        (uid, games_limit),
+    ).fetchall()]
+    if not game_ids:
+        return jsonify([])
+
+    placeholders = ",".join("?" * len(game_ids))
+    where = f"m.game_id IN ({placeholders}) AND m.category IS NOT NULL"
+    params = list(game_ids)
+
+    if group:
+        # Map group name to category prefixes
+        GROUP_PREFIXES = {
+            "Efficiency": ["1A"], "Value Tiles": ["2A"],
+            "Strategy": ["3A", "3B", "3C"], "Meld": ["4A", "4B", "4C"],
+            "Riichi": ["5A", "5B"], "Kan": ["6A", "6B"],
+        }
+        cats = GROUP_PREFIXES.get(group, [])
+        if cats:
+            cat_ph = ",".join("?" * len(cats))
+            where += f" AND m.category IN ({cat_ph})"
+            params.extend(cats)
+
+    rows = conn.execute(
+        f"""SELECT m.*, g.date FROM mistakes m
+            JOIN games g ON m.game_id = g.id
+            WHERE {where}
+            ORDER BY m.ev_loss DESC LIMIT ?""",
+        params + [limit],
+    ).fetchall()
+
+    results = []
+    for r in rows:
+        m = db.row_to_mistake(r)
+        results.append({
+            "game_id": r["game_id"],
+            "game_date": r["date"],
+            "round": r["round_name"],
+            "turn": r["turn"],
+            "category": r["category"],
+            "severity": r["severity"],
+            "ev_loss": r["ev_loss"],
+            "hand": m.get("hand"),
+            "actual": m.get("actual"),
+            "expected": m.get("expected"),
+        })
+    return jsonify(results)
+
+
 # --- Register blueprints ---
 
 from routes.games import games_bp
