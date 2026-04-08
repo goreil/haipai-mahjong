@@ -148,14 +148,9 @@ function renderMeld(meld, tileClass = "action-tile-sm", actorSeat) {
   const label = `<span class="meld-label">${type}${windTitle}</span>`;
 
   if (type === "chi") {
-    // Chi: always from left (kamicha), called tile sorted into sequence
-    const all = [...consumed, pai].sort((a, b) => {
-      const na = parseInt(a) || 0, nb = parseInt(b) || 0;
-      return na - nb;
-    });
-    return `<span class="meld-group" title="chi${windTitle}">${label}${all.map(t =>
-      t === pai ? `<span class="meld-called">${renderTile(t, tileClass)}</span>` : renderTile(t, tileClass)
-    ).join("")}</span>`;
+    // Chi: always from left (kamicha), called tile always on the left (rotated)
+    const own = [...consumed].sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
+    return `<span class="meld-group" title="chi${windTitle}">${label}<span class="meld-called">${renderTile(pai, tileClass)}</span>${own.map(t => renderTile(t, tileClass)).join("")}</span>`;
   }
 
   if (type === "pon") {
