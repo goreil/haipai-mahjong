@@ -1180,6 +1180,39 @@ body {
 .cat-sub-stat {
   color: var(--text-dim);
 }
+.cat-expand {
+  font-size: 10px;
+  opacity: 0.5;
+}
+.top-mistakes-list {
+  padding: 4px 0;
+}
+.top-mistake-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.top-mistake-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+.top-mistake-meta {
+  color: var(--text-dim);
+  min-width: 90px;
+}
+.top-mistake-ev {
+  color: var(--sev-major);
+  min-width: 80px;
+  font-weight: 600;
+}
+.top-mistake-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 
 /* Trends */
 .trend-chart-card {
