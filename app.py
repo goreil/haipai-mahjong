@@ -372,18 +372,10 @@ def api_top_mistakes():
     results = []
     for r in rows:
         m = db.row_to_mistake(r)
-        results.append({
-            "game_id": r["game_id"],
-            "game_date": r["date"],
-            "round": r["round_name"],
-            "turn": r["turn"],
-            "category": r["category"],
-            "severity": r["severity"],
-            "ev_loss": r["ev_loss"],
-            "hand": m.get("hand"),
-            "actual": m.get("actual"),
-            "expected": m.get("expected"),
-        })
+        m["game_id"] = r["game_id"]
+        m["game_date"] = r["date"]
+        m["round_name"] = r["round_name"]
+        results.append(m)
     return jsonify(results)
 
 

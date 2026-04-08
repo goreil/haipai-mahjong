@@ -1213,6 +1213,33 @@ body {
   align-items: center;
   gap: 4px;
 }
+.trend-mistakes-panel {
+  padding: 0 0 8px;
+}
+.trend-mistakes-panel .mistake {
+  margin: 8px 0;
+}
+.mistake-date {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--bg);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.round-label {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.mistake-link {
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--accent);
+  opacity: 0.6;
+  margin-left: auto;
+}
+.mistake-link:hover {
+  opacity: 1;
+}
 
 /* Trends */
 .trend-chart-card {

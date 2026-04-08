@@ -634,6 +634,69 @@ function renderGameList() {
 
 // --- Render: Game Detail ---
 
+function renderMistakeCard(m, opts = {}) {
+  const showDate = opts.gameDate;
+  const showLink = opts.gameId;
+  const sc = sevClass(m.severity);
+  const doraTiles = m.board_state ? getDoraTiles(m.board_state.dora_indicators) : new Set();
+
+  let html = `<div class="mistake ${sc}">`;
+  html += `<div class="mistake-top">`;
+  if (showDate) {
+    const d = new Date(showDate + "T00:00:00").toLocaleDateString("en-US", {month: "short", day: "numeric"});
+    html += `<span class="mistake-date">${d}</span>`;
+  }
+  if (m.round_name) html += `<span class="round-label">${m.round_name}</span>`;
+  html += `<span class="turn-num">T${m.turn}</span>`;
+  html += `<span class="severity ${sc}" title="${sevTooltip(m.severity)}">${m.severity}</span>`;
+  html += `<span class="ev-loss">${m.ev_loss.toFixed(2)} EV</span>`;
+  if (m.category) {
+    const grp = catGroup(m.category);
+    const color = GROUP_COLORS[grp] || "#888";
+    html += `<span class="cat-badge" style="background:${color}20;color:${color};border:1px solid ${color}40" title="${catDesc(m.category)}">${catLabel(m.category)}</span>`;
+  }
+  if (m.shanten != null) html += `<span class="shanten">${m.shanten}-shanten</span>`;
+  if (showLink) html += `<span class="mistake-link" onclick="fetchGame(${showLink})" title="Go to game">&#x2197;</span>`;
+  if (m.actual && m.expected) {
+    const actStr = formatAction(m.actual);
+    const expStr = formatAction(m.expected);
+    if (actStr !== expStr) {
+      html += `<span class="discard-comparison">
+        <span class="played">${renderAction(m.actual, "played")}</span>
+        <span class="arrow">&rarr;</span>
+        <span class="ai">${renderAction(m.expected, "ai")}</span>
+      </span>`;
+    }
+  }
+  html += `</div>`;
+
+  if (m.hand && m.hand.length) {
+    html += `<div class="hand-row">
+      <span class="label">Hand</span>
+      ${m.safety_ratings ? '<span class="defense-badge">Riichi</span>' : ''}
+      <span class="tiles">${renderHand(m.hand, m.draw, m.safety_ratings, doraTiles)}</span>
+    </div>`;
+  }
+  if (m.melds && m.melds.length) {
+    html += `<div class="hand-row"><span class="label">Melds</span><span class="tiles">`;
+    const playerSeat = m.actual ? m.actual.actor : null;
+    for (const meld of m.melds) html += renderMeld(meld, "action-tile-sm", playerSeat) + " ";
+    html += `</span></div>`;
+  }
+  html += renderBoardContext(m);
+  if (m.top_actions && m.top_actions.length && m.cpp_stats && m.cpp_stats.length) {
+    html += renderEvComparison(m);
+  } else if (m.top_actions && m.top_actions.length) {
+    html += `<div class="top-actions">`;
+    for (const a of m.top_actions) {
+      html += `<span class="top-action">${renderAction(a.action)} <b>${a.q_value.toFixed(2)}</b> <span class="prob">${(a.prob * 100).toFixed(0)}%</span></span>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
 function renderGame() {
   const game = state.currentGameData;
   if (!game) return;
@@ -950,32 +1013,25 @@ function onAnnotate(el) {
 async function toggleTopMistakes(group, grpId) {
   const panel = document.getElementById(`top-mistakes-${grpId}`);
   if (!panel) return;
-  if (panel.style.display !== "none") {
-    panel.style.display = "none";
-    return;
-  }
+  if (panel.style.display !== "none") { panel.style.display = "none"; return; }
   panel.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:6px">Loading...</div>';
   panel.style.display = "";
-
   const res = await fetch(`/api/top-mistakes?group=${encodeURIComponent(group)}&limit=3&games=10`);
   const mistakes = await res.json();
+  if (!mistakes.length) { panel.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:6px">No recent mistakes</div>'; return; }
+  panel.innerHTML = mistakes.map(m => renderMistakeCard(m, {gameDate: m.game_date, gameId: m.game_id})).join("");
+}
 
-  if (!mistakes.length) {
-    panel.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:6px">No mistakes in this category from recent games</div>';
-    return;
-  }
-
-  let html = '<div class="top-mistakes-list">';
-  for (const m of mistakes) {
-    const date = new Date(m.game_date + "T00:00:00").toLocaleDateString("en-US", {month: "short", day: "numeric"});
-    html += `<div class="top-mistake-item" onclick="fetchGame(${m.game_id})">
-      <span class="top-mistake-meta">${date} ${m.round} T${m.turn}</span>
-      <span class="top-mistake-ev">${m.severity} ${m.ev_loss.toFixed(2)} EV</span>
-      <span class="top-mistake-play">${renderAction(m.actual)} &rarr; ${renderAction(m.expected)}</span>
-    </div>`;
-  }
-  html += '</div>';
-  panel.innerHTML = html;
+async function toggleTrendMistakes(group, grpId) {
+  const panel = document.getElementById(grpId);
+  if (!panel) return;
+  if (panel.style.display !== "none") { panel.style.display = "none"; return; }
+  panel.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:6px">Loading...</div>';
+  panel.style.display = "";
+  const res = await fetch(`/api/top-mistakes?group=${encodeURIComponent(group)}&limit=3&games=10`);
+  const mistakes = await res.json();
+  if (!mistakes.length) { panel.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:6px">No recent mistakes</div>'; return; }
+  panel.innerHTML = mistakes.map(m => renderMistakeCard(m, {gameDate: m.game_date, gameId: m.game_id})).join("");
 }
 
 function onToggleMinor(cb) {
@@ -1441,17 +1497,19 @@ function renderCategoryTrend(games) {
 
   const maxEv = sorted[0][1].ev;
 
-  let html = `<div class="trend-chart-card"><h3>EV Loss by Skill Area (All Games)</h3><div class="trend-bars">`;
+  let html = `<div class="trend-chart-card"><h3>EV Loss by Skill Area (All Games)</h3><p style="font-size:12px;color:var(--text-dim);margin:-4px 0 10px">Click a row to see your worst mistakes</p><div class="trend-bars">`;
   for (const [grp, data] of sorted) {
     const color = GROUP_COLORS[grp] || "#888";
     const pct = (data.ev / maxEv * 100).toFixed(0);
-    html += `<div class="trend-bar-row">
+    const grpId = "trend-" + grp.replace(/\s/g, "-").toLowerCase();
+    html += `<div class="trend-bar-row" onclick="toggleTrendMistakes('${grp}', '${grpId}')" style="cursor:pointer">
       <span class="trend-bar-label" style="color:${color}">${grp}</span>
       <div class="trend-bar-track">
         <div class="trend-bar-fill" style="width:${pct}%;background:${color}"></div>
       </div>
       <span class="trend-bar-value">${data.ev.toFixed(1)} EV <span class="trend-bar-count">(${data.count})</span></span>
-    </div>`;
+    </div>
+    <div id="${grpId}" class="trend-mistakes-panel" style="display:none"></div>`;
   }
   html += `</div></div>`;
 
