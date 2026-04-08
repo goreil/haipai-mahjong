@@ -245,6 +245,7 @@ def extract_board_state(mortal_data, kyoku_idx, tiles_left_target):
                 "type": etype,
                 "consumed": e.get("consumed", []),
                 "pai": e.get("pai"),
+                "target": e.get("target"),
             })
             # Called tile is removed from the caller's discard pool
             # (the target's last dahai gets "consumed" by the call)
@@ -263,6 +264,7 @@ def extract_board_state(mortal_data, kyoku_idx, tiles_left_target):
                 "type": "kakan",
                 "consumed": e.get("consumed", []),
                 "pai": e.get("pai"),
+                "target": e.get("target"),
             })
 
         elif etype == "dora":

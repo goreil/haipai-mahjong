@@ -182,6 +182,46 @@ def api_backfill_decisions():
     return jsonify({"ok": True, "updated": updated, "total": len(games)})
 
 
+@games_bp.route("/api/games/preview", methods=["POST"])
+def api_preview():
+    """Parse a mortal JSON and return the analysis without storing anything.
+
+    Available to all users (no login required) — lets visitors try before signing up.
+    CSRF exempt because anonymous users have no token.
+    """
+    from datetime import date
+
+    body = request.json
+    mortal_data = body.get("mortal_data")
+    if not mortal_data or not isinstance(mortal_data, dict):
+        return jsonify({"error": "mortal_data is required (Mortal analysis JSON)"}), 400
+
+    try:
+        game_dict = parse_game(mortal_data, game_date=date.today().isoformat())
+    except (ValueError, KeyError, IndexError, TypeError) as e:
+        return jsonify({"error": f"Failed to parse Mortal data: {e}"}), 400
+    compute_summary(game_dict)
+
+    # Build the same structure as get_game returns, but ephemeral
+    rounds = []
+    for rnd in game_dict.get("rounds", []):
+        rounds.append({
+            "round": rnd["round"],
+            "outcome": rnd.get("outcome"),
+            "turn_count": rnd.get("turn_count"),
+            "decision_count": rnd.get("decision_count"),
+            "mistakes": rnd.get("mistakes", []),
+        })
+
+    return jsonify({
+        "id": None,
+        "date": game_dict.get("date"),
+        "summary": game_dict.get("summary", {}),
+        "rounds": rounds,
+        "preview": True,
+    })
+
+
 @games_bp.route("/api/games/add", methods=["POST"])
 @login_required
 def api_add():

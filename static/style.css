@@ -782,7 +782,7 @@ body {
 
 .meld-group {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 1px;
   padding: 2px 6px;
   background: var(--bg);
@@ -791,6 +791,14 @@ body {
   font-weight: 600;
   color: var(--text-dim);
   margin-right: 4px;
+}
+.meld-called {
+  display: inline-flex;
+  align-items: flex-end;
+}
+.meld-called > .tile {
+  transform: rotate(90deg);
+  margin: -3px 0;
 }
 
 .action-meld {

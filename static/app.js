@@ -118,6 +118,80 @@ function renderTile(t, extraClass = "", titleOverride = null) {
   return `<img class="${cls}" src="${tileSrc(t)}" alt="${t}" title="${title}" data-tile="${tileBase(t)}">`;
 }
 
+function renderBackTile(cls = "action-tile-sm") {
+  return `<img class="tile ${cls}" src="/tiles/Back.svg" alt="?" title="hidden">`;
+}
+
+function renderMeld(meld, tileClass = "action-tile-sm", actorSeat) {
+  // Determine called tile position based on relative seat
+  // (target - actor) % 4: 1=right, 2=across, 3=left
+  const type = meld.type;
+  const consumed = meld.consumed || [];
+  const pai = meld.pai;
+  const target = meld.target;
+
+  if (type === "ankan") {
+    // Closed kan: back-back-face-face (show 2 face-down, 2 face-up)
+    const tile = consumed[0] || pai || "?";
+    return `<span class="meld-group meld-kan">${renderBackTile(tileClass)}${renderTile(tile, tileClass)}${renderTile(tile, tileClass)}${renderBackTile(tileClass)}</span>`;
+  }
+
+  // For open melds, determine relative position of called tile
+  let relPos = null; // null = unknown
+  const WINDS = ["E", "S", "W", "N"];
+  let targetWind = null;
+  if (target != null && actorSeat != null) {
+    relPos = ((target - actorSeat) % 4 + 4) % 4; // 1=right, 2=across, 3=left
+    targetWind = WINDS[target % 4];
+  }
+  const windTitle = targetWind ? ` (from ${targetWind})` : "";
+
+  if (type === "chi") {
+    // Chi: always from left (kamicha), called tile sorted into sequence
+    const all = [...consumed, pai].sort((a, b) => {
+      const na = parseInt(a) || 0, nb = parseInt(b) || 0;
+      return na - nb;
+    });
+    // Called tile (pai) is shown sideways (rotated)
+    return `<span class="meld-group" title="chi${windTitle}">${all.map(t =>
+      t === pai ? `<span class="meld-called">${renderTile(t, tileClass)}</span>` : renderTile(t, tileClass)
+    ).join("")}</span>`;
+  }
+
+  if (type === "pon") {
+    // Pon: called tile position depends on source
+    const calledTile = `<span class="meld-called">${renderTile(pai, tileClass)}</span>`;
+    const ownTiles = consumed.map(t => renderTile(t, tileClass));
+    if (relPos === 3) return `<span class="meld-group" title="pon${windTitle}">${calledTile}${ownTiles.join("")}</span>`;
+    if (relPos === 2) return `<span class="meld-group" title="pon${windTitle}">${ownTiles[0]}${calledTile}${ownTiles[1]}</span>`;
+    // relPos === 1 or unknown: called tile on right
+    return `<span class="meld-group" title="pon${windTitle}">${ownTiles.join("")}${calledTile}</span>`;
+  }
+
+  if (type === "daiminkan") {
+    // Open kan: like pon but with 4 tiles, called tile rotated
+    const calledTile = `<span class="meld-called">${renderTile(pai, tileClass)}</span>`;
+    const ownTiles = consumed.map(t => renderTile(t, tileClass));
+    if (relPos === 3) return `<span class="meld-group meld-kan" title="kan${windTitle}">${calledTile}${ownTiles.join("")}</span>`;
+    if (relPos === 2) return `<span class="meld-group meld-kan" title="kan${windTitle}">${ownTiles[0]}${calledTile}${ownTiles.slice(1).join("")}</span>`;
+    return `<span class="meld-group meld-kan" title="kan${windTitle}">${ownTiles.join("")}${calledTile}</span>`;
+  }
+
+  if (type === "kakan") {
+    // Added kan: pon display + 4th tile stacked on the called tile
+    const calledTile = `<span class="meld-called meld-kakan"><span class="meld-stacked">${renderTile(pai, tileClass)}</span>${renderTile(consumed[0] || pai, tileClass)}</span>`;
+    const ownTiles = consumed.slice(1).map(t => renderTile(t, tileClass));
+    if (relPos === 3) return `<span class="meld-group meld-kan" title="added kan${windTitle}">${calledTile}${ownTiles.join("")}</span>`;
+    if (relPos === 2) return `<span class="meld-group meld-kan" title="added kan${windTitle}">${ownTiles[0] || ""}${calledTile}${ownTiles.slice(1).join("")}</span>`;
+    return `<span class="meld-group meld-kan" title="added kan${windTitle}">${ownTiles.join("")}${calledTile}</span>`;
+  }
+
+  // Fallback: just show all tiles
+  const all = [...consumed];
+  if (pai) all.push(pai);
+  return `<span class="meld-group">${type} ${all.map(t => renderTile(t, tileClass)).join("")}</span>`;
+}
+
 function renderHand(tiles, draw, safetyRatings, doraTiles) {
   if (!tiles || !tiles.length) return "";
   return tiles.map((t, i) => {
@@ -199,9 +273,7 @@ function renderBoardContext(m) {
         if (seatMelds) {
           html += `<span class="inline-melds">`;
           for (const meld of seatMelds) {
-            const tiles = [...(meld.consumed || [])];
-            if (meld.pai) tiles.push(meld.pai);
-            html += `<span class="meld-group">${meld.type} ${tiles.map(t => renderTile(t, "action-tile-sm")).join("")}</span> `;
+            html += renderMeld(meld, "action-tile-sm", d.seat) + " ";
           }
           html += `</span>`;
         }
@@ -247,14 +319,14 @@ function renderAction(action, cls = "") {
     case "dahai":
       return renderTile(action.pai, `action-tile ${cls}`);
     case "chi":
-      return `<span class="action-meld ${cls}">chi ${(action.consumed || []).map(t => renderTile(t, "action-tile-sm")).join("")}+${renderTile(action.pai || "?", "action-tile-sm")}</span>`;
     case "pon":
-      return `<span class="action-meld ${cls}">pon ${(action.consumed || []).map(t => renderTile(t, "action-tile-sm")).join("")}+${renderTile(action.pai || "?", "action-tile-sm")}</span>`;
+    case "ankan":
+    case "daiminkan":
+    case "kakan":
+      return `<span class="action-meld ${cls}">${renderMeld(action, "action-tile-sm", action.actor)}</span>`;
     case "reach": return `<span class="action-text ${cls}">riichi</span>`;
     case "hora": return `<span class="action-text ${cls}">win</span>`;
     case "none": return `<span class="action-text ${cls}">pass</span>`;
-    case "ankan":
-      return `<span class="action-meld ${cls}">ankan ${renderTile((action.consumed || ["?"])[0], "action-tile-sm")}</span>`;
     default: return `<span class="action-text ${cls}">${action.type}</span>`;
   }
 }
@@ -577,13 +649,22 @@ function renderGame() {
 
   const dateObj = new Date(game.date + "T00:00:00");
   const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const isPreview = game.preview;
   let html = `
     <div class="game-header">
       <h2>${displayDate}
-        <button class="btn btn-delete" onclick="deleteGame(${state.currentGame})" title="Delete game">Delete</button>
+        ${!isPreview ? `<button class="btn btn-delete" onclick="deleteGame(${state.currentGame})" title="Delete game">Delete</button>` : ""}
       </h2>
       ${game.log_url ? `<div class="log-link"><a href="${game.log_url}" target="_blank">${game.log_url}</a></div>` : ""}
-    </div>
+    </div>`;
+
+  if (isPreview) {
+    html += `<div class="categorization-banner pending" style="background:rgba(79,195,247,0.08);border-color:rgba(79,195,247,0.2)">
+      Preview mode &mdash; this game is not saved. <a href="/register">Register</a> to keep your games, track progress, and get auto-categorization.
+    </div>`;
+  }
+
+  html += `
 
     <div class="summary-bar">
       <div class="stat"><span class="value">${s.total_mistakes || 0}</span><span class="label">Mistakes</span></div>
@@ -723,10 +804,9 @@ function renderGame() {
         html += `<div class="hand-row">
           <span class="label">Melds</span>
           <span class="tiles">`;
+        const playerSeat = m.actual ? m.actual.actor : null;
         for (const meld of m.melds) {
-          const meldTiles = [...(meld.consumed || [])];
-          if (meld.pai) meldTiles.push(meld.pai);
-          html += `<span class="meld-group">${meld.type} ${meldTiles.map(t => renderTile(t, "action-tile-sm")).join("")}</span> `;
+          html += renderMeld(meld, "action-tile-sm", playerSeat) + " ";
         }
         html += `</span></div>`;
       }
@@ -763,19 +843,21 @@ function renderGame() {
         html += `</div>`;
       }
 
-      // Annotation
-      const catOptions = CATEGORIES.map(c => {
-        const sel = (m.category || "") === c ? "selected" : "";
-        const label = c ? catLabel(c) : "Uncategorized";
-        return `<option value="${c}" ${sel}>${label}</option>`;
-      }).join("");
+      // Annotation (hidden in preview mode)
+      if (!isPreview) {
+        const catOptions = CATEGORIES.map(c => {
+          const sel = (m.category || "") === c ? "selected" : "";
+          const label = c ? catLabel(c) : "Uncategorized";
+          return `<option value="${c}" ${sel}>${label}</option>`;
+        }).join("");
 
-      html += `<div class="annotation-row">
-        <select onchange="onAnnotate(this)" ${dataAttrs}>${catOptions}</select>
-        <input type="text" placeholder="Note..." value="${(m.note || "").replace(/"/g, "&quot;")}"
-               onchange="onAnnotate(this)" ${dataAttrs}>
-        <span class="save-indicator">Saved</span>
-      </div>`;
+        html += `<div class="annotation-row">
+          <select onchange="onAnnotate(this)" ${dataAttrs}>${catOptions}</select>
+          <input type="text" placeholder="Note..." value="${(m.note || "").replace(/"/g, "&quot;")}"
+                 onchange="onAnnotate(this)" ${dataAttrs}>
+          <span class="save-indicator">Saved</span>
+        </div>`;
+      }
 
       html += `</div>`; // .mistake
     }
@@ -943,6 +1025,58 @@ async function submitAddGame() {
   } catch (e) {
     btn.disabled = false;
     progressEl.style.display = "none";
+    errEl.textContent = e.message;
+  }
+}
+
+function showPreviewUpload() {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay show";
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <h3>Preview a game</h3>
+      <p style="color:var(--text-dim);font-size:13px;margin:8px 0 16px;line-height:1.5">
+        Upload a Mortal analysis JSON to see your mistakes. Nothing is saved &mdash; <a href="/register">register</a> to keep your games.
+      </p>
+      <input type="file" id="preview-file" accept=".json">
+      <div id="preview-error" style="color:#ef5350;font-size:13px;margin-top:8px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitPreview(this)">Preview</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+async function submitPreview(btn) {
+  const fileInput = document.getElementById("preview-file");
+  const errEl = document.getElementById("preview-error");
+  if (!fileInput.files.length) { errEl.textContent = "Select a file"; return; }
+
+  btn.disabled = true;
+  errEl.textContent = "";
+  try {
+    const text = await fileInput.files[0].text();
+    const mortalData = JSON.parse(text);
+    const res = await fetch("/api/games/preview", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({mortal_data: mortalData}),
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    if (data.error) { errEl.textContent = data.error; return; }
+
+    // Close modal and show the game
+    btn.closest(".modal-overlay").remove();
+    state.currentGameData = data;
+    state.currentGame = null;
+    // Switch to game view (hide practice sidebar etc.)
+    document.getElementById("sidebar").style.display = "";
+    renderGame();
+  } catch (e) {
+    btn.disabled = false;
     errEl.textContent = e.message;
   }
 }
@@ -1455,7 +1589,8 @@ function renderPractice() {
     </div>`;
   }
 
-  html += `${isAnonymous ? '<div class="practice-login-banner"><strong>Haipai</strong> &mdash; Riichi Mahjong mistake trainer. Pick the best discard below! <a href="/register">Register</a> or <a href="/login">log in</a> to upload your own games. <a href="/about">Learn more</a></div>' : ''}`;
+  html += `${isAnonymous ? `<div class="practice-login-banner"><strong>Haipai</strong> &mdash; Riichi Mahjong mistake trainer. Pick the best discard below!
+    <span class="banner-links"><a href="/register">Register</a> or <a href="/login">log in</a> to save your games. <a href="#" onclick="showPreviewUpload(); return false">Try uploading a game</a> &middot; <a href="/about">Learn more</a></span></div>` : ''}`;
 
   // Collapsible filters
   html += `<div class="practice-filters-toggle" onclick="togglePracticeFilters()">Filters ${showFilters ? '&#9650;' : '&#9660;'}</div>`;
@@ -1498,11 +1633,10 @@ function renderPractice() {
 
   // Melds
   if (m.melds && m.melds.length) {
+    const playerSeat = m.actual ? m.actual.actor : null;
     html += `<div class="practice-melds">`;
     for (const meld of m.melds) {
-      const tiles = [...(meld.consumed || [])];
-      if (meld.pai) tiles.push(meld.pai);
-      html += `<span class="practice-meld">${meld.type} ${tiles.map(t => renderTile(t, "action-tile-sm")).join("")}</span>`;
+      html += renderMeld(meld, "action-tile-sm", playerSeat);
     }
     html += `</div>`;
   }
