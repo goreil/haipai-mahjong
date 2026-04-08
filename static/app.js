@@ -173,14 +173,16 @@ function renderMeld(meld, tileClass = "action-tile-sm", actorSeat, doraTiles) {
   }
 
   if (type === "kakan") {
-    // Added kan: 3 tiles like pon, with 4th tile stacked on the called tile
-    const addedTile = pai;
-    const baseTile = consumed[0] || pai;
-    const ct = `<span class="meld-called meld-kakan">${meldTile(addedTile, "meld-stacked-tile")}${meldTile(baseTile)}</span>`;
-    const ot = consumed.slice(1).map(t => meldTile(t));
-    if (relPos === 3) return `<span class="meld-group">${ct}${ot.join("")}${windSup}</span>`;
-    if (relPos === 2) return `<span class="meld-group">${ot[0] || ""}${ct}${ot.slice(1).join("")}${windSup}</span>`;
-    return `<span class="meld-group">${ot.join("")}${ct}${windSup}</span>`;
+    // Added kan: pon layout with 4th tile stacked on top of the rotated called tile
+    // consumed has 3 tiles, pai is the 4th (added) tile
+    const tile = consumed[0] || pai;
+    // Two rotated tiles stacked vertically
+    const ct = `<span class="meld-kakan">${meldTile(pai, "meld-stacked-tile")}${meldTile(tile)}</span>`;
+    const t1 = meldTile(tile);
+    const t2 = meldTile(tile);
+    if (relPos === 3) return `<span class="meld-group">${ct}${t1}${t2}${windSup}</span>`;
+    if (relPos === 2) return `<span class="meld-group">${t1}${ct}${t2}${windSup}</span>`;
+    return `<span class="meld-group">${t1}${t2}${ct}${windSup}</span>`;
   }
 
   // Fallback

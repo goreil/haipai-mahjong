@@ -814,14 +814,20 @@ body {
   margin: -3px 0;
 }
 .meld-kakan {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   position: relative;
+  vertical-align: bottom;
 }
-.meld-stacked-tile {
-  position: absolute;
-  bottom: 60%;
-  left: 0;
+.meld-kakan > .tile {
   transform: rotate(90deg);
+  margin: -3px 0;
+}
+.meld-kakan > .tile.meld-stacked-tile {
+  margin-bottom: -10px;
   z-index: 1;
+  position: relative;
 }
 
 .action-meld {
