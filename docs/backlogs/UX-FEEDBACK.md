@@ -53,6 +53,16 @@ Observed from visual audit of the game review, trends, and practice pages:
 
 ---
 
+## UX-16: Community pool EV should be 1st-vs-2nd, not 1st-vs-actual (MEDIUM)
+
+For community practice problems, the `actual` play is stripped (UX-09). The EV loss displayed should be the gap between Mortal's #1 and #2 choices (`details[0].q_value - details[1].q_value`), not between Mortal's pick and the original player's pick. This better reflects the difficulty of the decision rather than how bad the original player was.
+
+Currently `ev_loss` is stored per-mistake as `details[0].q_value - details[actual_index].q_value`. For community display, compute it on the fly or store a second field.
+
+**Files**: `db.py` (get_public_practice_problem), `lib/parse.py` (store top-2 gap), `static/app.js` (display)
+
+---
+
 ## UX-15: Mobile responsiveness (LOW)
 
 The layout doesn't adapt well to narrow screens. The sidebar + content split doesn't work on mobile. The tile images are tiny. Consider a responsive layout with collapsible sidebar.
