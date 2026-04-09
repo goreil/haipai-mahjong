@@ -97,9 +97,11 @@ Examples of the desired level of detail:
 - **4B (Missed Meld)**: "You passed on a pon of 7s. With your hand at 2-shanten, calling this pon immediately drops you to 1-shanten. The trade-off is losing a closed hand, but at this point the speed advantage outweighs the value loss."
 - **5B (Missed Riichi)**: "Your hand is tenpai and ready to declare riichi. Riichi adds at least 1 han and ippatsu chance. Mortal says the expected value of declaring far exceeds the risk of being locked into your wait."
 
-**Implementation**: Expand `generateExplanation(m)` in `static/app.js` to use `m.cpp_stats`, `m.safety_ratings`, `m.top_actions`, `m.board_state`, `m.labels`, `m.shanten`, and `m.category` to build contextual paragraphs. Consider a helper per category group.
+**Placement**: The explanation should appear inline on each mistake card in the main game review view (not in the category summary breakdown). It should sit below the hand/EV table area, as a readable paragraph that the player sees when reviewing each individual mistake.
 
-**Files**: `static/app.js` (`generateExplanation` function)
+**Implementation**: Expand `generateExplanation(m)` in `static/app.js` to use `m.cpp_stats`, `m.safety_ratings`, `m.top_actions`, `m.board_state`, `m.labels`, `m.shanten`, and `m.category` to build contextual paragraphs. Call it from the main mistake rendering in `renderGame()`, not just the breakdown panel. Consider a helper per category group.
+
+**Files**: `static/app.js` (`generateExplanation` function, mistake rendering in `renderGame`), `static/style.css`
 
 ---
 
