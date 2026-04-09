@@ -79,6 +79,30 @@ The text should be generated from the mistake data (category, actual/expected ac
 
 ---
 
+## UX-18: Rich categorization explanations per mistake (HIGH)
+
+The current explanatory text in the mistake breakdown is too brief (e.g. "best discard was 3m, but you chose 1m"). It should be a detailed, educational paragraph that:
+
+1. **Explains the category** in context — not just "this is 1A (Efficiency)" but why this specific mistake falls into that category for this hand.
+2. **Describes the AI reasoning** — what Mortal considered (hand shape, shanten, tiles remaining, safety, hand value) and what mahjong-cpp's tile efficiency analysis says.
+3. **Teaches the player** — connects the mistake to a general mahjong principle. E.g. for a 2A (Value Tile) mistake: "Your hand is 1-shanten. Both 1m and E reduce to 0-shanten with similar acceptance counts, but Mortal values keeping E because it's a yakuhai (round wind) — dropping it loses potential hand value."
+4. **Uses available data**: `cpp_stats` (shanten, necessary_count, exp_score per discard), `safety_ratings`, `top_actions` (Mortal q_values), `board_state` (dora, winds, scores), `category`, `cpp_best`, `labels` (dora/yakuhai/terminal tags).
+
+Examples of the desired level of detail:
+
+- **1A (Efficiency)**: "Both Mortal and calc agree: discard 3m for maximum tile acceptance (14 tiles vs 8 tiles for your 7p). At 2-shanten, pure efficiency matters most — you want to reduce shanten as fast as possible."
+- **2A (Value Tiles)**: "Calc says 1m and E have similar efficiency (both reach 1-shanten with 12 vs 10 tiles). But Mortal prefers keeping E — it's the round wind (yakuhai), so completing the hand with E in it is worth significantly more points."
+- **3A (Complex Decision)**: "Calc recommends 4s for best tile acceptance, but Mortal disagrees and prefers 8p. This is a strategic judgment call — possibly considering hand shape, potential yaku, or opponents' states. The AI sees something beyond pure efficiency here."
+- **3B (Defense)**: "An opponent declared riichi. Mortal recommends discarding E (safety: 14) over your 5p (safety: 2). Calc doesn't account for defense — it still wants 5p for efficiency. Mortal is prioritizing survival: E is nearly 100% safe (genbutsu) while 5p is very dangerous."
+- **4B (Missed Meld)**: "You passed on a pon of 7s. With your hand at 2-shanten, calling this pon immediately drops you to 1-shanten. The trade-off is losing a closed hand, but at this point the speed advantage outweighs the value loss."
+- **5B (Missed Riichi)**: "Your hand is tenpai and ready to declare riichi. Riichi adds at least 1 han and ippatsu chance. Mortal says the expected value of declaring far exceeds the risk of being locked into your wait."
+
+**Implementation**: Expand `generateExplanation(m)` in `static/app.js` to use `m.cpp_stats`, `m.safety_ratings`, `m.top_actions`, `m.board_state`, `m.labels`, `m.shanten`, and `m.category` to build contextual paragraphs. Consider a helper per category group.
+
+**Files**: `static/app.js` (`generateExplanation` function)
+
+---
+
 ## UX-15: Mobile responsiveness (LOW)
 
 The layout doesn't adapt well to narrow screens. The sidebar + content split doesn't work on mobile. The tile images are tiny. Consider a responsive layout with collapsible sidebar.
