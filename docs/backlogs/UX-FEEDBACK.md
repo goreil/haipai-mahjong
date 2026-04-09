@@ -105,6 +105,22 @@ Examples of the desired level of detail:
 
 ---
 
+## UX-19: Mascot character (MEDIUM)
+
+Add a mascot character to Haipai that serves two purposes:
+
+1. **Favicon**: A small mascot icon as `favicon.ico` for browser tabs/bookmarks.
+2. **Trainer persona**: The mascot "says" the explanatory text on mistake cards (UX-18), giving it personality. Instead of plain italic text, show a small mascot avatar next to a speech bubble with the explanation. Could also appear in:
+   - Practice mode ("Good job!" / "Think about defense here...")
+   - Empty states ("No games yet — upload your first replay!")
+   - Onboarding steps
+
+**Design direction**: Should feel friendly and mahjong-themed. Ideas: a small tile character, a cartoon tanuki/cat in a mahjong robe, a chibi player, etc. Could be pixel art or simple vector. Needs to work at 16x16 (favicon) and ~40px (inline avatar).
+
+**Files**: `static/favicon.ico`, `static/mascot.svg` (or `.png`), `static/style.css`, `static/index.html` (favicon link), `static/app.js` (mascot integration with explanations)
+
+---
+
 ## UX-15: Mobile responsiveness (LOW)
 
 The layout doesn't adapt well to narrow screens. The sidebar + content split doesn't work on mobile. The tile images are tiny. Consider a responsive layout with collapsible sidebar.
