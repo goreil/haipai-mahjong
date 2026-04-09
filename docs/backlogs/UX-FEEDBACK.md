@@ -115,9 +115,9 @@ Add a mascot character to Haipai that serves two purposes:
    - Empty states ("No games yet — upload your first replay!")
    - Onboarding steps
 
-**Design direction**: Should feel friendly and mahjong-themed. Ideas: a small tile character, a cartoon tanuki/cat in a mahjong robe, a chibi player, etc. Could be pixel art or simple vector. Needs to work at 16x16 (favicon) and ~40px (inline avatar).
+**Design direction**: Should feel friendly and mahjong-themed. Ideas: a small tile character, a cartoon tanuki/cat in a mahjong robe, a chibi player, etc. Could be pixel art or simple vector. Needs to work at 16x16 (favicon), ~40px (inline avatar), and larger for the landing page/login. Replaces the current MPS tile logo (`.brand-mark` in sidebar, landing page hero, login page header) as the primary brand identity.
 
-**Files**: `static/favicon.ico`, `static/mascot.svg` (or `.png`), `static/style.css`, `static/index.html` (favicon link), `static/app.js` (mascot integration with explanations)
+**Files**: `static/favicon.ico`, `static/mascot.svg` (or `.png`), `static/style.css`, `static/index.html` (favicon link), `static/landing.html` (hero), `static/app.js` (sidebar brand, mascot integration with explanations), `app.py` (login page template)
 
 ---
 
