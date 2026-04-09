@@ -588,6 +588,13 @@ def get_public_practice_problem(conn, severity=None, group=None, defense_only=Fa
         mistake["note"] = None  # strip user annotation
         mistake.pop("actual", None)  # don't reveal original play
 
+        # For community problems, show 1st-vs-2nd EV gap (decision difficulty)
+        # instead of 1st-vs-actual (how bad the player was)
+        top_actions = data.get("top_actions") or []
+        if len(top_actions) >= 2:
+            gap = round(top_actions[0].get("q_value", 0) - top_actions[1].get("q_value", 0), 2)
+            mistake["ev_loss"] = gap
+
         candidates.append({
             "game_id": row["gid"],
             "round": row["round_name"],

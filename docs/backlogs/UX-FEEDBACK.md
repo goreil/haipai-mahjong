@@ -2,7 +2,7 @@
 
 **Source**: Direct user feedback + visual audit (2026-04-08)
 
-Completed: UX-01 through UX-05, UX-07 through UX-12.
+Completed: UX-01 through UX-05, UX-07 through UX-14, UX-16, UX-17.
 
 ---
 
@@ -14,7 +14,7 @@ See `AUTH.md` A-02. Confirms user priority for Google OAuth.
 
 ---
 
-## UX-13: Kakan meld rendering fix (HIGH)
+## UX-13: Kakan meld rendering fix (HIGH) ✅ DONE
 
 The kakan (added kan) tile stacking is visually broken:
 - The 4th tile doesn't stack cleanly on top of the rotated called tile
@@ -27,7 +27,7 @@ The kakan should look like: two upright tiles + a rotated tile with another tile
 
 ---
 
-## UX-14: Visual cleanup — reduce clutter (MEDIUM)
+## UX-14: Visual cleanup — reduce clutter (MEDIUM) ✅ DONE
 
 Observed from visual audit of the game review, trends, and practice pages:
 
@@ -53,7 +53,7 @@ Observed from visual audit of the game review, trends, and practice pages:
 
 ---
 
-## UX-16: Community pool EV should be 1st-vs-2nd, not 1st-vs-actual (MEDIUM)
+## UX-16: Community pool EV should be 1st-vs-2nd, not 1st-vs-actual (MEDIUM) ✅ DONE
 
 For community practice problems, the `actual` play is stripped (UX-09). The EV loss displayed should be the gap between Mortal's #1 and #2 choices (`details[0].q_value - details[1].q_value`), not between Mortal's pick and the original player's pick. This better reflects the difficulty of the decision rather than how bad the original player was.
 
@@ -63,7 +63,7 @@ Currently `ev_loss` is stored per-mistake as `details[0].q_value - details[actua
 
 ---
 
-## UX-17: Mistake breakdown scoped to current game + explanatory text (HIGH)
+## UX-17: Mistake breakdown scoped to current game + explanatory text (HIGH) ✅ DONE
 
 The mistake breakdown in the game analysis section currently shows mistakes across all games. It should be scoped to the current game only.
 

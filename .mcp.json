@@ -2,7 +2,10 @@
   "mcpServers": {
     "puppeteer": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "env": {
+        "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium"
+      }
     }
   }
 }

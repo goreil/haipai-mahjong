@@ -20,7 +20,7 @@
 
 ## Tier 1: Core Logic (highest risk, no coverage)
 
-### T-01: mj_defense.py -- zero tests
+### T-01: mj_defense.py -- zero tests ✅ DONE (37 tests in tests/test_defense.py)
 
 All 5 functions completely untested:
 - `evaluate_safety()` -- core safety rating (0-15 scale), 58 lines of branching logic
@@ -36,7 +36,7 @@ Key edge cases to test:
 - Red five handling in safety context
 - Empty riichi state (no opponent in riichi -> return None)
 
-### T-02: Categorization decision logic
+### T-02: Categorization decision logic ✅ DONE (39 tests in tests/test_categorize.py)
 
 Untested functions in `mj_categorize.py`:
 - `categorize_mistake()` (line 649) -- 113 lines, main decision tree

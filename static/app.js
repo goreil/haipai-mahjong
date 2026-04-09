@@ -28,6 +28,55 @@ function catDesc(code) {
   return desc;
 }
 
+function generateExplanation(m) {
+  const actual = m.actual;
+  const expected = m.expected;
+  if (!actual || !expected) return "";
+  const at = actual.type;
+  const et = expected.type;
+  const act = formatAction(actual);
+  const exp = formatAction(expected);
+
+  // Meld decisions
+  if (at === "none" && (et === "chi" || et === "pon"))
+    return `You passed, but ${exp} was better here`;
+  if ((at === "chi" || at === "pon") && et === "none")
+    return `You called ${act}, but passing was better here`;
+  if ((at === "chi" || at === "pon") && (et === "chi" || et === "pon"))
+    return `You called ${act}, but ${exp} was the better meld`;
+
+  // Riichi decisions
+  if (at === "reach" && et === "dahai")
+    return `You declared riichi, but discarding ${expected.pai} was better`;
+  if (at === "dahai" && et === "reach")
+    return `You discarded ${actual.pai}, but declaring riichi was better`;
+
+  // Kan decisions
+  if ((at === "ankan" || at === "kakan" || at === "daiminkan") && (et === "dahai" || et === "none"))
+    return `You declared kan, but ${exp} was better`;
+  if ((at === "dahai" || at === "none") && (et === "ankan" || et === "kakan" || et === "daiminkan"))
+    return `You chose ${act}, but declaring kan was better`;
+
+  // Missed win
+  if (et === "hora")
+    return `You passed on a winning tile`;
+
+  // Discard vs discard
+  if (at === "dahai" && et === "dahai") {
+    const hasCpp = m.cpp_best;
+    const cat = m.category || "";
+    if (cat === "3B")
+      return `Mortal prefers the safer ${expected.pai} over ${actual.pai} — defense play`;
+    if (hasCpp && hasCpp === expected.pai)
+      return `Both Mortal and calc agree: best discard was ${expected.pai}, but you chose ${actual.pai}`;
+    if (hasCpp && hasCpp !== expected.pai)
+      return `Calc prefers ${hasCpp}, Mortal prefers ${expected.pai} — you chose ${actual.pai}`;
+    return `Best discard was ${expected.pai}, but you chose ${actual.pai}`;
+  }
+
+  return `Expected ${exp}, but you chose ${act}`;
+}
+
 const GROUP_COLORS = {
   "Efficiency": "#4a9eff",
   "Value Tiles": "#6db3e8",
@@ -175,8 +224,7 @@ function renderMeld(meld, tileClass = "action-tile-sm", actorSeat, doraTiles) {
   if (type === "kakan") {
     // Added kan: pon layout with 4th tile stacked on top of the rotated called tile
     const tile = consumed[0] || pai;
-    // Called position: bottom rotated tile + top rotated tile overlapping
-    const ct = `<span class="meld-called meld-kakan">${meldTile(tile)}<span class="meld-added">${meldTile(pai)}</span></span>`;
+    const ct = `<span class="meld-called meld-kakan">${meldTile(tile)}<span class="meld-kakan-added">${meldTile(pai)}</span></span>`;
     const t1 = meldTile(tile);
     const t2 = meldTile(tile);
     if (relPos === 3) return `<span class="meld-group">${ct}${t1}${t2}${windSup}</span>`;
@@ -616,6 +664,7 @@ async function addGameWithProgress(mortalData, date, onProgress) {
 function renderGameList() {
   const list = document.getElementById("game-list");
   const sorted = [...state.games].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  let lastDate = "";
   list.innerHTML = sorted.map(g => {
     const s = g.summary || {};
     const active = g.id === state.currentGame ? "active" : "";
@@ -624,13 +673,16 @@ function renderGameList() {
     const rating = gameRating(s);
     const dateObj = new Date(g.date + "T00:00:00");
     const shortDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    return `
+    let sep = "";
+    if (g.date !== lastDate) {
+      lastDate = g.date;
+      sep = `<div class="date-separator">${shortDate}</div>`;
+    }
+    return `${sep}
       <div class="game-item ${active}" onclick="fetchGame(${g.id})">
-        <div class="date">${shortDate}${rating.icon ? ` <span class="game-rating-icon" title="${rating.label}">${rating.icon}</span>` : ""}</div>
-        <div class="stats">
-          ${s.total_mistakes || 0} mistakes &middot; ${(s.total_ev_loss || 0).toFixed(2)} EV
-          ${s.total_decisions ? ` &middot; ${s.ev_per_decision.toFixed(4)}/D` : ""}
-        </div>
+        <div class="date">${rating.icon ? `<span class="game-rating-icon" title="${rating.label}">${rating.icon}</span> ` : ""}${
+          s.total_mistakes || 0} mistakes &middot; ${(s.total_ev_loss || 0).toFixed(2)} EV${
+          s.total_decisions ? ` &middot; ${s.ev_per_decision.toFixed(4)}/D` : ""}</div>
         ${g.categorization_status === "pending"
           ? `<div class="annotation-bar categorizing"><div class="fill" style="width:${pct}%;transition:width 0.5s ease"></div></div>`
           : `<div class="annotation-bar"><div class="fill" style="width:${pct}%"></div></div>`}
@@ -924,44 +976,73 @@ function renderGame() {
     html += `</div>`; // .round
   }
 
-  // Category summary - grouped by skill area
-  if (s.by_category && Object.keys(s.by_category).length) {
-    html += `<div class="game-summary"><h3>Mistake Breakdown</h3>`;
-
-    // Group by skill area
-    const groups = {};
-    for (const [cat, data] of Object.entries(s.by_category)) {
-      const grp = catGroup(cat);
-      if (!groups[grp]) groups[grp] = { count: 0, ev: 0, subs: {} };
-      groups[grp].count += data.count;
-      groups[grp].ev += data.ev;
-      groups[grp].subs[cat] = data;
-    }
-
-    html += `<div class="category-groups">`;
-    for (const [grp, data] of Object.entries(groups).sort((a, b) => b[1].ev - a[1].ev)) {
-      const color = GROUP_COLORS[grp] || "#888";
-      const grpId = grp.replace(/\s/g, "-").toLowerCase();
-      html += `<div class="cat-group" style="border-left: 3px solid ${color}">
-        <div class="cat-group-header" onclick="toggleTopMistakes('${grp}', '${grpId}')" style="cursor:pointer">
-          <span class="cat-group-name" style="color:${color}">${grp}</span>
-          <span class="cat-group-stat">${data.count} mistakes &middot; ${data.ev.toFixed(2)} EV <span class="cat-expand">&#9660;</span></span>
-        </div>`;
-      // Subcategories
-      const subs = Object.entries(data.subs).sort((a, b) => b[1].ev - a[1].ev);
-      for (const [cat, sub] of subs) {
-        const info = CATEGORY_INFO[cat];
-        const label = info ? info.label : cat;
-        const desc = info ? info.desc : "";
-        html += `<div class="cat-sub" title="${desc}">
-          <span class="cat-sub-label">${label}</span>
-          <span class="cat-sub-stat">${sub.count} (${sub.ev.toFixed(2)} EV)</span>
-        </div>`;
+  // Category summary - grouped by skill area, scoped to this game
+  {
+    // Collect all mistakes from this game
+    const allMistakes = [];
+    for (const rnd of game.rounds || []) {
+      for (const m of rnd.mistakes || []) {
+        allMistakes.push(m);
       }
-      html += `<div id="top-mistakes-${grpId}" class="top-mistakes-panel" style="display:none"></div>`;
-      html += `</div>`;
     }
-    html += `</div></div>`;
+
+    // Build by_category from this game's mistakes
+    const gameByCat = {};
+    for (const m of allMistakes) {
+      const cat = m.category;
+      if (!cat) continue;
+      if (!gameByCat[cat]) gameByCat[cat] = { count: 0, ev: 0, mistakes: [] };
+      gameByCat[cat].count += 1;
+      gameByCat[cat].ev = Math.round((gameByCat[cat].ev + (m.ev_loss || 0)) * 100) / 100;
+      gameByCat[cat].mistakes.push(m);
+    }
+
+    if (Object.keys(gameByCat).length) {
+      html += `<div class="game-summary"><h3>Mistake Breakdown</h3>`;
+
+      // Group by skill area
+      const groups = {};
+      for (const [cat, data] of Object.entries(gameByCat)) {
+        const grp = catGroup(cat);
+        if (!groups[grp]) groups[grp] = { count: 0, ev: 0, subs: {}, mistakes: [] };
+        groups[grp].count += data.count;
+        groups[grp].ev += data.ev;
+        groups[grp].subs[cat] = data;
+        groups[grp].mistakes.push(...data.mistakes);
+      }
+
+      html += `<div class="category-groups">`;
+      for (const [grp, data] of Object.entries(groups).sort((a, b) => b[1].ev - a[1].ev)) {
+        const color = GROUP_COLORS[grp] || "#888";
+        const grpId = grp.replace(/\s/g, "-").toLowerCase();
+        html += `<div class="cat-group" style="border-left: 3px solid ${color}">
+          <div class="cat-group-header" onclick="toggleGameMistakes('${grpId}')" style="cursor:pointer">
+            <span class="cat-group-name" style="color:${color}">${grp}</span>
+            <span class="cat-group-stat">${data.count} mistakes &middot; ${data.ev.toFixed(2)} EV <span class="cat-expand">&#9660;</span></span>
+          </div>`;
+        // Subcategories
+        const subs = Object.entries(data.subs).sort((a, b) => b[1].ev - a[1].ev);
+        for (const [cat, sub] of subs) {
+          const info = CATEGORY_INFO[cat];
+          const label = info ? info.label : cat;
+          const desc = info ? info.desc : "";
+          html += `<div class="cat-sub" title="${desc}">
+            <span class="cat-sub-label">${label}</span>
+            <span class="cat-sub-stat">${sub.count} (${sub.ev.toFixed(2)} EV)</span>
+          </div>`;
+        }
+        // Inline mistake list (hidden by default) with explanatory text
+        const sorted = [...data.mistakes].sort((a, b) => (b.ev_loss || 0) - (a.ev_loss || 0));
+        let panelHtml = sorted.map(m => {
+          const explanation = generateExplanation(m);
+          const explSpan = explanation ? `<div class="mistake-explanation">${explanation}</div>` : "";
+          return renderMistakeCard(m) + explSpan;
+        }).join("");
+        html += `<div id="game-mistakes-${grpId}" class="top-mistakes-panel" style="display:none">${panelHtml}</div>`;
+        html += `</div>`;
+      }
+      html += `</div></div>`;
+    }
   }
 
   content.innerHTML = html;
@@ -1010,6 +1091,12 @@ function onAnnotate(el) {
 }
 
 // --- Filter handlers ---
+
+function toggleGameMistakes(grpId) {
+  const panel = document.getElementById(`game-mistakes-${grpId}`);
+  if (!panel) return;
+  panel.style.display = panel.style.display === "none" ? "" : "none";
+}
 
 async function toggleTopMistakes(group, grpId) {
   const panel = document.getElementById(`top-mistakes-${grpId}`);
