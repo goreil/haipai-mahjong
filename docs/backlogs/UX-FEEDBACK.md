@@ -2,7 +2,7 @@
 
 **Source**: Direct user feedback + visual audit (2026-04-08)
 
-Completed: UX-01 through UX-05, UX-07 through UX-14, UX-16, UX-17.
+Completed: UX-01 through UX-05, UX-07 through UX-14, UX-16 through UX-19.
 
 ---
 
@@ -79,7 +79,7 @@ The text should be generated from the mistake data (category, actual/expected ac
 
 ---
 
-## UX-18: Rich categorization explanations per mistake (HIGH)
+## UX-18: Rich categorization explanations per mistake (HIGH) ✅ DONE
 
 The current explanatory text in the mistake breakdown is too brief (e.g. "best discard was 3m, but you chose 1m"). It should be a detailed, educational paragraph that:
 
@@ -105,7 +105,7 @@ Examples of the desired level of detail:
 
 ---
 
-## UX-19: Mascot character (MEDIUM)
+## UX-19: Mascot character (MEDIUM) ✅ DONE
 
 Add a mascot character to Haipai that serves two purposes:
 

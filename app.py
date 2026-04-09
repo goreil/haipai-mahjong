@@ -181,11 +181,7 @@ button:hover{background:linear-gradient(135deg,#3a9ac3 0%,#4fc3f7 100%);box-shad
 </style></head><body>
 <div class="login-wrap">
 <div class="brand">
-  <div class="brand-tiles">
-    <div class="brand-tile">M</div>
-    <div class="brand-tile">P</div>
-    <div class="brand-tile">S</div>
-  </div>
+  <img src="/static/mascot.svg" alt="Haipai" style="width:80px;height:auto;margin-bottom:12px;animation:tileIn 0.5s ease backwards">
   <h1>Haipai</h1>
   <p>Mahjong Mistake Trainer</p>
 </div>

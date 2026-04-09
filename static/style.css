@@ -71,28 +71,11 @@ body {
   margin-bottom: 10px;
 }
 
-.brand-mark {
-  display: flex;
-  gap: 2px;
+.brand-mascot {
+  width: 40px;
+  height: auto;
+  flex-shrink: 0;
 }
-
-.brand-mark span {
-  width: 18px;
-  height: 24px;
-  border-radius: 3px;
-  background: linear-gradient(135deg, #1e2a48 0%, #16213e 100%);
-  border: 1px solid #2a3a5a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Outfit', sans-serif;
-  font-size: 9px;
-  font-weight: 700;
-}
-
-.bm-m { color: var(--tile-m); }
-.bm-p { color: var(--tile-p); }
-.bm-s { color: var(--tile-s); }
 
 .sidebar-header h2 {
   font-family: 'Outfit', sans-serif;
@@ -1252,10 +1235,14 @@ body {
   opacity: 0.5;
 }
 .mistake-explanation {
-  font-size: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
   color: var(--text-dim);
-  padding: 2px 12px 8px;
-  font-style: italic;
+  padding: 8px 14px;
+  margin-top: 4px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  border-left: 2px solid var(--accent-dim);
 }
 .top-mistakes-list {
   padding: 4px 0;
@@ -1809,29 +1796,11 @@ body {
   margin-bottom: 16px;
 }
 
-.landing-tiles-row {
-  display: inline-flex;
-  gap: 6px;
-  margin-bottom: 20px;
-}
-
-.landing-tile {
-  height: 52px;
-  border-radius: 5px;
-  background: #fff;
-  border: 2px solid transparent;
+.landing-mascot {
+  width: 100px;
+  height: auto;
+  margin-bottom: 16px;
   animation: landingTileIn 0.5s ease backwards;
-}
-
-.landing-tile:nth-child(1) { animation-delay: 0.1s; }
-.landing-tile:nth-child(2) { animation-delay: 0.2s; }
-.landing-tile:nth-child(3) { animation-delay: 0.3s; }
-.landing-tile:nth-child(4) { animation-delay: 0.4s; }
-.landing-tile:nth-child(5) { animation-delay: 0.5s; }
-
-.landing-tile-glow {
-  border-color: #ffa94d;
-  box-shadow: 0 0 8px rgba(255, 169, 77, 0.4);
 }
 
 @keyframes landingTileIn {
