@@ -63,6 +63,22 @@ Currently `ev_loss` is stored per-mistake as `details[0].q_value - details[actua
 
 ---
 
+## UX-17: Mistake breakdown scoped to current game + explanatory text (HIGH)
+
+The mistake breakdown in the game analysis section currently shows mistakes across all games. It should be scoped to the current game only.
+
+Additionally, each mistake should have a short explanatory text on the right side describing what happened. Examples:
+- "Mortal and calc both agree: best discard was 3m, but you chose 1m"
+- "Mortal recommends riichi here, but you discarded 5p instead"
+- "Calc says 2s is more efficient, but Mortal prefers the safer E — you chose 7p"
+- "You called chi, but passing was better here"
+
+The text should be generated from the mistake data (category, actual/expected actions, cpp agreement).
+
+**Files**: `static/app.js` (mistake breakdown rendering, text generation), `static/style.css`
+
+---
+
 ## UX-15: Mobile responsiveness (LOW)
 
 The layout doesn't adapt well to narrow screens. The sidebar + content split doesn't work on mobile. The tile images are tiny. Consider a responsive layout with collapsible sidebar.
